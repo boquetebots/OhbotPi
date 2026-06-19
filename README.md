@@ -40,76 +40,37 @@ This GUI lets you control and program an Ohbot robot head from any web browser o
 
 ---
 
-## Full Documentation
+## Installation
 
-If this is a brand new install, read the guides in this order:
+> **[→ Read the full installation guide](INSTALL_GUIDE.md)**
 
-| Guide | What it covers |
-|-------|---------------|
-| [Setting Up Your Pi](docs/PI_FIRST_SETUP.md) | SD card, OS install, first boot, SSH access — start here if your Pi is brand new |
-| [Getting Your API Keys](docs/API_KEYS_SETUP.md) | Step-by-step for Azure Speech and OpenAI — includes warnings about Azure's confusing interface |
-| [Full Rebuild Guide](REBUILD_GUIDE.md) | Complete software install: Python, dependencies, project files, and systemd services |
-| [Launcher Setup](LAUNCHER_SETUP.md) | Set up the web launcher so Ohbot starts automatically on boot |
-| [Autostart Troubleshooting](docs/AUTOSTART_TROUBLESHOOT.md) | If services won't start on boot, check here |
+The install guide covers everything from a blank SD card to a running robot — including what SSH is, how to find your Pi on the network, and how to get your API keys.
+
+The short version, once your Pi is set up and you're SSH'd in:
+
+```bash
+cd ~/Projects/Ohbot
+git clone https://github.com/boquetebots/OhbotPi.git .
+bash install.sh
+```
+
+The installer will prompt you for your API keys and handle everything else automatically. Ohbot will be configured to start on every boot.
+
+Then open a browser on any computer on the same WiFi and go to:
+
+```
+http://ohbot.local:5001
+```
 
 ---
 
-## Quick Setup
+## Documentation
 
-> **Brand new Pi?** Start with the [Pi First Setup guide](docs/PI_FIRST_SETUP.md) before continuing here.
-
-### 1. Clone this repo onto your Pi
-
-```bash
-cd ~/Projects
-git clone https://github.com/YOUR_USERNAME/ohbot-web-gui.git
-cd ohbot-web-gui
-```
-
-### 2. Install Python dependencies
-
-```bash
-pip3 install flask openai azure-cognitiveservices-speech
-```
-
-### 3. Create your `.env` file
-
-Copy the example and fill in your keys:
-
-```bash
-cp .env.example .env
-nano .env
-```
-
-The `.env` file should look like this:
-
-```
-AZURE_SPEECH_KEY=your_azure_key_here
-AZURE_SPEECH_REGION=your_azure_region_here
-OPENAI_API_KEY=your_openai_key_here
-```
-
-> **Don't have keys yet?** See the [API Keys Setup guide](docs/API_KEYS_SETUP.md) for step-by-step instructions on getting Azure and OpenAI keys.
->
-> **Important:** Never share your `.env` file. It contains your private API keys.
-
-### 4. Customize the personality prompts *(optional but recommended)*
-
-Open `gui_server.py` and find the `_PERSONALITIES` section near the top. The default prompts describe Ohbot as a robot at "the Boquete Public Library in Panama" — that's where the original was built. Change these to suit your location and use case.
-
-### 5. Run the server
-
-```bash
-python3 gui_server.py
-```
-
-Then open a browser on any computer on your local network and go to:
-
-```
-http://<your-pi-ip-address>:5001/gui
-```
-
-To find your Pi's IP address, run `hostname -I` on the Pi.
+| Guide | What it covers |
+|-------|---------------|
+| [Installation Guide](INSTALL_GUIDE.md) | Complete setup from scratch — Pi imaging, SSH, GitHub clone, running the installer |
+| [Rebuild Guide](REBUILD_GUIDE.md) | Full manual setup reference if you prefer to do things step by step |
+| [Launcher Setup](LAUNCHER_SETUP.md) | How the web launcher works and how to add new Ohbot personalities |
 
 ---
 
