@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🤖 Ohbot Launcher</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #1a1a2e;
+    --panel:   #16213e;
+    --card:    #0f3460;
+    --accent:  #e94560;
+    --accent2: #0f9b8e;
+    --text:    #eaeaea;
+    --muted:   #8892a4;
+    --border:  #2a3a5c;
+    --success: #2ecc71;
+    --warn:    #f39c12;
+    --danger:  #e74c3c;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .header .robot { font-size: 4rem; margin-bottom: 12px; }
+  .header h1 { font-size: 2rem; font-weight: 700; letter-spacing: 1px; }
+  .header p  { color: var(--muted); margin-top: 8px; font-size: 0.95rem; }
+
+  /* ── Status badge ── */
+  #status-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 8px 20px;
+    margin-bottom: 32px;
+    font-size: 0.85rem;
+  }
+  #status-bar.visible { display: flex; }
+  .status-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--success);
+    animation: pulse 1.5s ease-in-out infinite alternate;
+  }
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.4; } }
+
+  /* ── Choice cards ── */
+  #choice-screen { width: 100%; max-width: 700px; }
+
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s, background 0.2s;
+    position: relative;
+  }
+  .card:hover:not(.disabled) {
+    border-color: var(--accent2);
+    transform: translateY(-3px);
+  }
+  .card.active {
+    border-color: var(--success);
+    background: #0d2e1a;
+  }
+  .card.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .card .icon    { font-size: 3rem; margin-bottom: 16px; }
+  .card h2       { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
+  .card p        { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
+
+  .active-badge {
+    display: none;
+    position: absolute;
+    top: 12px; right: 12px;
+    background: var(--success);
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .card.active .active-badge { display: block; }
+
+  /* ── Action buttons ── */
+  .actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-stop     { background: var(--warn);   color: #000; }
+  .btn-open     { background: var(--accent2); color: #fff; }
+  .btn-shutdown { background: #2a1a1a; color: var(--danger); border: 1px solid var(--danger); }
+  .btn-restart  { background: #1a2a2a; color: var(--muted); border: 1px solid var(--border); }
+
+  /* ── Shutdown screen ── */
+  #shutdown-screen {
+    display: none;
+    text-align: center;
+  }
+  #shutdown-screen .icon { font-size: 4rem; margin-bottom: 20px; }
+  #shutdown-screen h2    { font-size: 1.6rem; margin-bottom: 12px; }
+  #shutdown-screen p     { color: var(--muted); }
+  #countdown             { font-size: 3rem; font-weight: 700; color: var(--danger); margin: 24px 0; }
+
+  /* ── Spinner ── */
+  .spinner {
+    display: none;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
+  .spinner.visible { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Footer ── */
+  .footer { margin-top: 40px; color: var(--muted); font-size: 0.75rem; text-align: center; }
+
+  @media (max-width: 500px) {
+    .cards { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="robot">🤖</div>
+  <h1>Ohbot Launcher</h1>
+  <p>Choose what you'd like to do</p>
+</div>
+
+<!-- Status bar — shown when a service is running -->
+<div id="status-bar">
+  <div class="status-dot"></div>
+  <span id="status-text">Something is running</span>
+</div>
+
+<!-- Main choice screen -->
+<div id="choice-screen">
+
+  <div class="cards">
+
+    <!-- Greeter Bot card -->
+    <div class="card" id="card-greeter" onclick="startService('greeter')">
+      <div class="active-badge">Running</div>
+      <div class="icon">🎙️</div>
+      <h2>Greeter Bot</h2>
+      <p>Voice-activated conversation mode. Ohbot listens, talks, and chats with visitors.</p>
+    </div>
+
+    <!-- Sequence Builder card -->
+    <div class="card" id="card-gui" onclick="startService('gui')">
+      <div class="active-badge">Running</div>
+      <div class="icon">🎛️</div>
+      <h2>Sequence Builder</h2>
+      <p>Web GUI for controlling motors, setting emotions, and building animation sequences.</p>
+    </div>
+
+  </div>
+
+  <!-- Action buttons -->
+  <div class="actions">
+    <button class="btn btn-stop" id="btn-stop" onclick="stopService()" style="display:none">
+      ⏹ Stop Current Service
+    </button>
+    <button class="btn btn-open" id="btn-open" onclick="openGui()" style="display:none">
+      Open GUI ↗
+    </button>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-restart"  onclick="confirmAction('restart')">↺ Restart Pi</button>
+    <button class="btn btn-shutdown" onclick="confirmAction('shutdown')">⏻ Shut Down Pi</button>
+  </div>
+
+</div>
+
+<!-- Shutdown/restart countdown screen -->
+<div id="shutdown-screen">
+  <div class="icon" id="shutdown-icon">⏻</div>
+  <h2 id="shutdown-title">Shutting down…</h2>
+  <div id="countdown">3</div>
+  <p id="shutdown-msg">You can safely unplug the power after the light goes out.</p>
+</div>
+
+<div class="footer">Ohbot Web Launcher — <a href="https://github.com/ohbot" style="color:var(--muted)">ohbot.co.uk</a></div>
+
+<script>
+  let currentStatus = 'idle';
+  let pollTimer     = null;
+
+  // ── Poll status every 2 seconds ──────────────────────────────────────────
+  async function pollStatus() {
+    try {
+      const r = await fetch('/launcher/status');
+      const d = await r.json();
+      applyStatus(d.status);
+    } catch(e) { /* ignore network blips */ }
+  }
+
+  function startPolling() {
+    pollStatus();
+    clearInterval(pollTimer);
+    pollTimer = setInterval(pollStatus, 2000);
+  }
+
+  // ── Apply UI state ────────────────────────────────────────────────────────
+  function applyStatus(status) {
+    currentStatus = status;
+
+    const bar      = document.getElementById('status-bar');
+    const barText  = document.getElementById('status-text');
+    const btnStop  = document.getElementById('btn-stop');
+    const btnOpen  = document.getElementById('btn-open');
+    const cardG    = document.getElementById('card-greeter');
+    const cardGUI  = document.getElementById('card-gui');
+
+    // Reset card states
+    cardG.classList.remove('active', 'disabled');
+    cardGUI.classList.remove('active', 'disabled');
+
+    if (status === 'idle') {
+      bar.classList.remove('visible');
+      btnStop.style.display = 'none';
+      btnOpen.style.display = 'none';
+
+    } else if (status === 'greeter') {
+      bar.classList.add('visible');
+      barText.textContent  = 'Greeter Bot is running';
+      cardG.classList.add('active');
+      cardGUI.classList.add('disabled');
+      btnStop.style.display = 'inline-block';
+      btnOpen.style.display = 'none';
+
+    } else if (status === 'gui') {
+      bar.classList.add('visible');
+      barText.textContent  = 'Sequence Builder is running';
+      cardGUI.classList.add('active');
+      cardG.classList.add('disabled');
+      btnStop.style.display  = 'inline-block';
+      btnOpen.style.display  = 'inline-block';
+    }
+  }
+
+  // ── Start a service ───────────────────────────────────────────────────────
+  async function startService(which) {
+    if (currentStatus === which) {
+      // Already running — if it's the GUI, just open it
+      if (which === 'gui') openGui();
+      return;
+    }
+
+    // If something else is running, confirm switch
+    if (currentStatus !== 'idle') {
+      const other = currentStatus === 'greeter' ? 'Greeter Bot' : 'Sequence Builder';
+      const target = which === 'greeter' ? 'Greeter Bot' : 'Sequence Builder';
+      if (!confirm(`Stop the ${other} and switch to the ${target}?`)) return;
+    }
+
+    const card = which === 'greeter'
+      ? document.getElementById('card-greeter')
+      : document.getElementById('card-gui');
+
+    card.style.opacity = '0.6';
+
+    try {
+      await fetch(`/launcher/start/${which}`, { method: 'POST' });
+      await pollStatus();
+    } finally {
+      card.style.opacity = '';
+    }
+  }
+
+  // ── Stop current service ──────────────────────────────────────────────────
+  async function stopService() {
+    if (!confirm('Stop the current service?')) return;
+    await fetch('/launcher/stop', { method: 'POST' });
+    await pollStatus();
+  }
+
+  // ── Open GUI in new tab ───────────────────────────────────────────────────
+  function openGui() {
+    window.open(`http://${location.hostname}:5001/gui`, '_blank');
+  }
+
+  // ── Shutdown / Restart ────────────────────────────────────────────────────
+  function confirmAction(action) {
+    const label  = action === 'shutdown' ? 'shut down' : 'restart';
+    if (!confirm(`Are you sure you want to ${label} the Pi?`)) return;
+    doAction(action);
+  }
+
+  async function doAction(action) {
+    clearInterval(pollTimer);
+
+    document.getElementById('choice-screen').style.display   = 'none';
+    document.getElementById('status-bar').style.display      = 'none';
+    document.getElementById('shutdown-screen').style.display = 'block';
+
+    const isShutdown = (action === 'shutdown');
+    document.getElementById('shutdown-icon').textContent  = isShutdown ? '⏻' : '↺';
+    document.getElementById('shutdown-title').textContent = isShutdown ? 'Shutting down…' : 'Restarting…';
+    document.getElementById('shutdown-msg').textContent   = isShutdown
+      ? 'You can safely unplug the power after the lights go out.'
+      : 'The page will reload when the Pi is back online.';
+
+    // Countdown
+    let n = 3;
+    document.getElementById('countdown').textContent = n;
+    const tick = setInterval(() => {
+      n--;
+      document.getElementById('countdown').textContent = n;
+      if (n <= 0) clearInterval(tick);
+    }, 1000);
+
+    await fetch(`/launcher/${action}`, { method: 'POST' });
+
+    if (!isShutdown) {
+      // Wait then reload
+      setTimeout(() => location.reload(), 15000);
+    }
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  startPolling();
+</script>
+</body>
+</html>

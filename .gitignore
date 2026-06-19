@@ -1,0 +1,51 @@
+# --- SECRETS — never commit these ---
+.env
+
+# --- Mac clutter ---
+.DS_Store
+**/.DS_Store
+._*
+**/._*
+
+# --- Temp / runtime files ---
+*.tmp
+*.bak
+*.pyc
+__pycache__/
+
+# --- Python virtual environment ---
+venv/
+.venv/
+
+# --- Personal / project-specific docs (not for public repo) ---
+CLAUDE.md
+HANDOFF_*.md
+README_github.md
+README_ohbot_assistant.md
+Ohbot\ Pi\ 4.txt
+
+# --- Large binary / archive files ---
+*.zip
+*.docx
+
+# --- Original library-specific knowledge base ---
+library_knowledge.json
+
+# --- Library-specific bot files (generic versions are ohbot_chat.py / ohbotchat_server.py) ---
+ohbot_conversation.py
+ohbot_server.py
+
+# --- Docs that are project-specific or planning notes ---
+docs/Azure_Latency_Handoff.md
+docs/Ohbot_shop_handofff.md
+docs/FUTURE_events_system_outline.md
+docs/SAMBA_COWORK_SETUP.md
+PiOS_Headless_Optimization_Guide.md
+docs/power_hardening.md
+
+# --- The root index.html (it lives in gui/ for the repo) ---
+/index.html
+
+# --- Sequences folder (created at runtime by the GUI) ---
+# Uncomment the next line if you don't want to share your saved sequences
+# sequences/

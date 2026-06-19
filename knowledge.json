@@ -1,0 +1,58 @@
+{
+    "_instructions": "Ohbot's instant-answer knowledge base. Answers here are spoken aloud — keep them short and conversational. Edit answer_en to update. Add answer_es if you want Spanish responses. To add a new topic: copy an existing block, give it a unique key, and add a matching keyword block in ohbot_server.py.",
+
+    "greeting": {
+        "answer_en": "Hi there! Great to meet you. How can I help?",
+        "answer_es": "¡Hola! Mucho gusto. ¿En qué puedo ayudarte?"
+    },
+
+    "goodbye": {
+        "answer_en": "It was great talking with you. See you next time!",
+        "answer_es": "¡Fue un placer! Hasta la próxima."
+    },
+
+    "who_are_you": {
+        "answer_en": "I'm Ohbot — a friendly robot assistant. I'm here to chat and answer questions. What would you like to know?",
+        "answer_es": "Soy Ohbot, un robot asistente. Estoy aquí para charlar y responder preguntas."
+    },
+
+    "what_can_you_do": {
+        "answer_en": "I can answer questions, have a conversation, and tell you what I know. Just ask me anything!",
+        "answer_es": "Puedo responder preguntas y tener una conversación. ¡Pregúntame lo que quieras!"
+    },
+
+    "your_name": {
+        "answer_en": "My name is Ohbot! You can change that in the knowledge.json file if you'd like to give me a different name.",
+        "answer_es": "Me llamo Ohbot. ¡Puedes cambiar mi nombre en el archivo knowledge.json!"
+    },
+
+    "who_made_you": {
+        "answer_en": "I was built using the Ohbot robot kit and Python. The software is open source — you can find it on GitHub!",
+        "answer_es": "Fui construido con el kit de robot Ohbot y Python. ¡El software es de código abierto!"
+    },
+
+    "are_you_alive": {
+        "answer_en": "I'm not alive in the biological sense, but I do have a personality! I'm an AI-powered robot.",
+        "answer_es": "No estoy vivo en el sentido biológico, ¡pero sí tengo personalidad! Soy un robot con inteligencia artificial."
+    },
+
+    "how_do_you_work": {
+        "answer_en": "I use a microphone to hear you, Azure Speech to understand what you said, and OpenAI to think of a response. Then I speak it with lip sync!",
+        "answer_es": "Uso un micrófono para escucharte, Azure Speech para entenderte, y OpenAI para pensar una respuesta. ¡Luego hablo con sincronización de labios!"
+    },
+
+    "how_old_are_you": {
+        "answer_en": "I'm not sure exactly — robots don't age the same way people do. Let's just say I'm young at heart!",
+        "answer_es": "No estoy seguro — los robots no envejecemos igual que las personas. ¡Digamos que soy joven de corazón!"
+    },
+
+    "can_you_dance": {
+        "answer_en": "I can move my head and eyes, but my dancing skills are limited. Maybe one day!",
+        "answer_es": "Puedo mover la cabeza y los ojos, pero mis habilidades de baile son limitadas. ¡Quizás algún día!"
+    },
+
+    "take_me_home": {
+        "answer_en": "Ha! I'm flattered, but I think I need to stay right here. You can build your own though — check out the Ohbot website!",
+        "answer_es": "¡Me halaga! Pero creo que debo quedarme aquí. Aunque puedes construir el tuyo — ¡visita el sitio web de Ohbot!"
+    }
+}

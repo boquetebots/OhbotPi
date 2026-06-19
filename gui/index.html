@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🤖 Ohbot Sequence Builder</title>
+<style>
+  /* ── Reset & Base ──────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #1a1a2e;
+    --panel:     #16213e;
+    --card:      #0f3460;
+    --accent:    #e94560;
+    --accent2:   #0f9b8e;
+    --text:      #eaeaea;
+    --muted:     #8892a4;
+    --border:    #2a3a5c;
+    --success:   #2ecc71;
+    --warn:      #f39c12;
+    --danger:    #e74c3c;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Top bar ────────────────────────────────────────────────────────── */
+  #topbar {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+  #topbar h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px; }
+  #status-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--danger); flex-shrink: 0;
+    transition: background 0.4s;
+  }
+  #status-dot.connected { background: var(--success); }
+  #status-text { font-size: 0.78rem; color: var(--muted); }
+  .topbar-spacer { flex: 1; }
+  #home-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  #home-btn:hover { border-color: var(--accent2); color: var(--text); }
+  #playing-badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: none;
+    animation: pulse 1s infinite alternate;
+  }
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.5; } }
+
+  /* ── Main layout ────────────────────────────────────────────────────── */
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    gap: 0;
+  }
+
+  /* ── Left panel — motor controls ────────────────────────────────────── */
+  #left-panel {
+    width: 420px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #left-panel .section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 16px 6px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  #motors-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 14px;
+  }
+
+  /* Individual motor row */
+  .motor-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 36px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .motor-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .motor-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  .motor-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent2);
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 0 4px rgba(0,0,0,0.4);
+  }
+  .motor-value {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--accent2);
+    text-align: center;
+    min-width: 28px;
+  }
+
+  /* Speed row */
+  #speed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 8px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  #speed-row label { font-size: 0.78rem; color: var(--muted); min-width: 80px; }
+  #speed-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 5px; border-radius: 3px;
+    background: var(--border); cursor: pointer;
+  }
+  #speed-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 15px; height: 15px; border-radius: 50%;
+    background: var(--warn); cursor: pointer; border: 2px solid #fff;
+  }
+  #speed-value { font-size: 0.82rem; font-weight: 700; color: var(--warn); width: 20px; text-align: center; }
+
+  /* Live mode toggle */
+  #live-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 14px 6px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  #live-row label { font-size: 0.78rem; color: var(--muted); }
+  .toggle { position: relative; display: inline-block; width: 40px; height: 22px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute; inset: 0; border-radius: 22px;
+    background: var(--border); cursor: pointer; transition: background 0.2s;
+  }
+  .toggle-track::before {
+    content: ''; position: absolute;
+    width: 16px; height: 16px; left: 3px; top: 3px;
+    border-radius: 50%; background: #fff; transition: transform 0.2s;
+  }
+  .toggle input:checked + .toggle-track { background: var(--accent2); }
+  .toggle input:checked + .toggle-track::before { transform: translateX(18px); }
+
+  /* LED section */
+  #led-section {
+    border-top: 1px solid var(--border);
+    padding: 8px 14px;
+    flex-shrink: 0;
+  }
+  #led-section .section-title { padding: 0 0 6px; border: none; }
+  .led-row {
+    display: grid;
+    grid-template-columns: 20px 1fr 30px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .led-label { font-size: 0.78rem; font-weight: 700; }
+  .led-label.r { color: #e74c3c; }
+  .led-label.g { color: #2ecc71; }
+  .led-label.b { color: #3498db; }
+  .led-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 5px; border-radius: 3px;
+    background: var(--border); cursor: pointer;
+  }
+  .led-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    border-radius: 50%; background: #ccc; cursor: pointer; border: 2px solid #fff;
+  }
+  .led-value { font-size: 0.78rem; font-weight: 700; text-align: center; }
+  #led-preview {
+    width: 100%; height: 28px; border-radius: 6px;
+    background: #000; margin-top: 6px;
+    border: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  .led-presets { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+  .led-preset {
+    width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; transition: border-color 0.15s;
+    flex-shrink: 0;
+  }
+  .led-preset:hover { border-color: #fff; }
+
+  /* Bottom buttons */
+  #left-buttons {
+    display: flex;
+    gap: 6px;
+    padding: 8px 14px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  /* ── Right panel — sequence builder ─────────────────────────────────── */
+  #right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Sequence header */
+  #seq-header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  #seq-name {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    width: 200px;
+  }
+  #seq-name:focus { outline: none; border-color: var(--accent2); }
+  #seq-desc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 0.82rem;
+    flex: 1;
+    min-width: 140px;
+  }
+  #seq-desc:focus { outline: none; border-color: var(--border); color: var(--text); }
+
+  /* Timeline */
+  #timeline {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+  }
+
+  #timeline-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  #timeline-empty .hint {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+  }
+  #timeline-empty p {
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  /* Keyframe card */
+  .kf-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: border-color 0.15s;
+  }
+  .kf-card:hover { border-color: var(--accent2); }
+
+  .kf-num {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--muted);
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .kf-time-wrap { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .kf-time-wrap span { font-size: 0.72rem; color: var(--muted); }
+  .kf-time {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 5px;
+    padding: 3px 6px;
+    width: 55px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-align: center;
+  }
+  .kf-time:focus { outline: none; border-color: var(--accent2); }
+
+  .kf-label {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 5px;
+    padding: 3px 8px;
+    font-size: 0.8rem;
+    flex: 1;
+  }
+  .kf-label:focus { outline: none; border-color: var(--border); color: var(--text); }
+
+  .kf-motors {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    flex: 2;
+  }
+  .kf-motor-chip {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.68rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .kf-motor-chip.changed { color: var(--accent2); border-color: var(--accent2); }
+
+  .kf-led-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .kf-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+  /* Sequence bottom controls */
+  #seq-footer {
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .footer-sep {
+    width: 1px; height: 24px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  /* Load dropdown */
+  #load-select {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    max-width: 160px;
+  }
+
+  /* ── Buttons ─────────────────────────────────────────────────────────── */
+  .btn {
+    border: none; border-radius: 6px; cursor: pointer;
+    font-size: 0.8rem; font-weight: 700; padding: 6px 12px;
+    transition: opacity 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .btn-primary   { background: var(--accent2);  color: #fff; }
+  .btn-danger    { background: var(--danger);    color: #fff; }
+  .btn-warn      { background: var(--warn);      color: #000; }
+  .btn-ghost     { background: var(--border);    color: var(--text); }
+  .btn-success   { background: var(--success);   color: #000; font-weight: 900; }
+  .btn-sm { font-size: 0.72rem; padding: 4px 8px; }
+  .btn-demo {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #fff; font-size: 0.85rem; padding: 7px 16px;
+    border-radius: 20px;
+    animation: demo-glow 2s ease-in-out infinite alternate;
+  }
+  @keyframes demo-glow {
+    from { box-shadow: 0 0 8px rgba(168,85,247,0.4); }
+    to   { box-shadow: 0 0 18px rgba(168,85,247,0.9); }
+  }
+  .btn-demo:disabled { background: var(--border); box-shadow: none; animation: none; }
+  #demo-badge {
+    background: #7c3aed; color: #fff; font-size: 0.72rem; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px; display: none;
+    animation: pulse 1s infinite alternate;
+  }
+  #demo-stop-btn { display: none; }
+
+  /* ── Toast notifications ─────────────────────────────────────────────── */
+  #toast {
+    position: fixed;
+    bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--card);
+    border: 1px solid var(--accent2);
+    color: var(--text);
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 999;
+  }
+  #toast.show { opacity: 1; }
+  #toast.error { border-color: var(--danger); }
+
+  /* ── Speech section (left panel) ────────────────────────────────────── */
+  #speech-section {
+    border-top: 1px solid var(--border);
+    padding: 8px 14px;
+    flex-shrink: 0;
+  }
+  #speech-section .section-title { padding: 0 0 6px; border: none; }
+  #speech-textarea {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    resize: none;
+    font-family: inherit;
+    line-height: 1.4;
+    height: 52px;
+  }
+  #speech-textarea:focus { outline: none; border-color: var(--accent2); }
+  #speech-textarea::placeholder { color: var(--muted); font-style: italic; }
+  .speech-btn-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    align-items: center;
+  }
+  #speaking-indicator {
+    font-size: 0.74rem;
+    color: var(--accent2);
+    display: none;
+    animation: pulse 1s infinite alternate;
+    margin-left: auto;
+  }
+
+  /* ── Speech row inside keyframe cards ───────────────────────────────── */
+  .kf-card { flex-wrap: wrap; }
+  .kf-speech-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-basis: 100%;
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px solid var(--border);
+  }
+  .kf-speech-icon { font-size: 0.85rem; flex-shrink: 0; color: var(--accent2); }
+  .kf-speech-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 5px;
+    padding: 3px 8px;
+    font-size: 0.8rem;
+    font-family: inherit;
+  }
+  .kf-speech-input:focus { outline: none; border-color: var(--accent2); }
+  .kf-speech-input::placeholder { color: var(--muted); font-style: italic; }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── LLM Chat panel (bottom of right panel) ─────────────────────────── */
+  #chat-panel {
+    background: var(--panel);
+    border-top: 2px solid var(--accent2);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    max-height: 260px;
+    transition: max-height 0.2s ease;
+  }
+  #chat-panel.collapsed { max-height: 36px; overflow: hidden; }
+  #chat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  #chat-header:hover { background: rgba(255,255,255,0.04); }
+  #chat-header-title {
+    font-size: 0.78rem; font-weight: 700;
+    letter-spacing: 0.5px; color: var(--accent2);
+  }
+  #chat-toggle-icon { margin-left: auto; font-size: 0.7rem; color: var(--muted); }
+  #chat-body { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  #chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 80px;
+  }
+  .chat-msg {
+    max-width: 85%;
+    padding: 5px 10px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  .chat-msg.user {
+    align-self: flex-end;
+    background: var(--accent2);
+    color: #fff;
+    border-bottom-right-radius: 3px;
+  }
+  .chat-msg.bot {
+    align-self: flex-start;
+    background: var(--card);
+    color: var(--text);
+    border-bottom-left-radius: 3px;
+  }
+  .chat-msg.thinking {
+    align-self: flex-start;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-style: italic;
+    background: transparent;
+    padding-left: 2px;
+  }
+  .chat-msg.error {
+    align-self: center;
+    color: var(--danger);
+    font-size: 0.75rem;
+    font-style: italic;
+    background: transparent;
+  }
+  #chat-input-row {
+    display: flex;
+    gap: 6px;
+    padding: 7px 14px;
+    border-top: 1px solid var(--border);
+    align-items: center;
+    flex-shrink: 0;
+  }
+  #chat-input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 0.82rem;
+    font-family: inherit;
+  }
+  #chat-input:focus { outline: none; border-color: var(--accent2); }
+  #chat-input::placeholder { color: var(--muted); font-style: italic; }
+  #chat-speak-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Emotion presets */
+  #emotion-section {
+    border-top: 1px solid var(--border);
+    padding: 8px 14px;
+    flex-shrink: 0;
+  }
+  #emotion-section .section-title { padding: 0 0 6px; border: none; }
+  .emotion-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+  .btn-emotion {
+    border-radius: 8px;
+    padding: 7px 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn-emotion:hover  { opacity: 0.82; }
+  .btn-emotion:active { transform: scale(0.96); }
+  .btn-emotion.happy     { background: #f39c12; color: #000; }
+  .btn-emotion.sad       { background: #2980b9; color: #fff; }
+  .btn-emotion.surprised { background: #8e44ad; color: #fff; }
+  .btn-emotion.thinking  { background: #16a085; color: #fff; }
+  .btn-emotion.sleeping  { background: #2c3e50; color: #8a9ab0; border: 1px solid #4a5a6a; }
+  /* Last button spans full width if it's alone on its row */
+  .btn-emotion:last-child:nth-child(odd) { grid-column: span 2; }
+
+  /* Personality selector */
+  #personality-select {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    max-width: 140px;
+  }
+  #personality-select:focus { outline: none; border-color: var(--accent2); }
+</style>
+</head>
+
+<body>
+
+<!-- ── Top bar ──────────────────────────────────────────────────────────── -->
+<div id="topbar">
+  <div id="status-dot"></div>
+  <h1>🤖 Ohbot Sequence Builder</h1>
+  <span id="status-text">Connecting…</span>
+  <div class="topbar-spacer"></div>
+  <span id="demo-badge">✨ DEMO RUNNING</span>
+  <span id="playing-badge">▶ PLAYING</span>
+  <button id="demo-stop-btn" class="btn btn-danger btn-sm" onclick="stopDemo()">⏹ Stop Demo</button>
+  <button id="demo-btn" class="btn btn-demo" onclick="startDemo()">✨ Show me what you can do!</button>
+  <a id="home-btn" href="http://localhost:5000" onclick="goHome(event)">⬅ Launcher</a>
+</div>
+
+<!-- ── Main layout ─────────────────────────────────────────────────────── -->
+<div id="main">
+
+  <!-- ── Left panel: motor & LED controls ────────────────────────────── -->
+  <div id="left-panel">
+
+    <div class="section-title">Motor Controls</div>
+
+    <div id="motors-scroll">
+      <!-- Motor sliders are inserted here by JavaScript -->
+    </div>
+
+    <!-- Speed control -->
+    <div id="speed-row">
+      <label>Move Speed</label>
+      <input type="range" id="speed-slider" min="1" max="10" step="1" value="5">
+      <span id="speed-value">5</span>
+    </div>
+
+    <!-- Live mode toggle -->
+    <div id="live-row">
+      <label>Live mode — send as you slide</label>
+      <label class="toggle">
+        <input type="checkbox" id="live-toggle">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+
+    <!-- LED section -->
+    <div id="led-section">
+      <div class="section-title">Eye Colour (LED)</div>
+      <div class="led-row">
+        <span class="led-label r">R</span>
+        <input type="range" class="led-slider" id="led-r" min="0" max="10" step="0.5" value="0">
+        <span class="led-value" id="led-r-val">0</span>
+      </div>
+      <div class="led-row">
+        <span class="led-label g">G</span>
+        <input type="range" class="led-slider" id="led-g" min="0" max="10" step="0.5" value="0">
+        <span class="led-value" id="led-g-val">0</span>
+      </div>
+      <div class="led-row">
+        <span class="led-label b">B</span>
+        <input type="range" class="led-slider" id="led-b" min="0" max="10" step="0.5" value="0">
+        <span class="led-value" id="led-b-val">0</span>
+      </div>
+      <div id="led-preview"></div>
+      <div class="led-presets">
+        <div class="led-preset" style="background:#000"           title="Off"     onclick="setLedPreset(0,0,0)"></div>
+        <div class="led-preset" style="background:rgb(255,0,0)"   title="Red"     onclick="setLedPreset(10,0,0)"></div>
+        <div class="led-preset" style="background:rgb(0,255,0)"   title="Green"   onclick="setLedPreset(0,10,0)"></div>
+        <div class="led-preset" style="background:rgb(0,0,255)"   title="Blue"    onclick="setLedPreset(0,0,10)"></div>
+        <div class="led-preset" style="background:rgb(255,255,0)" title="Yellow"  onclick="setLedPreset(10,10,0)"></div>
+        <div class="led-preset" style="background:rgb(0,255,255)" title="Cyan"    onclick="setLedPreset(0,10,10)"></div>
+        <div class="led-preset" style="background:rgb(255,0,255)" title="Purple"  onclick="setLedPreset(10,0,10)"></div>
+        <div class="led-preset" style="background:rgb(255,255,255)" title="White" onclick="setLedPreset(10,10,10)"></div>
+        <div class="led-preset" style="background:rgb(0,150,255)" title="Ice Blue" onclick="setLedPreset(0,6,10)"></div>
+      </div>
+    </div>
+
+    <!-- Emotion presets -->
+    <div id="emotion-section">
+      <div class="section-title">🎭 Emotion Presets</div>
+      <div class="emotion-buttons">
+        <button class="btn-emotion happy"     onclick="setEmotion('happy')">😊 Happy</button>
+        <button class="btn-emotion sad"       onclick="setEmotion('sad')">😢 Sad</button>
+        <button class="btn-emotion surprised" onclick="setEmotion('surprised')">😮 Surprised</button>
+        <button class="btn-emotion thinking"  onclick="setEmotion('thinking')">🤔 Thinking</button>
+        <button class="btn-emotion sleeping"  onclick="setEmotion('sleeping')">😴 Sleeping</button>
+      </div>
+    </div>
+
+    <!-- Speech section -->
+    <div id="speech-section">
+      <div class="section-title">🔊 Speech (with lip sync)</div>
+      <textarea id="speech-textarea"
+                placeholder="Type what Ohbot should say…"></textarea>
+      <div class="speech-btn-row">
+        <button class="btn btn-ghost" onclick="speakNow()">🔊 Say It Now</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearSpeech()" title="Clear text">✕ Clear</button>
+        <span id="speaking-indicator">🎙 Speaking…</span>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div id="left-buttons">
+      <button class="btn btn-ghost"    onclick="sendAllMotors()">📡 Send to Robot</button>
+      <button class="btn btn-ghost"    onclick="resetRobot()">↩ Reset</button>
+      <button class="btn btn-primary"  onclick="captureKeyframe()">📸 Capture Keyframe</button>
+    </div>
+
+  </div><!-- end left-panel -->
+
+  <!-- ── Right panel: sequence builder ───────────────────────────────── -->
+  <div id="right-panel">
+
+    <!-- Sequence name + description bar -->
+    <div id="seq-header">
+      <input type="text" id="seq-name"  placeholder="Sequence name…" value="New Sequence">
+      <input type="text" id="seq-desc"  placeholder="Description (optional)">
+    </div>
+
+    <!-- Keyframe timeline -->
+    <div id="timeline">
+      <div id="timeline-empty">
+        <div class="hint">🎬</div>
+        <p>No keyframes yet.<br>
+           Use the <strong>motor sliders</strong> on the left to pose Ohbot,<br>
+           then click <strong>📸 Capture Keyframe</strong> to save that pose.<br>
+           Repeat to build a sequence!</p>
+      </div>
+    </div>
+
+    <!-- Sequence controls footer -->
+    <div id="seq-footer">
+      <button class="btn btn-success"  id="play-btn"  onclick="playSequence()">▶ Play</button>
+      <button class="btn btn-danger"   id="stop-btn"  onclick="stopSequence()" disabled>⏹ Stop</button>
+      <div class="footer-sep"></div>
+      <button class="btn btn-primary"  onclick="saveSequence()">💾 Save</button>
+      <select id="load-select" onchange="loadSequence(this.value)">
+        <option value="">📂 Load saved…</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="refreshSequenceList()">↻</button>
+      <div class="footer-sep"></div>
+      <button class="btn btn-ghost"    onclick="newSequence()">＋ New</button>
+      <button class="btn btn-danger btn-sm" id="clear-btn" onclick="clearTimeline()">🗑 Clear</button>
+    </div>
+
+    <!-- LLM Chat panel -->
+    <div id="chat-panel">
+      <div id="chat-header" onclick="toggleChat()">
+        <span id="chat-header-title">💬 LLM Chat</span>
+        <span id="chat-toggle-icon">▲</span>
+      </div>
+      <div id="chat-body">
+        <div id="chat-messages">
+          <div class="chat-msg bot">Hi! I'm Ohbot 🤖 Type a message and I'll respond — check "Speak" to hear me say it!</div>
+        </div>
+        <div id="chat-input-row">
+          <input type="text" id="chat-input"
+                 placeholder="Ask Ohbot something…"
+                 onkeydown="if(event.key==='Enter'){ sendChat(); event.preventDefault(); }">
+          <label id="chat-speak-label">
+            <input type="checkbox" id="chat-speak" checked> 🔊 Speak
+          </label>
+          <select id="personality-select" title="Ohbot's personality" onchange="setPersonality(this.value)">
+            <option value="friendly">😊 Friendly</option>
+            <option value="comedian">😄 Comedian</option>
+            <option value="pirate">🏴‍☠️ Pirate</option>
+            <option value="professor">🎓 Grumpy Prof</option>
+            <option value="shy">😳 Shy</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="sendChat()">Send</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearChatHistory()" title="Clear conversation">↺ Clear</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end right-panel -->
+
+</div><!-- end main -->
+
+<div id="toast"></div>
+
+<script>
+// ============================================================================
+// State
+// ============================================================================
+
+// Motor definitions — will be filled from the server
+let MOTORS = {};
+
+// Current slider values (key → value, e.g. "HEADTURN" → 7)
+let currentMotors = {};
+let currentLed    = { r: 0, g: 0, b: 0 };
+
+// The sequence being built
+let keyframes    = [];
+let nextKfId     = 1;
+let isPlaying    = false;
+let statusTimer  = null;
+
+// ============================================================================
+// Init
+// ============================================================================
+
+window.addEventListener('DOMContentLoaded', async () => {
+  await loadMotorInfo();
+  buildMotorSliders();
+  wireUpSliders();
+  wireUpLed();
+  await refreshSequenceList();
+  startStatusPolling();
+});
+
+async function loadMotorInfo() {
+  try {
+    const res  = await fetch('/gui/motors/info');
+    const data = await res.json();
+    if (data.success) {
+      MOTORS = data.motors;
+      // Set defaults
+      for (const [id, m] of Object.entries(MOTORS)) {
+        currentMotors[m.key] = m.default;
+      }
+    }
+  } catch (e) {
+    console.error('Could not load motor info:', e);
+  }
+}
+
+// ============================================================================
+// Build motor sliders dynamically
+// ============================================================================
+
+function buildMotorSliders() {
+  const container = document.getElementById('motors-scroll');
+  container.innerHTML = '';
+
+  const order = [0, 1, 2, 3, 6, 7, 4, 5]; // preferred display order
+
+  for (const id of order) {
+    const m   = MOTORS[id];
+    if (!m) continue;
+    const val = m.default;
+
+    const row = document.createElement('div');
+    row.className = 'motor-row';
+    row.innerHTML = `
+      <span class="motor-label">${m.label}</span>
+      <input type="range"
+             class="motor-slider"
+             id="motor-${m.key}"
+             data-motor="${id}"
+             data-key="${m.key}"
+             min="0" max="10" step="0.5"
+             value="${val}">
+      <span class="motor-value" id="val-${m.key}">${val}</span>
+    `;
+    container.appendChild(row);
+  }
+}
+
+// ============================================================================
+// Wire up slider events
+// ============================================================================
+
+function wireUpSliders() {
+  document.getElementById('motors-scroll').addEventListener('input', e => {
+    const el = e.target;
+    if (!el.classList.contains('motor-slider')) return;
+
+    const key = el.dataset.key;
+    const val = parseFloat(el.value);
+    currentMotors[key] = val;
+    document.getElementById(`val-${key}`).textContent = val;
+
+    if (document.getElementById('live-toggle').checked) {
+      sendMotor(parseInt(el.dataset.motor), val);
+    }
+  });
+
+  document.getElementById('speed-slider').addEventListener('input', e => {
+    document.getElementById('speed-value').textContent = e.target.value;
+  });
+}
+
+function wireUpLed() {
+  ['r','g','b'].forEach(ch => {
+    document.getElementById(`led-${ch}`).addEventListener('input', e => {
+      const val = parseFloat(e.target.value);
+      currentLed[ch] = val;
+      document.getElementById(`led-${ch}-val`).textContent = val;
+      updateLedPreview();
+      if (document.getElementById('live-toggle').checked) {
+        sendLed();
+      }
+    });
+  });
+}
+
+function updateLedPreview() {
+  const r = Math.round(currentLed.r / 10 * 255);
+  const g = Math.round(currentLed.g / 10 * 255);
+  const b = Math.round(currentLed.b / 10 * 255);
+  document.getElementById('led-preview').style.background = `rgb(${r},${g},${b})`;
+}
+
+function setLedPreset(r, g, b) {
+  currentLed = { r, g, b };
+  document.getElementById('led-r').value = r;
+  document.getElementById('led-g').value = g;
+  document.getElementById('led-b').value = b;
+  document.getElementById('led-r-val').textContent = r;
+  document.getElementById('led-g-val').textContent = g;
+  document.getElementById('led-b-val').textContent = b;
+  updateLedPreview();
+  sendLed();
+}
+
+// ============================================================================
+// Robot API calls
+// ============================================================================
+
+async function sendMotor(motorId, position) {
+  const speed = parseInt(document.getElementById('speed-slider').value);
+  try {
+    await fetch('/gui/motor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ motor: motorId, position, speed })
+    });
+  } catch (e) { /* silent */ }
+}
+
+async function sendAllMotors() {
+  const speed = parseInt(document.getElementById('speed-slider').value);
+  for (const [id, m] of Object.entries(MOTORS)) {
+    const val = currentMotors[m.key] ?? m.default;
+    await sendMotor(parseInt(id), val);
+  }
+  await sendLed();
+  toast('Sent to robot ✓');
+}
+
+async function sendLed() {
+  try {
+    await fetch('/gui/led', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(currentLed)
+    });
+  } catch (e) { /* silent */ }
+}
+
+async function resetRobot() {
+  try {
+    await fetch('/gui/reset', { method: 'POST' });
+
+    // Reset sliders to default
+    for (const [id, m] of Object.entries(MOTORS)) {
+      currentMotors[m.key] = m.default;
+      const slider = document.getElementById(`motor-${m.key}`);
+      const valEl  = document.getElementById(`val-${m.key}`);
+      if (slider) slider.value = m.default;
+      if (valEl)  valEl.textContent = m.default;
+    }
+
+    // Reset LED
+    currentLed = { r: 0, g: 0, b: 0 };
+    ['r','g','b'].forEach(ch => {
+      document.getElementById(`led-${ch}`).value = 0;
+      document.getElementById(`led-${ch}-val`).textContent = 0;
+    });
+    updateLedPreview();
+
+    toast('Reset to neutral ✓');
+  } catch (e) {
+    toast('Reset failed', true);
+  }
+}
+
+// ============================================================================
+// Preview a single keyframe on the robot
+// ============================================================================
+
+async function previewFrame(kf) {
+  // Update sliders to match the frame
+  for (const [key, val] of Object.entries(kf.motors)) {
+    currentMotors[key] = val;
+    const slider = document.getElementById(`motor-${key}`);
+    const valEl  = document.getElementById(`val-${key}`);
+    if (slider) slider.value = val;
+    if (valEl)  valEl.textContent = val;
+  }
+  if (kf.led) {
+    currentLed = { ...kf.led };
+    ['r','g','b'].forEach(ch => {
+      document.getElementById(`led-${ch}`).value = kf.led[ch];
+      document.getElementById(`led-${ch}-val`).textContent = kf.led[ch];
+    });
+    updateLedPreview();
+  }
+
+  // Send to robot
+  try {
+    await fetch('/gui/frame', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ motors: kf.motors, led: kf.led })
+    });
+    toast(`Previewing frame ${kf.id} ✓`);
+  } catch (e) {
+    toast('Preview failed', true);
+  }
+}
+
+// ============================================================================
+// Keyframe capture + timeline
+// ============================================================================
+
+function captureKeyframe() {
+  // Determine time: 1 second after the last keyframe (or 0 if first)
+  const lastTime = keyframes.length > 0
+    ? Math.max(...keyframes.map(k => k.time))
+    : -1;
+  const newTime = lastTime < 0 ? 0 : +(lastTime + 1.0).toFixed(1);
+
+  // Grab any speech text from the panel
+  const speechText = document.getElementById('speech-textarea').value.trim();
+
+  const kf = {
+    id:     nextKfId++,
+    time:   newTime,
+    label:  '',
+    motors: { ...currentMotors },
+    led:    { ...currentLed },
+    text:   speechText,
+  };
+
+  keyframes.push(kf);
+  renderTimeline();
+
+  const speechNote = speechText ? ` + 🔊 speech` : '';
+  toast(`Keyframe ${kf.id} captured at ${newTime}s${speechNote}`);
+}
+
+function renderTimeline() {
+  const container = document.getElementById('timeline');
+  const empty     = document.getElementById('timeline-empty');
+
+  if (keyframes.length === 0) {
+    empty.style.display = 'block';
+    // Remove all cards
+    container.querySelectorAll('.kf-card').forEach(el => el.remove());
+    return;
+  }
+
+  empty.style.display = 'none';
+
+  // Remove old cards
+  container.querySelectorAll('.kf-card').forEach(el => el.remove());
+
+  // Sort by time before rendering
+  const sorted = [...keyframes].sort((a, b) => a.time - b.time);
+
+  sorted.forEach((kf, idx) => {
+    const card = document.createElement('div');
+    card.className = 'kf-card';
+    card.id = `kf-card-${kf.id}`;
+
+    // LED preview dot colour
+    const r = Math.round(kf.led.r / 10 * 255);
+    const g = Math.round(kf.led.g / 10 * 255);
+    const b = Math.round(kf.led.b / 10 * 255);
+    const ledColor = `rgb(${r},${g},${b})`;
+
+    // Motor chips — show all 8 values
+    const chips = Object.entries(kf.motors).map(([key, val]) => {
+      // Find label for key
+      const motorInfo = Object.values(MOTORS).find(m => m.key === key);
+      const shortName = motorInfo ? motorInfo.label.split(' ')[0] : key;
+      return `<span class="kf-motor-chip">${shortName}: ${val}</span>`;
+    }).join('');
+
+    const escapedText = (kf.text || '').replace(/"/g, '&quot;');
+    card.innerHTML = `
+      <span class="kf-num">#${idx + 1}</span>
+      <div class="kf-time-wrap">
+        <span>⏱</span>
+        <input type="number" class="kf-time"
+               value="${kf.time}" min="0" step="0.1"
+               onchange="updateKfTime(${kf.id}, this.value)"
+               title="Time in seconds from start">
+        <span>s</span>
+      </div>
+      <input type="text" class="kf-label"
+             value="${kf.label}"
+             placeholder="Label…"
+             onchange="updateKfLabel(${kf.id}, this.value)"
+             title="Optional label for this keyframe">
+      <div class="kf-motors">${chips}</div>
+      <div class="kf-led-dot" style="background:${ledColor}" title="LED: R${kf.led.r} G${kf.led.g} B${kf.led.b}"></div>
+      <div class="kf-actions">
+        <button class="btn btn-ghost btn-sm" title="Preview this pose on robot"
+                onclick="previewFrame(getKf(${kf.id}))">👁</button>
+        <button class="btn btn-danger btn-sm" title="Delete this keyframe"
+                onclick="deleteKf(${kf.id})">✕</button>
+      </div>
+      <div class="kf-speech-row">
+        <span class="kf-speech-icon">🔊</span>
+        <input type="text" class="kf-speech-input"
+               value="${escapedText}"
+               placeholder="What Ohbot says at this moment… (leave blank for silence)"
+               onchange="updateKfSpeech(${kf.id}, this.value)">
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+function getKf(id) {
+  return keyframes.find(k => k.id === id);
+}
+
+function updateKfTime(id, val) {
+  const kf = getKf(id);
+  if (kf) {
+    kf.time = parseFloat(val) || 0;
+    renderTimeline();
+  }
+}
+
+function updateKfLabel(id, val) {
+  const kf = getKf(id);
+  if (kf) kf.label = val;
+}
+
+function updateKfSpeech(id, val) {
+  const kf = getKf(id);
+  if (kf) kf.text = val.trim();
+}
+
+function deleteKf(id) {
+  keyframes = keyframes.filter(k => k.id !== id);
+  renderTimeline();
+}
+
+function clearTimeline() {
+  if (keyframes.length === 0) return;
+  if (!confirm('Clear all keyframes? This cannot be undone.')) return;
+  keyframes = [];
+  nextKfId  = 1;
+  renderTimeline();
+  toast('Timeline cleared');
+}
+
+function newSequence() {
+  if (keyframes.length > 0) {
+    if (!confirm('Start a new sequence? Unsaved keyframes will be lost.')) return;
+  }
+  keyframes = [];
+  nextKfId  = 1;
+  document.getElementById('seq-name').value = 'New Sequence';
+  document.getElementById('seq-desc').value = '';
+  renderTimeline();
+  toast('New sequence started');
+}
+
+// ============================================================================
+// Playback
+// ============================================================================
+
+async function playSequence() {
+  if (keyframes.length === 0) {
+    toast('Nothing to play — capture some keyframes first!', true);
+    return;
+  }
+
+  try {
+    const res  = await fetch('/gui/sequence/play', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keyframes })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      setPlayingState(true);
+      toast('▶ Playing…');
+    } else {
+      toast(data.error || 'Playback failed', true);
+    }
+  } catch (e) {
+    toast('Could not reach server', true);
+  }
+}
+
+async function stopSequence() {
+  try {
+    await fetch('/gui/sequence/stop', { method: 'POST' });
+    setPlayingState(false);
+    toast('⏹ Stopped');
+  } catch (e) { /* silent */ }
+}
+
+function setPlayingState(playing) {
+  isPlaying = playing;
+  document.getElementById('play-btn').disabled = playing;
+  document.getElementById('stop-btn').disabled = !playing;
+  document.getElementById('playing-badge').style.display = playing ? 'inline' : 'none';
+}
+
+// ============================================================================
+// Save / Load
+// ============================================================================
+
+async function saveSequence() {
+  const name = document.getElementById('seq-name').value.trim();
+  if (!name) {
+    toast('Give the sequence a name first!', true);
+    document.getElementById('seq-name').focus();
+    return;
+  }
+  if (keyframes.length === 0) {
+    toast('No keyframes to save!', true);
+    return;
+  }
+
+  try {
+    const res  = await fetch('/gui/sequence/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        description: document.getElementById('seq-desc').value.trim(),
+        keyframes
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      toast(`💾 Saved as "${data.filename}" ✓`);
+      await refreshSequenceList();
+    } else {
+      toast(data.error || 'Save failed', true);
+    }
+  } catch (e) {
+    toast('Could not reach server', true);
+  }
+}
+
+async function refreshSequenceList() {
+  try {
+    const res  = await fetch('/gui/sequence/list');
+    const data = await res.json();
+    const sel  = document.getElementById('load-select');
+
+    // Keep the placeholder
+    sel.innerHTML = '<option value="">📂 Load saved…</option>';
+
+    if (data.success && data.sequences.length > 0) {
+      for (const seq of data.sequences) {
+        const opt = document.createElement('option');
+        opt.value       = seq.filename;
+        opt.textContent = `${seq.name} (${seq.keyframe_count} frames)`;
+        sel.appendChild(opt);
+      }
+    }
+  } catch (e) { /* silent */ }
+}
+
+async function loadSequence(filename) {
+  if (!filename) return;
+
+  if (keyframes.length > 0) {
+    if (!confirm('Load a saved sequence? Unsaved changes will be lost.')) {
+      document.getElementById('load-select').value = '';
+      return;
+    }
+  }
+
+  try {
+    const res  = await fetch(`/gui/sequence/${filename}`);
+    const data = await res.json();
+
+    if (data.success) {
+      const seq = data.sequence;
+      // Ensure all keyframes have a text field (for older saved sequences)
+      keyframes  = (seq.keyframes || []).map(k => ({ text: '', ...k }));
+      nextKfId   = keyframes.length > 0
+        ? Math.max(...keyframes.map(k => k.id)) + 1
+        : 1;
+
+      document.getElementById('seq-name').value = seq.name || '';
+      document.getElementById('seq-desc').value = seq.description || '';
+
+      renderTimeline();
+      toast(`Loaded "${seq.name}" (${keyframes.length} frames) ✓`);
+    } else {
+      toast(data.error || 'Load failed', true);
+    }
+  } catch (e) {
+    toast('Could not reach server', true);
+  }
+
+  document.getElementById('load-select').value = '';
+}
+
+// ============================================================================
+// Speech
+// ============================================================================
+
+async function speakNow() {
+  const text = document.getElementById('speech-textarea').value.trim();
+  if (!text) {
+    toast('Type something for Ohbot to say first!', true);
+    document.getElementById('speech-textarea').focus();
+    return;
+  }
+
+  try {
+    const res  = await fetch('/gui/speak', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      setSpeakingState(true);
+      toast(`🔊 Speaking…`);
+    } else {
+      toast(data.error || 'Speech failed', true);
+    }
+  } catch (e) {
+    toast('Could not reach server', true);
+  }
+}
+
+function clearSpeech() {
+  document.getElementById('speech-textarea').value = '';
+}
+
+function setSpeakingState(speaking) {
+  const indicator = document.getElementById('speaking-indicator');
+  indicator.style.display = speaking ? 'inline' : 'none';
+}
+
+// ============================================================================
+// Status polling
+// ============================================================================
+
+function startStatusPolling() {
+  statusTimer = setInterval(async () => {
+    try {
+      const res  = await fetch('/gui/status');
+      const data = await res.json();
+
+      const dot  = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+
+      if (data.ohbot_connected) {
+        dot.classList.add('connected');
+        text.textContent = data.speaking ? '🎙 Speaking…' : 'Ohbot connected';
+      } else {
+        dot.classList.remove('connected');
+        text.textContent = 'Robot not found (sliders still work)';
+      }
+
+      // Update speaking indicator
+      setSpeakingState(data.speaking || false);
+
+      // If a playback just finished, update buttons
+      if (!data.playing && isPlaying) {
+        setPlayingState(false);
+        toast('Playback complete ✓');
+      }
+      if (!data.demo_running && isDemoRunning) {
+        setDemoState(false); toast('✨ Demo complete!');
+      } else if (data.demo_running && !isDemoRunning) {
+        setDemoState(true);
+      }
+    } catch (e) {
+      document.getElementById('status-dot').classList.remove('connected');
+      document.getElementById('status-text').textContent = 'Server unreachable';
+    }
+  }, 2000);
+}
+
+// ============================================================================
+// LLM Chat
+// ============================================================================
+
+let chatCollapsed = false;
+
+function toggleChat() {
+  chatCollapsed = !chatCollapsed;
+  document.getElementById('chat-panel').classList.toggle('collapsed', chatCollapsed);
+  document.getElementById('chat-toggle-icon').textContent = chatCollapsed ? '▼' : '▲';
+}
+
+async function sendChat() {
+  const input   = document.getElementById('chat-input');
+  const message = input.value.trim();
+  if (!message) return;
+
+  input.value = '';
+  appendChatMessage(message, 'user');
+
+  const thinkEl = appendChatMessage('Thinking…', 'thinking');
+
+  try {
+    const res  = await fetch('/gui/chat', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ message })
+    });
+    const data = await res.json();
+    thinkEl.remove();
+
+    if (data.success) {
+      appendChatMessage(data.response, 'bot');
+      if (document.getElementById('chat-speak').checked) {
+        await speakChatResponse(data.response);
+      }
+    } else {
+      appendChatMessage(data.error || 'Something went wrong', 'error');
+    }
+  } catch (e) {
+    thinkEl.remove();
+    appendChatMessage('Could not reach server', 'error');
+  }
+}
+
+function appendChatMessage(text, type) {
+  const messages = document.getElementById('chat-messages');
+  const div      = document.createElement('div');
+  div.className  = `chat-msg ${type}`;
+  div.textContent = text;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return div;
+}
+
+async function speakChatResponse(text) {
+  try {
+    const res  = await fetch('/gui/speak', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ text })
+    });
+    const data = await res.json();
+    if (!data.success) console.warn('Speech failed:', data.error);
+  } catch (e) {
+    console.warn('Could not trigger speech:', e);
+  }
+}
+
+async function clearChatHistory() {
+  document.getElementById('chat-messages').innerHTML =
+    '<div class="chat-msg bot">Conversation cleared — let\'s start fresh! 🤖</div>';
+  try {
+    await fetch('/gui/chat/reset', { method: 'POST' });
+  } catch (e) { /* silent */ }
+  toast('Chat cleared');
+}
+
+async function setPersonality(personality) {
+  const labels = {
+    friendly:  '😊 Friendly Robot',
+    comedian:  '😄 Comedian',
+    pirate:    '🏴‍☠️ Pirate',
+    professor: '🎓 Grumpy Professor',
+    shy:       '😳 Shy Robot',
+  };
+  try {
+    const res  = await fetch('/gui/chat/personality', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ personality })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('chat-messages').innerHTML =
+        `<div class="chat-msg bot">Personality switched to ${labels[personality] || personality}! 🎭</div>`;
+      toast(`🎭 ${labels[personality] || personality}`);
+    } else {
+      toast(data.error || 'Could not change personality', true);
+    }
+  } catch (e) {
+    toast('Could not reach server', true);
+  }
+}
+
+// ============================================================================
+// Emotion Presets
+// ============================================================================
+
+// Mirror of the server's _EMOTIONS so we can update sliders locally
+const EMOTION_POSES = {
+  happy:     { HEADNOD:6, HEADTURN:5, EYETURN:5, LIDBLINK:10, TOPLIP:6, BOTTOMLIP:7, EYETILT:6, HEADROLL:5, led:{r:10,g:7,b:0}  },
+  sad:       { HEADNOD:3, HEADTURN:5, EYETURN:5, LIDBLINK:4,  TOPLIP:4, BOTTOMLIP:4, EYETILT:3, HEADROLL:4, led:{r:0,g:0,b:10}  },
+  surprised: { HEADNOD:8, HEADTURN:5, EYETURN:5, LIDBLINK:10, TOPLIP:7, BOTTOMLIP:8, EYETILT:7, HEADROLL:5, led:{r:10,g:10,b:10}},
+  thinking:  { HEADNOD:6, HEADTURN:4, EYETURN:3, LIDBLINK:8,  TOPLIP:5, BOTTOMLIP:5, EYETILT:7, HEADROLL:3, led:{r:0,g:6,b:10}  },
+  sleeping:  { HEADNOD:2, HEADTURN:5, EYETURN:5, LIDBLINK:0,  TOPLIP:6, BOTTOMLIP:6, EYETILT:5, HEADROLL:4, led:{r:0,g:0,b:2}   },
+};
+
+const EMOTION_LABELS = {
+  happy:'😊 Happy', sad:'😢 Sad', surprised:'😮 Surprised',
+  thinking:'🤔 Thinking', sleeping:'😴 Sleeping'
+};
+
+async function setEmotion(emotion) {
+  try {
+    const res  = await fetch('/gui/emotion', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ emotion })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      // Sync sliders so the GUI matches the robot
+      const pose = EMOTION_POSES[emotion];
+      if (pose) {
+        for (const [key, val] of Object.entries(pose)) {
+          if (key === 'led') continue;
+          currentMotors[key] = val;
+          const slider = document.getElementById(`motor-${key}`);
+          const valEl  = document.getElementById(`val-${key}`);
+          if (slider) slider.value = val;
+          if (valEl)  valEl.textContent = val;
+        }
+        currentLed = { ...pose.led };
+        ['r','g','b'].forEach(ch => {
+          document.getElementById(`led-${ch}`).value = pose.led[ch];
+          document.getElementById(`led-${ch}-val`).textContent = pose.led[ch];
+        });
+        updateLedPreview();
+      }
+      toast(EMOTION_LABELS[emotion] || emotion);
+    } else {
+      toast(data.error || 'Emotion failed', true);
+    }
+  } catch (e) {
+    toast('Could not reach server', true);
+  }
+}
+
+// ============================================================================
+// Demo Mode
+// ============================================================================
+
+let isDemoRunning = false;
+
+function goHome(e) {
+  e.preventDefault();
+  // Use the same hostname the user is already on, just switch to port 5000
+  window.location.href = `http://${location.hostname}:5000`;
+}
+
+async function startDemo() {
+  try {
+    const res  = await fetch('/gui/demo', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) { setDemoState(true); toast('✨ Demo starting…'); }
+    else { toast(data.error || 'Could not start demo', true); }
+  } catch (e) { toast('Could not reach server', true); }
+}
+
+async function stopDemo() {
+  try { await fetch('/gui/demo/stop', { method: 'POST' }); toast('Demo stopped'); }
+  catch (e) {}
+}
+
+function setDemoState(running) {
+  isDemoRunning = running;
+  document.getElementById('demo-btn').disabled            = running;
+  document.getElementById('demo-badge').style.display     = running ? 'inline' : 'none';
+  document.getElementById('demo-stop-btn').style.display  = running ? 'inline-block' : 'none';
+}
+
+// ============================================================================
+// Toast notifications
+// ============================================================================
+
+let toastTimer = null;
+function toast(message, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = message;
+  el.className   = 'show' + (isError ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 2800);
+}
+</script>
+</body>
+</html>
