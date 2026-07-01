@@ -169,46 +169,48 @@ Ohbot is now set up to **start automatically every time the Pi powers on**. You 
 
 ### Useful Commands (for when you do SSH in)
 
-Watch what Ohbot is doing in real time:
+Watch what the launcher is doing in real time:
+```
+journalctl --user -u ohbot-launcher -f
+```
+Watch the Greeter Bot:
 ```
 journalctl --user -u ohbot-server -f
-```
-```
 journalctl --user -u ohbot-conversation -f
 ```
 Press `Ctrl-C` to stop watching the log.
 
-Stop Ohbot:
+Stop everything:
 ```
-systemctl --user stop ohbot-server ohbot-conversation
+systemctl --user stop ohbot-launcher ohbot-server ohbot-conversation ohbot-gui
 ```
 
-Start Ohbot:
+Restart the launcher:
 ```
-systemctl --user start ohbot-server
+systemctl --user restart ohbot-launcher
 ```
 
 ### Open the Launcher
 
 On any computer connected to the same WiFi, open a browser and go to:
 ```
-http://ohbot.local:5001
+http://ohbot.local:5000
 ```
 Or use the IP address:
 ```
-http://192.168.xxx.xxx:5001
+http://192.168.xxx.xxx:5000
 ```
 
-This opens the launcher page where you can choose which Ohbot personality to run.
+This opens the launcher page where you can start the Greeter Bot or the GUI tool.
 
 ---
 
 ## Troubleshooting
 
 **"Robot not found" / red status dot in the GUI**
-The USB cable connection got stuck. Unplug and replug the Ohbot USB cable from the Pi, then restart:
+The USB cable connection got stuck. Unplug and replug the Ohbot USB cable from the Pi, then restart the GUI:
 ```
-systemctl --user restart ohbot-server ohbot-conversation
+systemctl --user restart ohbot-gui
 ```
 
 **SSH connection refused**
