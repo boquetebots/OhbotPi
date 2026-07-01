@@ -495,4 +495,3 @@ echo ""
 echo -e "  ${YELLOW}Tip:${RESET} If Ohbot says 'robot not found', unplug and replug the USB"
 echo "  cable, then use the launcher page to restart whichever mode is running."
 echo ""
-#       Fix file checks and service names for generic repo
