@@ -295,12 +295,43 @@ ok "Linger enabled — Ohbot starts at boot without anyone logged in"
 # ════════════════════════════════════════════════════════════
 hdr "Step 9 — Installing auto-start services"
 
+# How the services work:
+#   ohbot-launcher  → starts at boot, serves the web launcher page on port 5000
+#   ohbot-server    → started ON DEMAND by the launcher when you pick "Greeter Bot"
+#   ohbot-conversation → started ON DEMAND after ohbot-server
+#   ohbot-gui       → started ON DEMAND by the launcher when you pick "Sequence Builder"
+#
+# Only ohbot-launcher is enabled to start at boot.
+# The other three are controlled by the launcher web page.
+
 mkdir -p "$USER_SERVICE_DIR"
 
-# ── ohbot-server service ─────────────────────────────────────
+# ── ohbot-launcher service (starts at boot) ──────────────────
+cat > "$USER_SERVICE_DIR/ohbot-launcher.service" << EOF
+[Unit]
+Description=Ohbot Launcher (web page to choose Greeter or GUI)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=$PROJECT_DIR
+ExecStart=$VENV_PYTHON $PROJECT_DIR/launcher_server.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
+EOF
+
+ok "ohbot-launcher service installed"
+
+# ── ohbot-server service (started on demand by launcher) ─────
 cat > "$USER_SERVICE_DIR/ohbot-server.service" << EOF
 [Unit]
-Description=Ohbot Flask Server (OpenAI + Intent Detection)
+Description=Ohbot Greeter Bot — Flask API Server
 After=network-online.target
 Wants=network-online.target
 
@@ -309,7 +340,7 @@ Type=simple
 WorkingDirectory=$PROJECT_DIR
 EnvironmentFile=$ENV_FILE
 ExecStart=$VENV_PYTHON $PROJECT_DIR/ohbot_server.py
-Restart=always
+Restart=on-failure
 RestartSec=5
 StandardOutput=journal
 StandardError=journal
@@ -320,10 +351,10 @@ EOF
 
 ok "ohbot-server service installed"
 
-# ── ohbot-conversation service ───────────────────────────────
+# ── ohbot-conversation service (started on demand by launcher) ─
 cat > "$USER_SERVICE_DIR/ohbot-conversation.service" << EOF
 [Unit]
-Description=Ohbot Conversation Loop
+Description=Ohbot Greeter Bot — Conversation Loop
 After=ohbot-server.service
 Requires=ohbot-server.service
 
@@ -333,7 +364,7 @@ WorkingDirectory=$PROJECT_DIR
 EnvironmentFile=$ENV_FILE
 ExecStartPre=/bin/sleep 10
 ExecStart=$VENV_PYTHON $PROJECT_DIR/ohbot_conversation.py
-Restart=always
+Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
@@ -344,39 +375,82 @@ EOF
 
 ok "ohbot-conversation service installed"
 
+# ── ohbot-gui service (started on demand by launcher) ─────────
+cat > "$USER_SERVICE_DIR/ohbot-gui.service" << EOF
+[Unit]
+Description=Ohbot Sequence Builder GUI (port 5001)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=$PROJECT_DIR
+EnvironmentFile=$ENV_FILE
+ExecStart=$VENV_PYTHON $PROJECT_DIR/gui_server.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
+EOF
+
+ok "ohbot-gui service installed"
+
+# ── Reload systemd and enable ONLY the launcher at boot ──────
 systemctl --user daemon-reload
 ok "systemd reloaded"
 
-systemctl --user enable ohbot-server.service
-systemctl --user enable ohbot-conversation.service
-ok "Services enabled — will start automatically on every boot"
+# Make sure ohbot-server and ohbot-conversation are NOT set to auto-start
+# (they were previously enabled — disable them if so)
+systemctl --user disable ohbot-server.service 2>/dev/null || true
+systemctl --user disable ohbot-conversation.service 2>/dev/null || true
+
+# Enable only the launcher to start at boot
+systemctl --user enable ohbot-launcher.service
+ok "Launcher enabled — will start automatically on every boot"
+ok "Greeter and GUI are controlled from the launcher web page (not auto-start)"
 
 
 # ════════════════════════════════════════════════════════════
-#  STEP 10 — Start Ohbot now
+#  STEP 9b — Allow launcher to shut down / restart the Pi
 # ════════════════════════════════════════════════════════════
-hdr "Step 10 — Start Ohbot"
+hdr "Step 9b — Enabling shutdown and restart buttons"
+
+SUDOERS_FILE="/etc/sudoers.d/ohbot-power"
+if [ -f "$SUDOERS_FILE" ]; then
+    ok "Power control already configured"
+else
+    echo "$CURRENT_USER ALL=(ALL) NOPASSWD: /sbin/shutdown, /sbin/reboot" | sudo tee "$SUDOERS_FILE" > /dev/null
+    sudo chmod 440 "$SUDOERS_FILE"
+    ok "Shutdown and restart buttons enabled for launcher"
+fi
+
+
+# ════════════════════════════════════════════════════════════
+#  STEP 10 — Start the launcher now
+# ════════════════════════════════════════════════════════════
+hdr "Step 10 — Start the launcher"
 
 echo ""
-echo -n "  Start Ohbot right now? (y/n): "
+echo -n "  Start the launcher right now? (y/n): "
 read -r START_NOW
 
 if [[ "$START_NOW" == "y" || "$START_NOW" == "Y" ]]; then
-    systemctl --user start ohbot-server.service
-    echo "  Waiting for server to start up (8 seconds)..."
-    sleep 8
-    systemctl --user start ohbot-conversation.service
+    # Stop anything that might be using port 5000
+    systemctl --user stop ohbot-server.service 2>/dev/null || true
+    systemctl --user stop ohbot-conversation.service 2>/dev/null || true
+
+    systemctl --user start ohbot-launcher.service
     sleep 3
-    ok "Ohbot is running!"
+    ok "Launcher is running!"
     echo ""
-    echo "  ── Server status ───────────────────────────────────"
-    systemctl --user status ohbot-server.service --no-pager -l 2>/dev/null | head -8 | sed 's/^/    /'
-    echo ""
-    echo "  ── Conversation status ─────────────────────────────"
-    systemctl --user status ohbot-conversation.service --no-pager -l 2>/dev/null | head -8 | sed 's/^/    /'
+    echo "  ── Launcher status ─────────────────────────────────"
+    systemctl --user status ohbot-launcher.service --no-pager -l 2>/dev/null | head -8 | sed 's/^/    /'
 else
-    ok "Skipped — start Ohbot later with:"
-    echo "    systemctl --user start ohbot-server"
+    ok "Skipped — start the launcher later with:"
+    echo "    systemctl --user start ohbot-launcher"
 fi
 
 
@@ -391,29 +465,34 @@ echo "  ║   ✅  Installation complete!                     ║"
 echo "  ║                                                  ║"
 echo "  ╚══════════════════════════════════════════════════╝"
 echo -e "${RESET}"
-echo "  Ohbot will now start automatically on every boot."
+echo "  The launcher starts automatically on every boot."
+echo ""
+echo -e "  ${BOLD}Open this in a browser on any computer on the same WiFi:${RESET}"
+echo ""
+echo "      http://$(hostname -I 2>/dev/null | awk '{print $1}'):5000"
+echo "   or http://ohbot.local:5000"
+echo ""
+echo "  You'll see a page where you can start the Greeter Bot or the GUI."
 echo ""
 echo -e "  ${BOLD}Useful commands:${RESET}"
 echo ""
-echo "    Watch Ohbot's logs live:"
+echo "    Watch the launcher log:"
+echo "      journalctl --user -u ohbot-launcher -f"
+echo ""
+echo "    Watch the greeter bot log:"
 echo "      journalctl --user -u ohbot-server -f"
 echo "      journalctl --user -u ohbot-conversation -f"
 echo ""
-echo "    Stop Ohbot:"
-echo "      systemctl --user stop ohbot-server ohbot-conversation"
+echo "    Stop everything:"
+echo "      systemctl --user stop ohbot-launcher ohbot-server ohbot-conversation ohbot-gui"
 echo ""
-echo "    Start Ohbot:"
-echo "      systemctl --user start ohbot-server"
-echo ""
-echo "    Restart after making changes:"
-echo "      systemctl --user restart ohbot-server ohbot-conversation"
-echo ""
-echo "    Open the GUI in a browser:"
-echo "      http://$(hostname -I 2>/dev/null | awk '{print $1}'):5001/gui"
+echo "    Restart the launcher:"
+echo "      systemctl --user restart ohbot-launcher"
 echo ""
 echo "    Edit your API keys:"
 echo "      nano $ENV_FILE"
 echo ""
 echo -e "  ${YELLOW}Tip:${RESET} If Ohbot says 'robot not found', unplug and replug the USB"
-echo "  cable, then run:  systemctl --user restart ohbot-server ohbot-conversation"
+echo "  cable, then use the launcher page to restart whichever mode is running."
 echo ""
+#        Fix installer: add launcher, gui, and power services
