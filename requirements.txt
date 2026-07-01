@@ -1,0 +1,23 @@
+# Ohbot Requirements
+# Install with: pip install -r requirements.txt
+
+# Web servers (launcher, GUI, chatbot API)
+flask>=3.0.0
+
+# AI chat
+openai>=1.0.0
+
+# HTTP client used by ohbot_chat.py to talk to the chatbot server
+httpx>=0.27.0
+
+# Azure Speech — text-to-speech and speech recognition
+azure-cognitiveservices-speech>=1.38.0
+
+# Loads API keys from the .env file
+python-dotenv>=1.0.0
+
+# Ohbot hardware library
+ohbot>=2.0.6
+
+# Raspberry Pi GPIO (for the wake button — skipped gracefully if not available)
+RPi.GPIO>=0.7.1

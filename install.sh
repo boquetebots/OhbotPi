@@ -111,8 +111,8 @@ fi
 # ════════════════════════════════════════════════════════════
 hdr "Step 3 — Checking project files"
 
-if [ ! -f "$PROJECT_DIR/ohbot_server.py" ]; then
-    err "Can't find ohbot_server.py in $PROJECT_DIR"
+if [ ! -f "$PROJECT_DIR/launcher_server.py" ]; then
+    err "Can't find launcher_server.py in $PROJECT_DIR"
     echo ""
     echo "  Make sure you're running this from inside the Ohbot project folder."
     echo "  Example:"
@@ -339,7 +339,7 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=$PROJECT_DIR
 EnvironmentFile=$ENV_FILE
-ExecStart=$VENV_PYTHON $PROJECT_DIR/ohbot_server.py
+ExecStart=$VENV_PYTHON $PROJECT_DIR/ohbotchat_server.py
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal
@@ -363,7 +363,7 @@ Type=simple
 WorkingDirectory=$PROJECT_DIR
 EnvironmentFile=$ENV_FILE
 ExecStartPre=/bin/sleep 10
-ExecStart=$VENV_PYTHON $PROJECT_DIR/ohbot_conversation.py
+ExecStart=$VENV_PYTHON $PROJECT_DIR/ohbot_chat.py
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
@@ -495,4 +495,3 @@ echo ""
 echo -e "  ${YELLOW}Tip:${RESET} If Ohbot says 'robot not found', unplug and replug the USB"
 echo "  cable, then use the launcher page to restart whichever mode is running."
 echo ""
-#        Fix installer: add launcher, gui, and power services
