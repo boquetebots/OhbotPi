@@ -21,3 +21,6 @@ ohbot>=2.0.6
 
 # Raspberry Pi GPIO (for the wake button — skipped gracefully if not available)
 RPi.GPIO>=0.7.1
+
+# XML parser used by ohbot_pi.py to read motor calibration file
+lxml>=4.9.0
