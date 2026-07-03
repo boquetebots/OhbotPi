@@ -420,21 +420,25 @@ def _move(m, pos, spd=5, avoid=True):
     spd = max(0, min(10, spd))
 
     # ── Lip avoidance ──────────────────────────────────────────────────────
-    # Crossing happens when one lip goes BELOW the other in API space.
-    # Neither lip is allowed to go lower than the other's current position.
+    # Rule: TopLip position + BottomLip position must always add up to at
+    # least 10. Equivalently, each lip's minimum allowed position is
+    # (10 - the other lip's current position).
     #
-    # TopLip   is floored at the current BottomLip position.
-    # BottomLip is floored at the current TopLip position.
+    # This means opening one lip further always FREES UP room for the other
+    # lip to move lower — it never traps the other lip the way a simple
+    # "can't go below the other's raw position" rule would (that older rule
+    # could ratchet both lips up to the same value and then deadlock, since
+    # neither could move down without the other moving first).
     #
     # avoid=False is used for programmatic resets (lip sync end, Reset button)
-    # so the mouth can close after opening without both lips locking each other.
+    # so the mouth can close after opening without this check getting in the way.
     if avoid:
         if m == TOPLIP:
             bot_api = _get_api_pos(BOTTOMLIP)
-            pos = max(pos, bot_api)   # top can't go below bot
+            pos = max(pos, 10 - bot_api)   # top can't go below (10 - bottom)
         elif m == BOTTOMLIP:
             top_api = _get_api_pos(TOPLIP)
-            pos = max(pos, top_api)   # bot can't go below top
+            pos = max(pos, 10 - top_api)   # bottom can't go below (10 - top)
     # ───────────────────────────────────────────────────────────────────────
 
     # Reverse if needed
