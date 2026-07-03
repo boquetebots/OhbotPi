@@ -429,9 +429,53 @@ fi
 
 
 # ════════════════════════════════════════════════════════════
-#  STEP 10 — Start the launcher now
+#  STEP 10 — Power-loss protection
 # ════════════════════════════════════════════════════════════
-hdr "Step 10 — Start the launcher"
+hdr "Step 10 — Power-loss protection"
+
+echo "  Raspberry Pis use SD cards, which can get corrupted if the power is"
+echo "  cut suddenly (someone unplugs it, a breaker trips, etc). Two things"
+echo "  help protect against that:"
+echo ""
+echo "  1. Hardware watchdog — if the Pi ever freezes completely, it reboots"
+echo "     itself automatically after 15 seconds instead of staying stuck."
+echo ""
+
+SYSTEMD_CONF="/etc/systemd/system.conf"
+sudo sed -i '/^RuntimeWatchdogSec=/d;/^ShutdownWatchdogSec=/d' "$SYSTEMD_CONF"
+sudo sed -i '/^\[Manager\]/a RuntimeWatchdogSec=15\nShutdownWatchdogSec=5min' "$SYSTEMD_CONF"
+ok "Hardware watchdog enabled (takes effect after your next reboot)"
+
+echo ""
+echo "  2. Overlay filesystem (optional, stronger protection) — makes the SD"
+echo "     card read-only while Ohbot runs, so a power cut can never corrupt"
+echo "     it. Nothing is ever written to the card during normal operation."
+echo ""
+echo -e "  ${YELLOW}Tradeoff:${RESET} once this is on, any file changes made via SAMBA or"
+echo "  SSH are lost on reboot unless you temporarily turn overlay off first,"
+echo "  make your change, then turn it back on. Most people enable this only"
+echo "  once Ohbot is working the way they want and they're done tinkering."
+echo ""
+echo -n "  Enable overlay filesystem now? (y/N): "
+read -r ENABLE_OVERLAY
+
+if [[ "$ENABLE_OVERLAY" == "y" || "$ENABLE_OVERLAY" == "Y" ]]; then
+    if command -v raspi-config &>/dev/null; then
+        sudo raspi-config nonint do_overlayfs 1
+        ok "Overlay filesystem will be active after your next reboot"
+    else
+        warn "raspi-config not found — skipping overlay (enable manually later if needed)"
+    fi
+else
+    ok "Skipped for now. Enable later any time with:"
+    echo "      sudo raspi-config nonint do_overlayfs 1   (then sudo reboot)"
+fi
+
+
+# ════════════════════════════════════════════════════════════
+#  STEP 11 — Start the launcher now
+# ════════════════════════════════════════════════════════════
+hdr "Step 11 — Start the launcher"
 
 echo ""
 echo -n "  Start the launcher right now? (y/n): "
