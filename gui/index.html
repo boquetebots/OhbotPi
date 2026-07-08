@@ -1091,7 +1091,7 @@ async function previewFrame(kf) {
     await fetch('/gui/frame', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ motors: kf.motors, led: kf.led })
+      body: JSON.stringify({ motors: kf.motors, led: kf.led, speed: kf.speed ?? 5 })
     });
     toast(`Previewing frame ${kf.id} ✓`);
   } catch (e) {
@@ -1105,21 +1105,25 @@ async function previewFrame(kf) {
 
 // Defaults applied to every newly captured keyframe. Both are editable
 // per-keyframe afterward on the timeline card.
-const DEFAULT_PRE_WAIT  = 1.0;   // seconds to wait after the previous move ends
-const DEFAULT_MOVE_TIME = 1.5;   // seconds the move itself takes
+const DEFAULT_PRE_WAIT = 1.0;   // seconds to hold after this move before the next one is sent
+const DEFAULT_SPEED    = 5;     // native Ohbot ramp speed, 1 (slow) - 10 (fast)
 
 function captureKeyframe() {
   // Grab any speech text from the panel
   const speechText = document.getElementById('speech-textarea').value.trim();
 
+  // Grab the current Move Speed slider value — this becomes the native
+  // hardware ramp speed for this keyframe's motors during playback.
+  const moveSpeed = parseInt(document.getElementById('speed-slider').value);
+
   const kf = {
-    id:       nextKfId++,
-    label:    '',
-    motors:   { ...currentMotors },
-    led:      { ...currentLed },
-    text:     speechText,
-    preWait:  DEFAULT_PRE_WAIT,
-    moveTime: DEFAULT_MOVE_TIME,
+    id:      nextKfId++,
+    label:   '',
+    motors:  { ...currentMotors },
+    led:     { ...currentLed },
+    text:    speechText,
+    speed:   moveSpeed,
+    preWait: DEFAULT_PRE_WAIT,
   };
 
   // New keyframes always go at the end of the play order. Use the reorder
@@ -1147,9 +1151,9 @@ function renderTimeline() {
   // Remove old cards
   container.querySelectorAll('.kf-card').forEach(el => el.remove());
 
-  // Play order = array order now (pre-wait/move-time are relative to the
-  // previous keyframe, not an absolute timestamp, so there's nothing to
-  // sort by). Use the ▲▼ buttons to reorder.
+  // Play order = array order now (pre-wait is relative to the previous
+  // keyframe, not an absolute timestamp, so there's nothing to sort by).
+  // Use the ▲▼ buttons to reorder.
   keyframes.forEach((kf, idx) => {
     const card = document.createElement('div');
     card.className = 'kf-card';
@@ -1173,19 +1177,18 @@ function renderTimeline() {
     card.innerHTML = `
       <span class="kf-num">#${idx + 1}</span>
       <div class="kf-time-wrap">
+        <span>⚡</span>
+        <input type="number" class="kf-time"
+               value="${kf.speed ?? 5}" min="1" max="10" step="1"
+               onchange="updateKfSpeed(${kf.id}, this.value)"
+               title="Native Ohbot ramp speed for this keyframe's move (1=slow/smooth, 10=fast)">
+      </div>
+      <div class="kf-time-wrap">
         <span>⏳</span>
         <input type="number" class="kf-time"
                value="${kf.preWait ?? 1.0}" min="0" step="0.1"
                onchange="updateKfPreWait(${kf.id}, this.value)"
-               title="Pre-wait: seconds to wait after the PREVIOUS keyframe's move finishes, before this move starts">
-        <span>s</span>
-      </div>
-      <div class="kf-time-wrap">
-        <span>▶</span>
-        <input type="number" class="kf-time"
-               value="${kf.moveTime ?? 1.5}" min="0.1" step="0.1"
-               onchange="updateKfMoveTime(${kf.id}, this.value)"
-               title="Move time: how many seconds this keyframe's move takes">
+               title="Pre-wait: seconds to hold after THIS move is sent before the NEXT keyframe's move is sent. Tune by watching the robot — this should cover this move's real travel time plus any extra pause you want.">
         <span>s</span>
       </div>
       <input type="text" class="kf-label"
@@ -1227,9 +1230,13 @@ function updateKfPreWait(id, val) {
   if (kf) kf.preWait = Math.max(0, parseFloat(val) || 0);
 }
 
-function updateKfMoveTime(id, val) {
+function updateKfSpeed(id, val) {
   const kf = getKf(id);
-  if (kf) kf.moveTime = Math.max(0.1, parseFloat(val) || 0.1);
+  if (kf) {
+    let speed = parseInt(val) || 5;
+    speed = Math.min(10, Math.max(1, speed));
+    kf.speed = speed;
+  }
 }
 
 function updateKfLabel(id, val) {
@@ -1406,18 +1413,29 @@ async function loadSequence(filename) {
       const seq = data.sequence;
       let frames = seq.keyframes || [];
 
-      // Old sequences used an absolute "time" (seconds from sequence start)
-      // and a 1-10 "speed" instead of preWait/moveTime. Those don't map
-      // cleanly onto the new relative model, so: fix play order by sorting
-      // on the old time once, then reset every frame to default pre-wait/
-      // move-time (editable afterward on each card).
-      const isLegacy = frames.some(k => k.preWait === undefined && k.time !== undefined);
-      if (isLegacy) {
+      // This sequence builder has been through a few keyframe formats:
+      //   A) absolute "time" + hardware "speed" (original)
+      //   B) "preWait" + "moveTime" with software step-interpolation (briefly)
+      //   C) hardware "speed" + a single "preWait" (current)
+      // Only C's preWait means what preWait means today, so any sequence
+      // missing the current shape gets its timing reset to defaults —
+      // order is preserved first (sorting on the old absolute time, if
+      // present; format B already used array order like today).
+      const isCurrentFormat = frames.length > 0 && frames.every(k =>
+        k.speed !== undefined && k.preWait !== undefined &&
+        k.time === undefined && k.moveTime === undefined
+      );
+      if (!isCurrentFormat && frames.some(k => k.time !== undefined)) {
         frames = [...frames].sort((a, b) => (a.time ?? 0) - (b.time ?? 0));
       }
       keyframes = frames.map(k => {
-        const { time, speed, ...rest } = k;
-        return { text: '', preWait: DEFAULT_PRE_WAIT, moveTime: DEFAULT_MOVE_TIME, ...rest };
+        const { time, moveTime, ...rest } = k;
+        return {
+          text:    '',
+          speed:   DEFAULT_SPEED,
+          ...rest,
+          preWait: isCurrentFormat ? (k.preWait ?? DEFAULT_PRE_WAIT) : DEFAULT_PRE_WAIT,
+        };
       });
 
       nextKfId   = keyframes.length > 0
@@ -1428,8 +1446,8 @@ async function loadSequence(filename) {
       document.getElementById('seq-desc').value = seq.description || '';
 
       renderTimeline();
-      if (isLegacy) {
-        toast(`Loaded "${seq.name}" — old-format timing reset to defaults (${DEFAULT_PRE_WAIT}s wait / ${DEFAULT_MOVE_TIME}s move). Re-tune each keyframe as needed.`);
+      if (!isCurrentFormat) {
+        toast(`Loaded "${seq.name}" — old-format timing reset to defaults (speed ${DEFAULT_SPEED}, ${DEFAULT_PRE_WAIT}s wait). Re-tune each keyframe as needed.`);
       } else {
         toast(`Loaded "${seq.name}" (${keyframes.length} frames) ✓`);
       }
