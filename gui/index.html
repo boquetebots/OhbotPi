@@ -1090,7 +1090,7 @@ async function previewFrame(kf) {
     await fetch('/gui/frame', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ motors: kf.motors, led: kf.led })
+      body: JSON.stringify({ motors: kf.motors, led: kf.led, speed: kf.speed ?? 5 })
     });
     toast(`Previewing frame ${kf.id} ✓`);
   } catch (e) {
@@ -1112,6 +1112,10 @@ function captureKeyframe() {
   // Grab any speech text from the panel
   const speechText = document.getElementById('speech-textarea').value.trim();
 
+  // Grab the current Move Speed slider value — this becomes the speed
+  // this keyframe's motors move at when the sequence plays back.
+  const moveSpeed = parseInt(document.getElementById('speed-slider').value);
+
   const kf = {
     id:     nextKfId++,
     time:   newTime,
@@ -1119,6 +1123,7 @@ function captureKeyframe() {
     motors: { ...currentMotors },
     led:    { ...currentLed },
     text:   speechText,
+    speed:  moveSpeed,
   };
 
   keyframes.push(kf);
@@ -1177,6 +1182,13 @@ function renderTimeline() {
                title="Time in seconds from start">
         <span>s</span>
       </div>
+      <div class="kf-time-wrap">
+        <span>⚡</span>
+        <input type="number" class="kf-time"
+               value="${kf.speed ?? 5}" min="1" max="10" step="1"
+               onchange="updateKfSpeed(${kf.id}, this.value)"
+               title="Move speed for this keyframe (1=slow/smooth, 10=fast)">
+      </div>
       <input type="text" class="kf-label"
              value="${kf.label}"
              placeholder="Label…"
@@ -1218,6 +1230,15 @@ function updateKfTime(id, val) {
 function updateKfLabel(id, val) {
   const kf = getKf(id);
   if (kf) kf.label = val;
+}
+
+function updateKfSpeed(id, val) {
+  const kf = getKf(id);
+  if (kf) {
+    let speed = parseInt(val) || 5;
+    speed = Math.min(10, Math.max(1, speed));
+    kf.speed = speed;
+  }
 }
 
 function updateKfSpeech(id, val) {
@@ -1370,8 +1391,9 @@ async function loadSequence(filename) {
 
     if (data.success) {
       const seq = data.sequence;
-      // Ensure all keyframes have a text field (for older saved sequences)
-      keyframes  = (seq.keyframes || []).map(k => ({ text: '', ...k }));
+      // Ensure all keyframes have text/speed fields (for older saved sequences
+      // captured before speed-per-keyframe existed)
+      keyframes  = (seq.keyframes || []).map(k => ({ text: '', speed: 5, ...k }));
       nextKfId   = keyframes.length > 0
         ? Math.max(...keyframes.map(k => k.id)) + 1
         : 1;

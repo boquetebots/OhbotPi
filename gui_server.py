@@ -254,18 +254,19 @@ def go_to_frame():
     """
     Jump directly to a saved keyframe pose (preview without playing the
     whole sequence).
-    Body: { "motors": {"HEADTURN": 7, ...}, "led": {"r":0,"g":5,"b":10} }
+    Body: { "motors": {"HEADTURN": 7, ...}, "led": {"r":0,"g":5,"b":10}, "speed": 5 }
     """
     try:
         data   = request.get_json()
         motors = data.get('motors', {})
         led    = data.get('led', None)
+        speed  = int(data.get('speed', 5))
 
         for key, position in motors.items():
             motor_id = KEY_TO_ID.get(key)
             if motor_id is not None:
                 with OHBOT_SERIAL_LOCK:
-                    ohbot.move(motor_id, float(position), 5)
+                    ohbot.move(motor_id, float(position), speed)
 
         if led:
             with OHBOT_SERIAL_LOCK:
@@ -681,13 +682,17 @@ def play_sequence():
                     # Move motors — skip lips if speech is active so lip sync isn't overridden.
                     # OHBOT_SERIAL_LOCK prevents a race with the lip-sync thread that runs
                     # inside the Azure controller — simultaneous serial access = segfault.
+                    # Speed comes from this keyframe (set via the Move Speed slider when it
+                    # was captured); default to 5 for older sequences saved before speed
+                    # was recorded per keyframe.
+                    frame_speed = int(frame.get('speed', 5))
                     for key, position in frame.get('motors', {}).items():
                         if speak_state['speaking'] and key in ('TOPLIP', 'BOTTOMLIP'):
                             continue
                         motor_id = KEY_TO_ID.get(key)
                         if motor_id is not None:
                             with OHBOT_SERIAL_LOCK:
-                                ohbot.move(motor_id, float(position), 5)
+                                ohbot.move(motor_id, float(position), frame_speed)
 
                     # Set LED
                     if 'led' in frame:
