@@ -640,8 +640,18 @@ def stop_demo():
 def play_sequence():
     """
     Play a sequence on the robot.
-    Body: { "keyframes": [ { "time": 0, "motors": {...}, "led": {...} }, ... ] }
-    Playback runs in a background thread so this call returns immediately.
+
+    Body: { "keyframes": [ { "preWait": 1.0, "moveTime": 1.5,
+                              "motors": {...}, "led": {...}, "text": "..." },
+                            ... ] }
+
+    Keyframes play in LIST ORDER — there's no timestamp to sort by anymore.
+    For each keyframe: wait `preWait` seconds after the PREVIOUS keyframe's
+    move finished, then smoothly step every motor listed in `motors` from
+    wherever it currently is to its target position, spread out over
+    `moveTime` seconds. LED and speech both fire the instant the move
+    starts. Playback runs in a background thread so this call returns
+    immediately.
     """
     try:
         data      = request.get_json()
@@ -653,48 +663,54 @@ def play_sequence():
         if play_state['playing']:
             return jsonify({'success': False, 'error': 'Already playing'}), 409
 
+        def _sleep_interruptible(seconds):
+            """time.sleep() broken into small chunks so Stop takes effect quickly."""
+            end = time.time() + seconds
+            while time.time() < end:
+                if play_state['stop_requested']:
+                    return
+                time.sleep(min(0.05, end - time.time()))
+
         def run_playback():
             play_state['playing']        = True
             play_state['stop_requested'] = False
 
+            # Motor commands are paced ourselves (not left to the Ohbot's own
+            # ramping) so we know EXACTLY when a move is finished — that's
+            # what lets the next keyframe's pre-wait start at a real,
+            # provable end point instead of a guess. STEP_HZ is kept modest
+            # because every motor shares one slow serial cable (19200 baud);
+            # 10 updates/sec per motor is smooth to the eye and leaves
+            # plenty of headroom even with all 8 motors moving at once.
+            STEP_HZ = 10
+
             try:
-                sorted_frames = sorted(keyframes, key=lambda k: float(k.get('time', 0)))
-                start_time    = time.time()
-
-                for frame in sorted_frames:
+                for i, frame in enumerate(keyframes):
                     if play_state['stop_requested']:
                         break
 
-                    target_time = float(frame.get('time', 0))
-
-                    # Wait until the right moment in the timeline
-                    while True:
-                        if play_state['stop_requested']:
-                            break
-                        elapsed = time.time() - start_time
-                        if elapsed >= target_time:
-                            break
-                        time.sleep(0.01)
-
+                    # Pre-wait: pause after the PREVIOUS keyframe's move ended.
+                    pre_wait = max(0.0, float(frame.get('preWait', 0)))
+                    if pre_wait > 0:
+                        _sleep_interruptible(pre_wait)
                     if play_state['stop_requested']:
                         break
 
-                    # Move motors — skip lips if speech is active so lip sync isn't overridden.
-                    # OHBOT_SERIAL_LOCK prevents a race with the lip-sync thread that runs
-                    # inside the Azure controller — simultaneous serial access = segfault.
-                    # Speed comes from this keyframe (set via the Move Speed slider when it
-                    # was captured); default to 5 for older sequences saved before speed
-                    # was recorded per keyframe.
-                    frame_speed = int(frame.get('speed', 5))
-                    for key, position in frame.get('motors', {}).items():
-                        if speak_state['speaking'] and key in ('TOPLIP', 'BOTTOMLIP'):
-                            continue
+                    move_time = max(0.05, float(frame.get('moveTime', 1.0)))
+                    motors    = frame.get('motors', {})
+
+                    # Look up each motor's current tracked position as the
+                    # start point for the interpolation.
+                    targets = {}
+                    for key, position in motors.items():
                         motor_id = KEY_TO_ID.get(key)
-                        if motor_id is not None:
-                            with OHBOT_SERIAL_LOCK:
-                                ohbot.move(motor_id, float(position), frame_speed)
+                        if motor_id is None:
+                            continue
+                        with OHBOT_SERIAL_LOCK:
+                            start_pos = ohbot._get_api_pos(motor_id)
+                        targets[key] = (motor_id, start_pos, float(position))
 
-                    # Set LED
+                    # LED and speech fire the instant the move starts.
                     if 'led' in frame:
                         led = frame['led']
                         with OHBOT_SERIAL_LOCK:
@@ -704,7 +720,6 @@ def play_sequence():
                                 float(led.get('b', 0)),
                             )
 
-                    # Trigger speech if this keyframe has text
                     speech_text = frame.get('text', '').strip()
                     if speech_text and _azure_controller and _speech_loop:
                         speak_state['speaking'] = True   # set before thread starts to protect lips immediately
@@ -720,8 +735,34 @@ def play_sequence():
                                 speak_state['speaking'] = False
                         threading.Thread(target=say_it, args=(speech_text,), daemon=True).start()
 
-                    print(f"▶ Frame at {target_time:.1f}s — "
-                          f"{list(frame.get('motors', {}).keys())}")
+                    # Step every motor toward its target over move_time seconds.
+                    # Individual step commands use speed 10 (fastest) since
+                    # the tiny distance-per-step is what makes it look
+                    # smooth — WE are what controls the real pacing here,
+                    # not the Ohbot's own ramping.
+                    step_count = max(1, round(move_time * STEP_HZ))
+                    step_delay = move_time / step_count
+                    move_start = time.time()
+
+                    for step in range(1, step_count + 1):
+                        if play_state['stop_requested']:
+                            break
+                        frac = step / step_count
+                        for key, (motor_id, start_pos, end_pos) in targets.items():
+                            if speak_state['speaking'] and key in ('TOPLIP', 'BOTTOMLIP'):
+                                continue
+                            pos = start_pos + (end_pos - start_pos) * frac
+                            with OHBOT_SERIAL_LOCK:
+                                ohbot.move(motor_id, pos, 10)
+                        # Pace to move_time regardless of how long the serial
+                        # writes above took.
+                        next_tick = move_start + step * step_delay
+                        remaining = next_tick - time.time()
+                        if remaining > 0:
+                            time.sleep(remaining)
+
+                    print(f"▶ Keyframe {i + 1}/{len(keyframes)} — "
+                          f"pre-wait {pre_wait}s, move {move_time}s — {list(motors.keys())}")
 
             finally:
                 play_state['playing'] = False

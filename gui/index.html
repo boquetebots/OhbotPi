@@ -1085,12 +1085,13 @@ async function previewFrame(kf) {
     updateLedPreview();
   }
 
-  // Send to robot
+  // Send to robot — a quick snap to this pose for checking, not a timed
+  // playback move, so it just uses the server's default speed.
   try {
     await fetch('/gui/frame', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ motors: kf.motors, led: kf.led, speed: kf.speed ?? 5 })
+      body: JSON.stringify({ motors: kf.motors, led: kf.led })
     });
     toast(`Previewing frame ${kf.id} ✓`);
   } catch (e) {
@@ -1102,35 +1103,32 @@ async function previewFrame(kf) {
 // Keyframe capture + timeline
 // ============================================================================
 
-function captureKeyframe() {
-  // Determine time: 1 second after the last keyframe (or 0 if first)
-  const lastTime = keyframes.length > 0
-    ? Math.max(...keyframes.map(k => k.time))
-    : -1;
-  const newTime = lastTime < 0 ? 0 : +(lastTime + 1.0).toFixed(1);
+// Defaults applied to every newly captured keyframe. Both are editable
+// per-keyframe afterward on the timeline card.
+const DEFAULT_PRE_WAIT  = 1.0;   // seconds to wait after the previous move ends
+const DEFAULT_MOVE_TIME = 1.5;   // seconds the move itself takes
 
+function captureKeyframe() {
   // Grab any speech text from the panel
   const speechText = document.getElementById('speech-textarea').value.trim();
 
-  // Grab the current Move Speed slider value — this becomes the speed
-  // this keyframe's motors move at when the sequence plays back.
-  const moveSpeed = parseInt(document.getElementById('speed-slider').value);
-
   const kf = {
-    id:     nextKfId++,
-    time:   newTime,
-    label:  '',
-    motors: { ...currentMotors },
-    led:    { ...currentLed },
-    text:   speechText,
-    speed:  moveSpeed,
+    id:       nextKfId++,
+    label:    '',
+    motors:   { ...currentMotors },
+    led:      { ...currentLed },
+    text:     speechText,
+    preWait:  DEFAULT_PRE_WAIT,
+    moveTime: DEFAULT_MOVE_TIME,
   };
 
+  // New keyframes always go at the end of the play order. Use the reorder
+  // buttons on the timeline to move them if needed.
   keyframes.push(kf);
   renderTimeline();
 
   const speechNote = speechText ? ` + 🔊 speech` : '';
-  toast(`Keyframe ${kf.id} captured at ${newTime}s${speechNote}`);
+  toast(`Keyframe ${kf.id} captured (#${keyframes.length} in sequence)${speechNote}`);
 }
 
 function renderTimeline() {
@@ -1149,10 +1147,10 @@ function renderTimeline() {
   // Remove old cards
   container.querySelectorAll('.kf-card').forEach(el => el.remove());
 
-  // Sort by time before rendering
-  const sorted = [...keyframes].sort((a, b) => a.time - b.time);
-
-  sorted.forEach((kf, idx) => {
+  // Play order = array order now (pre-wait/move-time are relative to the
+  // previous keyframe, not an absolute timestamp, so there's nothing to
+  // sort by). Use the ▲▼ buttons to reorder.
+  keyframes.forEach((kf, idx) => {
     const card = document.createElement('div');
     card.className = 'kf-card';
     card.id = `kf-card-${kf.id}`;
@@ -1175,19 +1173,20 @@ function renderTimeline() {
     card.innerHTML = `
       <span class="kf-num">#${idx + 1}</span>
       <div class="kf-time-wrap">
-        <span>⏱</span>
+        <span>⏳</span>
         <input type="number" class="kf-time"
-               value="${kf.time}" min="0" step="0.1"
-               onchange="updateKfTime(${kf.id}, this.value)"
-               title="Time in seconds from start">
+               value="${kf.preWait ?? 1.0}" min="0" step="0.1"
+               onchange="updateKfPreWait(${kf.id}, this.value)"
+               title="Pre-wait: seconds to wait after the PREVIOUS keyframe's move finishes, before this move starts">
         <span>s</span>
       </div>
       <div class="kf-time-wrap">
-        <span>⚡</span>
+        <span>▶</span>
         <input type="number" class="kf-time"
-               value="${kf.speed ?? 5}" min="1" max="10" step="1"
-               onchange="updateKfSpeed(${kf.id}, this.value)"
-               title="Move speed for this keyframe (1=slow/smooth, 10=fast)">
+               value="${kf.moveTime ?? 1.5}" min="0.1" step="0.1"
+               onchange="updateKfMoveTime(${kf.id}, this.value)"
+               title="Move time: how many seconds this keyframe's move takes">
+        <span>s</span>
       </div>
       <input type="text" class="kf-label"
              value="${kf.label}"
@@ -1197,6 +1196,10 @@ function renderTimeline() {
       <div class="kf-motors">${chips}</div>
       <div class="kf-led-dot" style="background:${ledColor}" title="LED: R${kf.led.r} G${kf.led.g} B${kf.led.b}"></div>
       <div class="kf-actions">
+        <button class="btn btn-ghost btn-sm" title="Move earlier in the sequence"
+                onclick="moveKfUp(${kf.id})" ${idx === 0 ? 'disabled' : ''}>▲</button>
+        <button class="btn btn-ghost btn-sm" title="Move later in the sequence"
+                onclick="moveKfDown(${kf.id})" ${idx === keyframes.length - 1 ? 'disabled' : ''}>▼</button>
         <button class="btn btn-ghost btn-sm" title="Preview this pose on robot"
                 onclick="previewFrame(getKf(${kf.id}))">👁</button>
         <button class="btn btn-danger btn-sm" title="Delete this keyframe"
@@ -1219,26 +1222,19 @@ function getKf(id) {
   return keyframes.find(k => k.id === id);
 }
 
-function updateKfTime(id, val) {
+function updateKfPreWait(id, val) {
   const kf = getKf(id);
-  if (kf) {
-    kf.time = parseFloat(val) || 0;
-    renderTimeline();
-  }
+  if (kf) kf.preWait = Math.max(0, parseFloat(val) || 0);
+}
+
+function updateKfMoveTime(id, val) {
+  const kf = getKf(id);
+  if (kf) kf.moveTime = Math.max(0.1, parseFloat(val) || 0.1);
 }
 
 function updateKfLabel(id, val) {
   const kf = getKf(id);
   if (kf) kf.label = val;
-}
-
-function updateKfSpeed(id, val) {
-  const kf = getKf(id);
-  if (kf) {
-    let speed = parseInt(val) || 5;
-    speed = Math.min(10, Math.max(1, speed));
-    kf.speed = speed;
-  }
 }
 
 function updateKfSpeech(id, val) {
@@ -1248,6 +1244,23 @@ function updateKfSpeech(id, val) {
 
 function deleteKf(id) {
   keyframes = keyframes.filter(k => k.id !== id);
+  renderTimeline();
+}
+
+// Reorder: since pre-wait/move-time are relative to the previous keyframe,
+// play order is just the array order — these swap a keyframe with its
+// neighbor and re-render.
+function moveKfUp(id) {
+  const idx = keyframes.findIndex(k => k.id === id);
+  if (idx <= 0) return;
+  [keyframes[idx - 1], keyframes[idx]] = [keyframes[idx], keyframes[idx - 1]];
+  renderTimeline();
+}
+
+function moveKfDown(id) {
+  const idx = keyframes.findIndex(k => k.id === id);
+  if (idx === -1 || idx >= keyframes.length - 1) return;
+  [keyframes[idx + 1], keyframes[idx]] = [keyframes[idx], keyframes[idx + 1]];
   renderTimeline();
 }
 
@@ -1391,9 +1404,22 @@ async function loadSequence(filename) {
 
     if (data.success) {
       const seq = data.sequence;
-      // Ensure all keyframes have text/speed fields (for older saved sequences
-      // captured before speed-per-keyframe existed)
-      keyframes  = (seq.keyframes || []).map(k => ({ text: '', speed: 5, ...k }));
+      let frames = seq.keyframes || [];
+
+      // Old sequences used an absolute "time" (seconds from sequence start)
+      // and a 1-10 "speed" instead of preWait/moveTime. Those don't map
+      // cleanly onto the new relative model, so: fix play order by sorting
+      // on the old time once, then reset every frame to default pre-wait/
+      // move-time (editable afterward on each card).
+      const isLegacy = frames.some(k => k.preWait === undefined && k.time !== undefined);
+      if (isLegacy) {
+        frames = [...frames].sort((a, b) => (a.time ?? 0) - (b.time ?? 0));
+      }
+      keyframes = frames.map(k => {
+        const { time, speed, ...rest } = k;
+        return { text: '', preWait: DEFAULT_PRE_WAIT, moveTime: DEFAULT_MOVE_TIME, ...rest };
+      });
+
       nextKfId   = keyframes.length > 0
         ? Math.max(...keyframes.map(k => k.id)) + 1
         : 1;
@@ -1402,7 +1428,11 @@ async function loadSequence(filename) {
       document.getElementById('seq-desc').value = seq.description || '';
 
       renderTimeline();
-      toast(`Loaded "${seq.name}" (${keyframes.length} frames) ✓`);
+      if (isLegacy) {
+        toast(`Loaded "${seq.name}" — old-format timing reset to defaults (${DEFAULT_PRE_WAIT}s wait / ${DEFAULT_MOVE_TIME}s move). Re-tune each keyframe as needed.`);
+      } else {
+        toast(`Loaded "${seq.name}" (${keyframes.length} frames) ✓`);
+      }
     } else {
       toast(data.error || 'Load failed', true);
     }
