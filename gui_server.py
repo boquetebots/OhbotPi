@@ -121,6 +121,41 @@ MOTORS = {
 # Build a reverse lookup: key name → motor ID  (e.g. 'HEADTURN' → 1)
 KEY_TO_ID = {v['key']: k for k, v in MOTORS.items()}
 
+# ── Speed slider remap ──────────────────────────────────────────────────────
+# The GUI's speed slider (gui/index.html #speed-slider) stays 1-10 for
+# Michael and gets saved into keyframes as 1-10 — nothing about the slider
+# or saved sequence files changes. But measured on the real hardware, a
+# lip move at slider-speed 1 takes ~2.5s, speed 5 takes ~0.4s, and speeds
+# 8, 9, and 10 are all identical (~0.3s) — the motor's physically maxed
+# out by 8, so 9 and 10 do nothing extra.
+#
+# This table is what actually gets sent to ohbot.move() in place of the
+# raw slider number, so "fast" is reachable around the middle of the dial
+# instead of requiring 8-10. It's just a lookup table — safe to hand-edit
+# these ten numbers directly if a particular speed feels off after testing;
+# no formula to untangle.
+SPEED_CURVE = {
+    1: 0.4,
+    2: 0.8,
+    3: 1.4,
+    4: 2.3,
+    5: 2.5,
+    6: 3.0,
+    7: 4.0,
+    8: 5.4,
+    9: 6.5,
+    10: 8.0,
+}
+
+def curve_speed(dial_value):
+    """Convert a 1-10 slider/keyframe speed value into the real speed sent
+    to the Ohbot, using SPEED_CURVE above. Rounds and clamps so odd input
+    (e.g. a hand-typed 4.5, or something out of range) still resolves to a
+    sensible table entry instead of crashing."""
+    d = int(round(float(dial_value)))
+    d = max(1, min(10, d))
+    return SPEED_CURVE[d]
+
 # Playback state (shared between endpoints and the background thread)
 play_state  = {'playing': False, 'stop_requested': False}
 speak_state = {'speaking': False, 'last_error': None}
@@ -205,7 +240,7 @@ def move_motor():
         data     = request.get_json()
         motor_id = int(data['motor'])
         position = float(data['position'])
-        speed    = int(data.get('speed', 5))
+        speed    = curve_speed(data.get('speed', 5))
 
         with OHBOT_SERIAL_LOCK:
             ohbot.move(motor_id, position, speed)
@@ -260,7 +295,7 @@ def go_to_frame():
         data   = request.get_json()
         motors = data.get('motors', {})
         led    = data.get('led', None)
-        speed  = int(data.get('speed', 5))
+        speed  = curve_speed(data.get('speed', 5))
 
         for key, position in motors.items():
             motor_id = KEY_TO_ID.get(key)
@@ -688,7 +723,7 @@ def play_sequence():
                     # active so lip sync isn't overridden. OHBOT_SERIAL_LOCK
                     # prevents a race with the lip-sync thread (simultaneous
                     # serial access = segfault).
-                    frame_speed = float(frame.get('speed', 5))
+                    frame_speed = curve_speed(frame.get('speed', 5))
                     motors      = frame.get('motors', {})
                     for key, position in motors.items():
                         if speak_state['speaking'] and key in ('TOPLIP', 'BOTTOMLIP'):
