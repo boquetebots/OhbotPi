@@ -63,6 +63,18 @@
     transition: border-color 0.2s, color 0.2s;
   }
   #home-btn:hover { border-color: var(--accent2); color: var(--text); }
+  #timeline-link {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  #timeline-link:hover { border-color: var(--accent2); color: var(--text); }
   #playing-badge {
     background: var(--accent);
     color: #fff;
@@ -698,6 +710,7 @@
   <span id="playing-badge">▶ PLAYING</span>
   <button id="demo-stop-btn" class="btn btn-danger btn-sm" onclick="stopDemo()">⏹ Stop Demo</button>
   <button id="demo-btn" class="btn btn-demo" onclick="startDemo()">✨ Show me what you can do!</button>
+  <a id="timeline-link" href="/timeline">🎬 Timeline</a>
   <a id="home-btn" href="http://localhost:5000" onclick="goHome(event)">⬅ Launcher</a>
 </div>
 
@@ -799,7 +812,7 @@
 
     <!-- Sequence name + description bar -->
     <div id="seq-header">
-      <input type="text" id="seq-name"  placeholder="Sequence name…" value="New Sequence">
+      <input type="text" id="seq-name"  placeholder="Sequence name…" value="">
       <input type="text" id="seq-desc"  placeholder="Description (optional)">
     </div>
 
@@ -1286,7 +1299,7 @@ function newSequence() {
   }
   keyframes = [];
   nextKfId  = 1;
-  document.getElementById('seq-name').value = 'New Sequence';
+  document.getElementById('seq-name').value = '';
   document.getElementById('seq-desc').value = '';
   renderTimeline();
   toast('New sequence started');
@@ -1351,6 +1364,26 @@ async function saveSequence() {
     toast('No keyframes to save!', true);
     return;
   }
+
+  // Warn before silently overwriting an existing sequence with the same
+  // name — check against a fresh list from the server rather than
+  // whatever's currently in the "Load saved…" dropdown, in case something
+  // else saved a file since this page was last refreshed.
+  try {
+    const listRes  = await fetch('/gui/sequence/list');
+    const listData = await listRes.json();
+    if (listData.success) {
+      const collision = listData.sequences.find(
+        s => s.name.trim().toLowerCase() === name.toLowerCase()
+      );
+      if (collision) {
+        const proceed = confirm(
+          `A sequence named "${collision.name}" already exists (${collision.keyframe_count} keyframes).\n\nOverwrite it?`
+        );
+        if (!proceed) return;
+      }
+    }
+  } catch (e) { /* if the check fails, fall through and let save proceed */ }
 
   try {
     const res  = await fetch('/gui/sequence/save', {

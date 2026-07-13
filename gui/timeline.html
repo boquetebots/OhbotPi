@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎬 Ohbot Timeline (Preview)</title>
+<style>
+  /* Same color palette as gui/index.html so this feels like the same toolset */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #1a1a2e;
+    --panel:     #16213e;
+    --card:      #0f3460;
+    --accent:    #e94560;
+    --accent2:   #0f9b8e;
+    --text:      #eaeaea;
+    --muted:     #8892a4;
+    --border:    #2a3a5c;
+    --success:   #2ecc71;
+    --warn:      #f39c12;
+    --danger:    #e74c3c;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Top bar ────────────────────────────────────────────────────────── */
+  #topbar {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+  #topbar h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px; }
+  #loaded-info { font-size: 0.82rem; color: var(--muted); }
+  #loaded-info b { color: var(--text); }
+  .topbar-spacer { flex: 1; }
+  #phase-badge {
+    background: var(--warn);
+    color: #1a1a2e;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+  #home-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  #home-btn:hover { border-color: var(--accent2); color: var(--text); }
+
+  #status-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--danger); flex-shrink: 0;
+    transition: background 0.4s;
+  }
+  #status-dot.connected { background: var(--success); }
+  #status-text { font-size: 0.78rem; color: var(--muted); }
+
+  #playing-badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: none;
+    animation: pulse 1s infinite alternate;
+  }
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.5; } }
+
+  /* ── Main layout ────────────────────────────────────────────────────── */
+  #main { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── Left panel — saved sequence list ──────────────────────────────── */
+  #left-panel {
+    width: 300px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 14px;
+  }
+  #left-panel h2 {
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .seq-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .seq-item:hover { border-color: var(--accent2); }
+  .seq-item.active { border-color: var(--accent); background: #133c6b; }
+  .seq-item .seq-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 3px; }
+  .seq-item .seq-meta { font-size: 0.74rem; color: var(--muted); }
+  #left-panel .empty-msg, #left-panel .error-msg {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  #left-panel .error-msg { color: var(--danger); }
+  #left-panel-hint {
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }
+  .seq-insert-btn {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.72rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .seq-insert-btn:hover { border-color: var(--accent2); background: var(--card); }
+
+  /* ── Timeline area ──────────────────────────────────────────────────── */
+  #timeline-area { flex: 1; overflow: auto; position: relative; }
+  #empty-state {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 0.95rem;
+    text-align: center;
+    padding: 40px;
+  }
+  #timeline-wrap { padding: 24px; position: relative; }
+
+  .playhead {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2px;
+    height: 134px; /* ruler (26) + margin (16) + track (92) */
+    background: var(--accent);
+    pointer-events: none;
+    z-index: 5;
+  }
+  .playhead::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: -5px;
+    width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--accent);
+  }
+
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 50;
+  }
+  #toast.show { opacity: 1; }
+
+  #hint-bar {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+
+  #ruler {
+    position: relative;
+    height: 26px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .ruler-tick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-left: 1px solid var(--border);
+    padding-left: 4px;
+    font-size: 0.68rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  #track {
+    position: relative;
+    height: 92px;
+  }
+
+  .clip {
+    position: absolute;
+    top: 0;
+    height: 92px;
+    background: var(--card);
+    border: 2px solid var(--accent2);
+    border-radius: 8px;
+    padding: 6px 8px;
+    overflow: hidden;
+    cursor: default;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .clip.is-macro { border-color: var(--warn); }
+  .clip.overflow { border-color: var(--danger); border-style: dashed; }
+  .clip .clip-index {
+    font-size: 0.68rem;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .clip .clip-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .clip .clip-badges {
+    font-size: 0.68rem;
+    color: var(--muted);
+    display: flex;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .clip .led-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 2px;
+  }
+
+  .wait-gap {
+    position: absolute;
+    top: 40px;
+    height: 12px;
+    border-top: 1px dashed var(--border);
+    border-bottom: 1px dashed var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .wait-gap span {
+    background: var(--bg);
+    padding: 0 4px;
+    font-size: 0.62rem;
+    color: var(--muted);
+  }
+
+  #total-duration { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+  /* ── Capture panel (Phase 2b) — right side, pose + capture controls ──── */
+  #capture-panel {
+    width: 320px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #capture-panel .panel-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 14px 6px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  #capture-panel .panel-subhead {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  #motors-scroll { flex: 1; overflow-y: auto; padding: 8px 14px; min-height: 0; }
+
+  .motor-row {
+    display: grid;
+    grid-template-columns: 78px 1fr 32px;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 9px;
+  }
+  .motor-label { font-size: 0.74rem; font-weight: 600; color: var(--text); white-space: nowrap; }
+  .motor-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 6px; border-radius: 3px;
+    background: var(--border); outline: none; cursor: pointer;
+  }
+  .motor-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent2); cursor: pointer; border: 2px solid #fff;
+    box-shadow: 0 0 4px rgba(0,0,0,0.4);
+  }
+  .motor-value { font-size: 0.78rem; font-weight: 700; color: var(--accent2); text-align: center; min-width: 26px; }
+
+  #speed-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 14px 8px; border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  #speed-row label { font-size: 0.76rem; color: var(--muted); min-width: 74px; }
+  #speed-slider {
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 5px; border-radius: 3px; background: var(--border); cursor: pointer;
+  }
+  #speed-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 15px; height: 15px; border-radius: 50%;
+    background: var(--warn); cursor: pointer; border: 2px solid #fff;
+  }
+  #speed-value { font-size: 0.8rem; font-weight: 700; color: var(--warn); width: 18px; text-align: center; }
+
+  #live-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 14px; border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  #live-row label { font-size: 0.76rem; color: var(--muted); }
+  .toggle { position: relative; display: inline-block; width: 38px; height: 21px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute; inset: 0; border-radius: 22px;
+    background: var(--border); cursor: pointer; transition: background 0.2s;
+  }
+  .toggle-track::before {
+    content: ''; position: absolute; width: 15px; height: 15px; left: 3px; top: 3px;
+    border-radius: 50%; background: #fff; transition: transform 0.2s;
+  }
+  .toggle input:checked + .toggle-track { background: var(--accent2); }
+  .toggle input:checked + .toggle-track::before { transform: translateX(17px); }
+
+  #led-section { border-top: 1px solid var(--border); padding: 10px 14px; flex-shrink: 0; }
+  .led-row {
+    display: grid; grid-template-columns: 18px 1fr 28px;
+    align-items: center; gap: 8px; margin-bottom: 5px;
+  }
+  .led-label { font-size: 0.76rem; font-weight: 700; }
+  .led-label.r { color: #e74c3c; }
+  .led-label.g { color: #2ecc71; }
+  .led-label.b { color: #3498db; }
+  .led-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 5px; border-radius: 3px; background: var(--border); cursor: pointer;
+  }
+  .led-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 15px; height: 15px; border-radius: 50%;
+    background: #ccc; cursor: pointer; border: 2px solid #fff;
+  }
+  .led-value { font-size: 0.76rem; font-weight: 700; text-align: center; }
+  #led-preview { width: 100%; height: 24px; border-radius: 6px; background: #000; margin-top: 4px; border: 1px solid var(--border); }
+  .led-presets { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+  .led-preset {
+    width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; transition: border-color 0.15s; flex-shrink: 0;
+  }
+  .led-preset:hover { border-color: #fff; }
+
+  #speech-section { border-top: 1px solid var(--border); padding: 10px 14px; flex-shrink: 0; }
+  #speech-textarea {
+    width: 100%; height: 50px; resize: none;
+    background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-size: 0.8rem; padding: 6px 8px; font-family: inherit;
+  }
+  #speech-hint { font-size: 0.68rem; color: var(--muted); margin-top: 4px; }
+
+  #capture-buttons { display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  #seq-save-block { padding: 10px 14px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  #seq-save-block input {
+    width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-size: 0.8rem; padding: 6px 8px; margin-bottom: 6px; font-family: inherit;
+  }
+  #seq-save-row { display: flex; gap: 6px; }
+  #seq-save-row .ctl-btn { flex: 1; }
+
+  .ctl-btn {
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    font-size: 0.8rem; padding: 8px 10px; border-radius: 6px; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .ctl-btn:hover { border-color: var(--accent2); }
+  .ctl-btn.primary { background: var(--accent2); border-color: var(--accent2); color: #fff; font-weight: 600; }
+  .ctl-btn.primary:hover { background: #0d8478; }
+
+  .clip { position: absolute; top: 0; height: 92px; }
+  .clip .clip-delete {
+    position: absolute; top: 3px; right: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--danger); color: #fff; font-size: 0.62rem;
+    display: none; align-items: center; justify-content: center;
+    cursor: pointer; line-height: 1;
+  }
+  .clip:hover .clip-delete { display: flex; }
+</style>
+</head>
+<body>
+
+  <div id="topbar">
+    <h1>🎬 Ohbot Timeline</h1>
+    <span id="phase-badge">PHASE 2B — LIVE CAPTURE</span>
+    <span id="status-dot"></span>
+    <span id="status-text">Checking robot…</span>
+    <span id="playing-badge">▶ PLAYING</span>
+    <div id="loaded-info">Pick a sequence on the left to preview it.</div>
+    <div class="topbar-spacer"></div>
+    <a href="http://192.168.50.155:5001/gui" id="home-btn">← Sequence Builder</a>
+  </div>
+
+  <div id="main">
+    <div id="left-panel">
+      <h2>Saved Sequences</h2>
+      <div id="left-panel-hint">Click a sequence to open it (replaces what's on the timeline now). Use <b>Insert at playhead</b> to splice its keyframes into what you're currently building instead.</div>
+      <div id="sequence-list">
+        <div class="empty-msg">Loading…</div>
+      </div>
+    </div>
+
+    <div id="timeline-area">
+      <div id="empty-state">
+        Select a saved sequence on the left, or pose Ohbot with the<br>
+        panel on the right and click <strong>📸 Capture Keyframe</strong> to start a new one.
+      </div>
+      <div id="timeline-wrap" style="display:none">
+        <div class="playhead" id="playhead"></div>
+        <div id="ruler"></div>
+        <div id="track"></div>
+        <div id="total-duration"></div>
+        <div id="hint-bar">Click the ruler or track to move the playhead — new keyframes (and inserted sequences) land there. Press spacebar to play from there (the playhead travels along as it plays), press again to stop. Hover a clip to delete it.</div>
+      </div>
+    </div>
+
+    <div id="capture-panel">
+      <div class="panel-title">Pose &amp; Capture</div>
+
+      <div id="motors-scroll"><!-- motor sliders inserted by JS --></div>
+
+      <div id="speed-row">
+        <label>Move Speed</label>
+        <input type="range" id="speed-slider" min="1" max="10" step="1" value="5">
+        <span id="speed-value">5</span>
+      </div>
+
+      <div id="live-row">
+        <label>Live mode — send as you slide</label>
+        <label class="toggle">
+          <input type="checkbox" id="live-toggle">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+      <div id="led-section">
+        <div class="panel-subhead">Eye Colour (LED)</div>
+        <div class="led-row">
+          <span class="led-label r">R</span>
+          <input type="range" class="led-slider" id="led-r" min="0" max="10" step="0.5" value="0">
+          <span class="led-value" id="led-r-val">0</span>
+        </div>
+        <div class="led-row">
+          <span class="led-label g">G</span>
+          <input type="range" class="led-slider" id="led-g" min="0" max="10" step="0.5" value="0">
+          <span class="led-value" id="led-g-val">0</span>
+        </div>
+        <div class="led-row">
+          <span class="led-label b">B</span>
+          <input type="range" class="led-slider" id="led-b" min="0" max="10" step="0.5" value="0">
+          <span class="led-value" id="led-b-val">0</span>
+        </div>
+        <div id="led-preview"></div>
+        <div class="led-presets">
+          <div class="led-preset" style="background:#000"             title="Off"      onclick="setLedPreset(0,0,0)"></div>
+          <div class="led-preset" style="background:rgb(255,0,0)"     title="Red"      onclick="setLedPreset(10,0,0)"></div>
+          <div class="led-preset" style="background:rgb(0,255,0)"     title="Green"    onclick="setLedPreset(0,10,0)"></div>
+          <div class="led-preset" style="background:rgb(0,0,255)"     title="Blue"     onclick="setLedPreset(0,0,10)"></div>
+          <div class="led-preset" style="background:rgb(255,255,0)"   title="Yellow"   onclick="setLedPreset(10,10,0)"></div>
+          <div class="led-preset" style="background:rgb(0,255,255)"   title="Cyan"     onclick="setLedPreset(0,10,10)"></div>
+          <div class="led-preset" style="background:rgb(255,0,255)"   title="Purple"   onclick="setLedPreset(10,0,10)"></div>
+          <div class="led-preset" style="background:rgb(255,255,255)" title="White"    onclick="setLedPreset(10,10,10)"></div>
+        </div>
+      </div>
+
+      <div id="speech-section">
+        <div class="panel-subhead">Speech</div>
+        <textarea id="speech-textarea" placeholder="What Ohbot says at this keyframe…"></textarea>
+        <div id="speech-hint">Saved as text with the keyframe — not spoken aloud here (timeline playback doesn't do speech yet).</div>
+      </div>
+
+      <div id="capture-buttons">
+        <button class="ctl-btn" onclick="sendAllMotorsTL()">📡 Send Pose to Robot</button>
+        <button class="ctl-btn" onclick="resetRobotTL()">↩ Reset Pose</button>
+        <button class="ctl-btn primary" onclick="captureKeyframeTL()">📸 Capture Keyframe</button>
+      </div>
+
+      <div id="seq-save-block">
+        <input type="text" id="seq-name-input" placeholder="Sequence name…">
+        <input type="text" id="seq-desc-input" placeholder="Description (optional)">
+        <div id="seq-save-row">
+          <button class="ctl-btn" onclick="newSequenceTL()">＋ New</button>
+          <button class="ctl-btn primary" onclick="saveSequenceTL()">💾 Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+<script>
+// ── Speed → full-range (0-to-10) sweep time, measured by Michael 2026-07-09 ──
+// This is used ONLY to size clips visually on the timeline — it does not
+// change how a sequence actually plays back (that still uses each
+// keyframe's `preWait`, tuned by eye, same as the sequence-builder GUI).
+const SPEED_TABLE = { 1: 5.75, 2: 2.0, 5: 0.75, 7: 0.4, 10: 0.2 };
+const SPEED_KEYS  = Object.keys(SPEED_TABLE).map(Number).sort((a, b) => a - b);
+
+function fullRangeSeconds(speed) {
+  speed = Math.max(1, Math.min(10, Number(speed) || 5));
+  if (SPEED_TABLE[speed] !== undefined) return SPEED_TABLE[speed];
+  if (speed <= SPEED_KEYS[0]) return SPEED_TABLE[SPEED_KEYS[0]];
+  if (speed >= SPEED_KEYS[SPEED_KEYS.length - 1]) return SPEED_TABLE[SPEED_KEYS[SPEED_KEYS.length - 1]];
+  let lo = SPEED_KEYS[0], hi = SPEED_KEYS[SPEED_KEYS.length - 1];
+  for (let i = 0; i < SPEED_KEYS.length - 1; i++) {
+    if (speed >= SPEED_KEYS[i] && speed <= SPEED_KEYS[i + 1]) { lo = SPEED_KEYS[i]; hi = SPEED_KEYS[i + 1]; break; }
+  }
+  const t = (speed - lo) / (hi - lo);
+  return SPEED_TABLE[lo] + t * (SPEED_TABLE[hi] - SPEED_TABLE[lo]);
+}
+
+// If we don't yet know where a motor was sitting before this keyframe
+// (e.g. it's the first time that motor appears in the sequence), assume
+// a half-range move as a reasonable placeholder guess — this only ever
+// affects clip width on screen, never real playback.
+const UNKNOWN_START_DELTA = 5;
+const MIN_CLIP_SECONDS     = 0.3; // floor so LED/speech-only keyframes still show a visible block
+
+function estimateKeyframeSeconds(kf, runningPos) {
+  const motors = kf.motors || {};
+  const keys = Object.keys(motors);
+  let maxDelta = 0;
+  let any = false;
+  for (const k of keys) {
+    const val = Number(motors[k]);
+    const prev = runningPos[k];
+    const delta = (prev === undefined) ? UNKNOWN_START_DELTA : Math.abs(val - prev);
+    if (delta > maxDelta) maxDelta = delta;
+    any = true;
+    runningPos[k] = val;
+  }
+  if (!any) return MIN_CLIP_SECONDS;
+  const secs = (maxDelta / 10) * fullRangeSeconds(kf.speed ?? 5);
+  return Math.max(MIN_CLIP_SECONDS, secs);
+}
+
+// Real playback (timeline_server.py's /timeline/api/play, same as
+// gui_server.py's) fires a keyframe's move and starts counting down that
+// keyframe's pre-wait in the same instant — it does NOT wait for the move to
+// visibly finish first. So the next keyframe always fires exactly `preWait`
+// seconds later, regardless of how long the move estimate says the move
+// takes. This layout has to match that or the playhead (which is timed
+// against real elapsed seconds) drifts away from where the clip boxes are
+// drawn — confirmed as a bug 2026-07-10 (Michael measured real playback at
+// ~4.7s on a 5-keyframe/1s-preWait sequence, while the timeline was showing
+// ~6.2s, because durations were being stacked in FRONT of each pre-wait
+// instead of overlapping with the start of it).
+function computeLayout(keyframes) {
+  const runningPos = {};
+  let cursor = 0; // real elapsed seconds, advances only by pre-wait
+  const clips = [];
+  keyframes.forEach((kf, i) => {
+    const isLast       = i === keyframes.length - 1;
+    const moveEstimate = estimateKeyframeSeconds(kf, runningPos);
+    const preWait       = isLast ? 0 : Math.max(0, Number(kf.preWait ?? 0));
+
+    // The move-estimate box can't be wider than the pre-wait window it
+    // happens inside (except the last keyframe, which has no "next fire
+    // time" to be bounded by) — otherwise it'd visually spill into where
+    // the next keyframe actually starts.
+    const boxWidth = isLast ? moveEstimate : Math.min(moveEstimate, preWait);
+    const overflow = !isLast && moveEstimate > preWait; // move may not finish before the next keyframe fires
+
+    const clip = { kf, index: i, start: cursor, duration: boxWidth, overflow };
+    clips.push(clip);
+
+    if (!isLast) {
+      clip.waitAfter = preWait;                       // the real, configured pre-wait — shown as the gap's label
+      clip.gapWidth  = Math.max(0, preWait - boxWidth); // leftover width after the move box, for drawing the dashed gap
+      cursor += preWait;
+    }
+  });
+  return { clips, totalSeconds: cursor };
+}
+
+// ── Rendering ────────────────────────────────────────────────────────────
+const PIXELS_PER_SECOND = 140;
+
+// ── Playback state (Phase 2a) ─────────────────────────────────────────────
+// Starts as an empty, unsaved sequence (rather than null) so you can pose
+// Ohbot and capture your first keyframe before ever picking a saved file.
+let currentSequence     = { name: '', description: '', keyframes: [] };
+let currentClips        = [];     // computed layout for the loaded sequence
+let currentTotalSeconds = 0;      // real playback length — sum of pre-waits only
+let currentDrawEnd      = 0;      // currentTotalSeconds plus the last keyframe's move-estimate box (visual only — where the timeline drawing, and the playhead animation, actually end)
+let playheadSeconds     = 0;
+let isPlaying            = false;
+
+// Traveling-playhead animation (Phase 2a follow-up) — purely visual, driven
+// by wall-clock time against the same estimated durations used to size the
+// clips. Doesn't read anything back from the robot (there's no such signal),
+// so it can drift from the real motion slightly — same caveat as the clip
+// width estimates it's built from.
+let playbackAnimFrame        = null;
+let playbackAnimStartWallMs  = null;
+let playbackAnimStartSeconds = 0;
+
+function beginPlayheadAnimation() {
+  cancelPlayheadAnimation();
+  playbackAnimStartWallMs  = performance.now();
+  playbackAnimStartSeconds = playheadSeconds;
+
+  function tick() {
+    const elapsed = (performance.now() - playbackAnimStartWallMs) / 1000;
+    playheadSeconds = Math.min(playbackAnimStartSeconds + elapsed, currentDrawEnd);
+    renderPlayhead();
+    if (playheadSeconds < currentDrawEnd) {
+      playbackAnimFrame = requestAnimationFrame(tick);
+    } else {
+      // Reached the end of the last clip's own box on its own — this is the
+      // animation's natural finish line, a beat after real playback (the
+      // pre-wait chain) actually ends, representing that last move still
+      // playing out. Treat this as the authoritative "playback is done"
+      // signal rather than waiting on the next status poll, which usually
+      // detects the server-side finish earlier and would otherwise cut this
+      // cosmetic tail short.
+      playbackAnimFrame = null;
+      if (isPlaying) {
+        setPlayingUI(false);
+        toast('Playback finished');
+      }
+    }
+  }
+  playbackAnimFrame = requestAnimationFrame(tick);
+}
+
+function cancelPlayheadAnimation() {
+  if (playbackAnimFrame !== null) {
+    cancelAnimationFrame(playbackAnimFrame);
+    playbackAnimFrame = null;
+  }
+}
+
+function clipTooltip(kf, estSeconds, overflow) {
+  const parts = [];
+  const motors = kf.motors || {};
+  const motorStr = Object.entries(motors).map(([k, v]) => `${k}=${v}`).join(', ');
+  if (motorStr) parts.push(`Motors: ${motorStr}`);
+  if (kf.led) parts.push(`LED: R${kf.led.r ?? 0} G${kf.led.g ?? 0} B${kf.led.b ?? 0}`);
+  if (kf.text && kf.text.trim()) parts.push(`Speech: "${kf.text.trim()}"`);
+  parts.push(`Speed: ${kf.speed ?? 5}`);
+  parts.push(`Pre-wait: ${(kf.preWait ?? 0)}s`);
+  parts.push(`Estimated move time: ${estSeconds.toFixed(2)}s (visual estimate only)`);
+  if (overflow) parts.push('⚠ Estimated move may take longer than this pre-wait — consider raising the pre-wait.');
+  return parts.join('\n');
+}
+
+function renderTimeline(sequence, resetPlayhead = true) {
+  const keyframes = sequence.keyframes || [];
+  currentSequence = sequence;
+  if (resetPlayhead) playheadSeconds = 0;
+
+  document.getElementById('loaded-info').innerHTML =
+    `<b>${escapeHtml(sequence.name || 'Untitled')}</b> — ${keyframes.length} keyframe${keyframes.length === 1 ? '' : 's'}`;
+
+  const emptyState = document.getElementById('empty-state');
+  const wrap = document.getElementById('timeline-wrap');
+
+  if (!keyframes.length) {
+    emptyState.style.display = 'flex';
+    emptyState.textContent = 'This sequence has no keyframes yet.';
+    wrap.style.display = 'none';
+    currentClips = [];
+    currentTotalSeconds = 0;
+    currentDrawEnd = 0;
+    return;
+  }
+
+  const { clips, totalSeconds } = computeLayout(keyframes);
+  currentClips = clips;
+  // Real playback ends at totalSeconds (the last pre-wait counted down), but
+  // the drawn timeline — and the traveling playhead — run a bit further, out
+  // to the end of the last clip's own move-estimate box, since that box
+  // isn't bounded by a following pre-wait the way every earlier clip's is.
+  const lastClip = clips[clips.length - 1];
+  const drawEnd  = lastClip ? (lastClip.start + lastClip.duration) : totalSeconds;
+  currentTotalSeconds = totalSeconds;
+  currentDrawEnd      = drawEnd;
+
+  emptyState.style.display = 'none';
+  wrap.style.display = 'block';
+
+  const totalWidth = Math.max(400, drawEnd * PIXELS_PER_SECOND + 60);
+
+  // Ruler
+  const ruler = document.getElementById('ruler');
+  ruler.style.width = totalWidth + 'px';
+  ruler.innerHTML = '';
+  const rulerSeconds = Math.ceil(drawEnd) + 1;
+  for (let s = 0; s <= rulerSeconds; s++) {
+    const tick = document.createElement('div');
+    tick.className = 'ruler-tick';
+    tick.style.left = (s * PIXELS_PER_SECOND) + 'px';
+    tick.textContent = s + 's';
+    ruler.appendChild(tick);
+  }
+
+  // Track (clips + wait gaps)
+  const track = document.getElementById('track');
+  track.style.width = totalWidth + 'px';
+  track.innerHTML = '';
+
+  clips.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'clip' + (c.kf.isMacro ? ' is-macro' : '') + (c.overflow ? ' overflow' : '');
+    div.style.left  = (c.start * PIXELS_PER_SECOND) + 'px';
+    div.style.width = Math.max(28, c.duration * PIXELS_PER_SECOND) + 'px';
+    div.title = clipTooltip(c.kf, c.duration, c.overflow);
+
+    const led = c.kf.led;
+    const ledColor = led ? `rgb(${Math.round((led.r ?? 0) / 10 * 255)}, ${Math.round((led.g ?? 0) / 10 * 255)}, ${Math.round((led.b ?? 0) / 10 * 255)})` : null;
+
+    div.innerHTML = `
+      <div class="clip-delete" onclick="event.stopPropagation(); deleteClipTL(${c.index})" title="Delete this keyframe">✕</div>
+      <div class="clip-index">#${c.index + 1}</div>
+      <div class="clip-label">${escapeHtml(c.kf.label || ('Keyframe ' + (c.index + 1)))}</div>
+      <div class="clip-badges">
+        ${ledColor ? `<span class="led-dot" style="background:${ledColor}"></span>` : ''}
+        <span>⚡${c.kf.speed ?? 5}</span>
+        ${c.kf.text ? '<span>🗣</span>' : ''}
+        ${c.overflow ? '<span title="Estimated move may take longer than this keyframe\'s pre-wait">⚠</span>' : ''}
+      </div>
+    `;
+    track.appendChild(div);
+
+    if (c.gapWidth && c.gapWidth > 0.05) {
+      const gapStart = (c.start + c.duration) * PIXELS_PER_SECOND;
+      const gapWidth = c.gapWidth * PIXELS_PER_SECOND;
+      const gap = document.createElement('div');
+      gap.className = 'wait-gap';
+      gap.style.left = gapStart + 'px';
+      gap.style.width = gapWidth + 'px';
+      gap.innerHTML = `<span>⏳${c.waitAfter}s</span>`;
+      track.appendChild(gap);
+    }
+  });
+
+  document.getElementById('total-duration').textContent =
+    `Estimated real playback time: ~${totalSeconds.toFixed(1)}s — driven by each keyframe's pre-wait, same as actual playback. Clip-move boxes are shown for reference, capped to fit inside their pre-wait.`;
+
+  renderPlayhead();
+}
+
+function renderPlayhead() {
+  document.getElementById('playhead').style.left = (playheadSeconds * PIXELS_PER_SECOND) + 'px';
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ── Sequence list (left panel) ────────────────────────────────────────────
+async function loadSequenceList() {
+  const listEl = document.getElementById('sequence-list');
+  try {
+    const res = await fetch('/timeline/api/sequences');
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Unknown error');
+
+    if (!data.sequences.length) {
+      listEl.innerHTML = '<div class="empty-msg">No saved sequences found yet. Build one in the Sequence Builder first.</div>';
+      return;
+    }
+
+    listEl.innerHTML = '';
+    data.sequences.forEach(seq => {
+      const item = document.createElement('div');
+      item.className = 'seq-item';
+      item.innerHTML = `
+        <div class="seq-name">${escapeHtml(seq.name)}</div>
+        <div class="seq-meta">${seq.keyframe_count} keyframe${seq.keyframe_count === 1 ? '' : 's'}${seq.description ? ' — ' + escapeHtml(seq.description) : ''}</div>
+        <button class="seq-insert-btn" title="Insert this sequence's keyframes into the timeline you're building, at the playhead — doesn't replace what's already there">⬇ Insert at playhead</button>
+      `;
+      item.addEventListener('click', () => selectSequence(seq.filename, item));
+      item.querySelector('.seq-insert-btn').addEventListener('click', (e) => {
+        e.stopPropagation(); // don't also trigger the "load / replace" click above
+        insertSequenceAtPlayhead(seq.filename, seq.name);
+      });
+      listEl.appendChild(item);
+    });
+  } catch (e) {
+    listEl.innerHTML = `<div class="error-msg">Couldn't load sequence list: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function selectSequence(filename, itemEl) {
+  document.querySelectorAll('.seq-item').forEach(el => el.classList.remove('active'));
+  itemEl.classList.add('active');
+  try {
+    const res = await fetch('/timeline/api/sequence/' + encodeURIComponent(filename));
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Unknown error');
+    renderTimeline(data.sequence);
+    activeFilename = filename;
+    document.getElementById('seq-name-input').value = data.sequence.name || '';
+    document.getElementById('seq-desc-input').value = data.sequence.description || '';
+  } catch (e) {
+    document.getElementById('loaded-info').textContent = 'Error loading sequence: ' + e.message;
+  }
+}
+
+// ── Toast (small temporary message) ───────────────────────────────────────
+let toastTimer = null;
+function toast(message) {
+  const el = document.getElementById('toast');
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Playhead: click the ruler or track to move it ─────────────────────────
+// (Ignored while playing — the playhead is animating on its own then, and a
+// mid-playback click would just get overwritten by the next animation frame.)
+function handleTimelineClick(e) {
+  if (!currentClips.length || isPlaying) return;
+  const rect = this.getBoundingClientRect();
+  playheadSeconds = Math.max(0, (e.clientX - rect.left) / PIXELS_PER_SECOND);
+  renderPlayhead();
+}
+document.getElementById('ruler').addEventListener('click', handleTimelineClick);
+document.getElementById('track').addEventListener('click', handleTimelineClick);
+
+// ── Spacebar: play from the playhead, or stop if already playing ─────────
+document.addEventListener('keydown', (e) => {
+  if (e.code !== 'Space') return;
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return; // don't hijack typing
+  e.preventDefault();
+  togglePlayback();
+});
+
+function togglePlayback() {
+  if (isPlaying) {
+    stopPlayback();
+  } else {
+    startPlaybackFromPlayhead();
+  }
+}
+
+function startPlaybackFromPlayhead() {
+  if (!currentSequence || !currentClips.length) {
+    toast('Pick a sequence first.');
+    return;
+  }
+
+  // A keyframe "owns" real time from its own start up to the next keyframe's
+  // real start (start + duration is just the move-estimate box, which is
+  // often narrower than that — using it here would pick the wrong keyframe
+  // to resume from whenever the playhead sits in the "gap" portion).
+  let startIndex = currentClips.findIndex((c, i) => {
+    const nextStart = (i < currentClips.length - 1) ? currentClips[i + 1].start : (c.start + c.duration);
+    return nextStart > playheadSeconds;
+  });
+  if (startIndex === -1) {
+    // Playhead is at or past the end — restart from the beginning.
+    startIndex = 0;
+    playheadSeconds = 0;
+    renderPlayhead();
+  }
+
+  const keyframesToPlay = currentSequence.keyframes.slice(startIndex);
+
+  fetch('/timeline/api/play', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ keyframes: keyframesToPlay }),
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) {
+        toast('Couldn\'t start playback: ' + (data.error || 'unknown error'));
+        return;
+      }
+      setPlayingUI(true);
+      beginPlayheadAnimation();
+    })
+    .catch(e => toast('Couldn\'t reach the timeline server: ' + e.message));
+}
+
+function stopPlayback() {
+  fetch('/timeline/api/stop', { method: 'POST' })
+    .then(() => setPlayingUI(false))
+    .catch(() => setPlayingUI(false));
+}
+
+function setPlayingUI(playing) {
+  isPlaying = playing;
+  document.getElementById('playing-badge').style.display = playing ? 'inline' : 'none';
+  if (!playing) cancelPlayheadAnimation();
+}
+
+// ── Live capture — pose state (Phase 2b) ────────────────────────────────────
+// Mirrors gui/index.html's motor/LED slider logic, talking to
+// timeline_server.py's own /timeline/api/motor, /led, /reset, /motors/info
+// routes instead of gui_server.py's — this page owns its own hardware
+// connection, same as the rest of the timeline server.
+let MOTORS         = {};
+let currentMotors   = {};
+let currentLed      = { r: 0, g: 0, b: 0 };
+let activeFilename  = null;   // which saved file Save will overwrite, if any
+
+async function loadMotorInfoTL() {
+  try {
+    const res  = await fetch('/timeline/api/motors/info');
+    const data = await res.json();
+    if (data.success) {
+      MOTORS = data.motors;
+      for (const [id, m] of Object.entries(MOTORS)) {
+        currentMotors[m.key] = m.default;
+      }
+    }
+  } catch (e) {
+    console.error('Could not load motor info:', e);
+  }
+}
+
+function buildMotorSlidersTL() {
+  const container = document.getElementById('motors-scroll');
+  container.innerHTML = '';
+  const order = [0, 1, 2, 3, 6, 7, 4, 5]; // same preferred display order as index.html
+
+  for (const id of order) {
+    const m = MOTORS[id];
+    if (!m) continue;
+    const val = m.default;
+    const row = document.createElement('div');
+    row.className = 'motor-row';
+    row.innerHTML = `
+      <span class="motor-label">${m.label}</span>
+      <input type="range" class="motor-slider" id="motor-${m.key}"
+             data-motor="${id}" data-key="${m.key}"
+             min="0" max="10" step="0.5" value="${val}">
+      <span class="motor-value" id="val-${m.key}">${val}</span>
+    `;
+    container.appendChild(row);
+  }
+}
+
+function wireUpSlidersTL() {
+  document.getElementById('motors-scroll').addEventListener('input', e => {
+    const el = e.target;
+    if (!el.classList.contains('motor-slider')) return;
+    const key = el.dataset.key;
+    const val = parseFloat(el.value);
+    currentMotors[key] = val;
+    document.getElementById(`val-${key}`).textContent = val;
+    if (document.getElementById('live-toggle').checked) {
+      sendMotorTL(parseInt(el.dataset.motor), val);
+    }
+  });
+
+  document.getElementById('speed-slider').addEventListener('input', e => {
+    document.getElementById('speed-value').textContent = e.target.value;
+  });
+}
+
+function wireUpLedTL() {
+  ['r', 'g', 'b'].forEach(ch => {
+    document.getElementById(`led-${ch}`).addEventListener('input', e => {
+      const val = parseFloat(e.target.value);
+      currentLed[ch] = val;
+      document.getElementById(`led-${ch}-val`).textContent = val;
+      updateLedPreviewTL();
+      if (document.getElementById('live-toggle').checked) {
+        sendLedTL();
+      }
+    });
+  });
+}
+
+function updateLedPreviewTL() {
+  const r = Math.round(currentLed.r / 10 * 255);
+  const g = Math.round(currentLed.g / 10 * 255);
+  const b = Math.round(currentLed.b / 10 * 255);
+  document.getElementById('led-preview').style.background = `rgb(${r},${g},${b})`;
+}
+
+function setLedPreset(r, g, b) {
+  currentLed = { r, g, b };
+  document.getElementById('led-r').value = r;
+  document.getElementById('led-g').value = g;
+  document.getElementById('led-b').value = b;
+  document.getElementById('led-r-val').textContent = r;
+  document.getElementById('led-g-val').textContent = g;
+  document.getElementById('led-b-val').textContent = b;
+  updateLedPreviewTL();
+  sendLedTL();
+}
+
+async function sendMotorTL(motorId, position) {
+  const speed = parseInt(document.getElementById('speed-slider').value);
+  try {
+    await fetch('/timeline/api/motor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ motor: motorId, position, speed }),
+    });
+  } catch (e) { /* silent, same as Sequence Builder */ }
+}
+
+async function sendAllMotorsTL() {
+  const speed = parseInt(document.getElementById('speed-slider').value);
+  for (const [id, m] of Object.entries(MOTORS)) {
+    const pos = currentMotors[m.key];
+    if (pos === undefined) continue;
+    try {
+      await fetch('/timeline/api/motor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motor: parseInt(id), position: pos, speed }),
+      });
+    } catch (e) { /* silent */ }
+  }
+  await sendLedTL();
+  toast('Pose sent to robot');
+}
+
+async function sendLedTL() {
+  try {
+    await fetch('/timeline/api/led', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(currentLed),
+    });
+  } catch (e) { /* silent */ }
+}
+
+async function resetRobotTL() {
+  try {
+    await fetch('/timeline/api/reset', { method: 'POST' });
+    for (const [id, m] of Object.entries(MOTORS)) {
+      currentMotors[m.key] = m.default;
+      const slider = document.getElementById(`motor-${m.key}`);
+      const valEl  = document.getElementById(`val-${m.key}`);
+      if (slider) slider.value = m.default;
+      if (valEl)  valEl.textContent = m.default;
+    }
+    currentLed = { r: 0, g: 0, b: 0 };
+    ['r', 'g', 'b'].forEach(ch => {
+      document.getElementById(`led-${ch}`).value = 0;
+      document.getElementById(`led-${ch}-val`).textContent = 0;
+    });
+    updateLedPreviewTL();
+    toast('Robot reset to neutral pose');
+  } catch (e) {
+    toast('Reset failed: ' + e.message);
+  }
+}
+
+// ── Capture: build a keyframe from the current pose, insert it at the
+// playhead, and re-render (Phase 2b) ────────────────────────────────────────
+function findInsertIndexTL() {
+  if (!currentClips.length) return currentSequence.keyframes.length;
+  for (let i = 0; i < currentClips.length; i++) {
+    if (currentClips[i].start >= playheadSeconds) return i;
+  }
+  return currentClips.length;
+}
+
+function captureKeyframeTL() {
+  if (isPlaying) { toast('Stop playback before editing the timeline.'); return; }
+  const speechText = document.getElementById('speech-textarea').value.trim();
+  const moveSpeed   = parseInt(document.getElementById('speed-slider').value);
+
+  const kf = {
+    id:      Date.now(),   // only needs to be unique within this session
+    label:   '',
+    motors:  { ...currentMotors },
+    led:     { ...currentLed },
+    text:    speechText,
+    speed:   moveSpeed,
+    preWait: 1.0,
+  };
+
+  const insertIndex = findInsertIndexTL();
+  currentSequence.keyframes.splice(insertIndex, 0, kf);
+
+  renderTimeline(currentSequence, false); // false = keep the playhead where it is for now
+
+  // Advance the playhead to just after the clip we just inserted, so the
+  // next capture continues on from here — like a DAW's playhead moving
+  // forward after each take, instead of always landing on top of the last one.
+  // Real next-keyframe-fires time is start + pre-wait (NOT + the move-estimate
+  // box width — that box now sits inside the pre-wait, not stacked before it).
+  // If this capture landed at the very end (no keyframe after it yet), there's
+  // no pre-wait to use, so just clear past its own move-estimate box instead.
+  const insertedClip = currentClips[insertIndex];
+  if (insertedClip) {
+    playheadSeconds = insertedClip.waitAfter !== undefined
+      ? insertedClip.start + insertedClip.waitAfter
+      : insertedClip.start + insertedClip.duration;
+    renderPlayhead();
+  }
+
+  const speechNote = speechText ? ' + 🔊 speech' : '';
+  toast(`Keyframe captured (position ${insertIndex + 1} of ${currentSequence.keyframes.length})${speechNote}`);
+}
+
+function deleteClipTL(index) {
+  if (isPlaying) { toast('Stop playback before editing the timeline.'); return; }
+  if (!currentSequence.keyframes[index]) return;
+  currentSequence.keyframes.splice(index, 1);
+  renderTimeline(currentSequence, false);
+  toast('Keyframe deleted');
+}
+
+// ── Insert a saved sequence's keyframes into the timeline you're currently
+// building, at the playhead — without discarding what's already there. This
+// is a lighter-weight cousin of the "macro" idea from the original design
+// doc (Phase 3): it splices the keyframes in flat, as individual clips, with
+// no grouping/expand-collapse behavior — added 2026-07-10 because clicking a
+// saved sequence in the left panel only ever REPLACED the whole timeline,
+// which turned out to be the more painful gap than drag-to-retime.
+async function insertSequenceAtPlayhead(filename, displayName) {
+  if (isPlaying) { toast('Stop playback before editing the timeline.'); return; }
+  try {
+    const res = await fetch('/timeline/api/sequence/' + encodeURIComponent(filename));
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Unknown error');
+
+    const incoming = (data.sequence.keyframes || []).map((kf, i) => ({
+      ...kf,
+      id: Date.now() + i, // fresh ids so they can't collide with what's already on the timeline
+    }));
+
+    if (!incoming.length) {
+      toast(`"${displayName}" has no keyframes to insert.`);
+      return;
+    }
+
+    const insertIndex = findInsertIndexTL();
+    currentSequence.keyframes.splice(insertIndex, 0, ...incoming);
+
+    renderTimeline(currentSequence, false); // false = keep the playhead where it is for now
+
+    // Advance the playhead to just after everything we inserted — same
+    // "continue from here" behavior as capturing a single keyframe.
+    const lastInserted = currentClips[insertIndex + incoming.length - 1];
+    if (lastInserted) {
+      playheadSeconds = lastInserted.waitAfter !== undefined
+        ? lastInserted.start + lastInserted.waitAfter
+        : lastInserted.start + lastInserted.duration;
+      renderPlayhead();
+    }
+
+    toast(`Inserted ${incoming.length} keyframe${incoming.length === 1 ? '' : 's'} from "${displayName}"`);
+  } catch (e) {
+    toast('Insert failed: ' + e.message);
+  }
+}
+
+// ── New / Save — writes back to the same sequences/ folder the Sequence
+// Builder GUI reads from, so anything captured here shows up there too ─────
+function newSequenceTL() {
+  if (isPlaying) { toast('Stop playback before starting a new sequence.'); return; }
+  currentSequence = { name: '', description: '', keyframes: [] };
+  activeFilename  = null;
+  playheadSeconds = 0;
+  currentClips    = [];
+  document.getElementById('seq-name-input').value = '';
+  document.getElementById('seq-desc-input').value = '';
+  document.querySelectorAll('.seq-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('loaded-info').textContent = 'New sequence — not saved yet.';
+  document.getElementById('empty-state').style.display = 'flex';
+  document.getElementById('timeline-wrap').style.display = 'none';
+  toast('Started a new sequence');
+}
+
+async function saveSequenceTL() {
+  const name = document.getElementById('seq-name-input').value.trim();
+  if (!name) {
+    toast('Type a sequence name first.');
+    return;
+  }
+  if (!currentSequence.keyframes.length) {
+    toast('Nothing to save yet — capture a keyframe first.');
+    return;
+  }
+  const description = document.getElementById('seq-desc-input').value.trim();
+
+  try {
+    const res = await fetch('/timeline/api/sequence/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description, keyframes: currentSequence.keyframes }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Unknown error');
+
+    currentSequence.name        = name;
+    currentSequence.description = description;
+    activeFilename = data.filename;
+
+    const count = currentSequence.keyframes.length;
+    document.getElementById('loaded-info').innerHTML =
+      `<b>${escapeHtml(name)}</b> — ${count} keyframe${count === 1 ? '' : 's'} (saved)`;
+
+    toast(`Saved as ${data.filename}`);
+    await loadSequenceList();
+  } catch (e) {
+    toast('Save failed: ' + e.message);
+  }
+}
+
+// ── Status polling: connection dot + detect playback finishing on its own ─
+function pollStatus() {
+  fetch('/timeline/api/status')
+    .then(res => res.json())
+    .then(data => {
+      const dot  = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+      if (data.ohbot_connected) {
+        dot.classList.add('connected');
+        text.textContent = 'Robot connected';
+      } else {
+        dot.classList.remove('connected');
+        text.textContent = 'Robot not found (preview still works)';
+      }
+      // If playback finished on its own, drop the badge — but only as a
+      // fallback for when the traveling-playhead animation isn't running
+      // (e.g. it never started, or the sequence had zero real playback
+      // time). Normally the animation itself is what ends the PLAYING
+      // badge, once its cosmetic tail past the last keyframe finishes —
+      // the server usually reports "not playing" a beat before that tail
+      // is done, and cutting the badge here would truncate it early.
+      if (!data.playing && isPlaying && playbackAnimFrame === null) {
+        setPlayingUI(false);
+        toast('Playback finished');
+      }
+    })
+    .catch(() => {
+      document.getElementById('status-text').textContent = 'Timeline server unreachable';
+    });
+}
+setInterval(pollStatus, 600);
+pollStatus();
+
+loadSequenceList();
+
+(async () => {
+  await loadMotorInfoTL();
+  buildMotorSlidersTL();
+  wireUpSlidersTL();
+  wireUpLedTL();
+  updateLedPreviewTL();
+})();
+</script>
+</body>
+</html>

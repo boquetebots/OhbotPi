@@ -1,13 +1,23 @@
 #!/usr/bin/env python3
 """
-Ohbot GUI Server - Web interface for building and testing Ohbot sequences
+Ohbot GUI Server - Web interface for building and testing Ohbot sequences,
+AND the keyframe Timeline editor.
 Runs on port 5001 (separate from the main conversation server on port 5000)
+
+Merged 2026-07-13: this one program now serves both the Sequence Builder
+(/gui) and the Timeline (/timeline). They used to be two separate programs
+(gui_server.py + timeline_server.py) that couldn't run at the same time
+because each opened its own connection to the robot's USB cable. Now
+there's only one connection, so both pages are available together with
+no stopping/starting anything. See HANDOFF_timeline_merge_plan.md.
+timeline_server.py is no longer used — kept only as a reference copy.
 
 Usage:
     python3 gui_server.py
 
 Then open in your browser:
     http://<pi-ip-address>:5001/gui
+    http://<pi-ip-address>:5001/timeline
 
 IMPORTANT: Stop the main conversation bot before running this!
 Both this server and ohbot_conversation.py use the same serial cable.
@@ -204,6 +214,16 @@ def serve_gui():
     return send_from_directory(GUI_DIR, 'index.html')
 
 
+@app.route('/timeline')
+@app.route('/timeline/')
+def serve_timeline():
+    """Serve the Timeline page — merged in from timeline_server.py on
+    2026-07-13 so both tools run as one program, sharing one connection
+    to the robot instead of two separate programs fighting over the USB
+    cable. See HANDOFF_timeline_merge_plan.md."""
+    return send_from_directory(GUI_DIR, 'timeline.html')
+
+
 # ============================================================================
 # STATUS
 # ============================================================================
@@ -221,8 +241,10 @@ def gui_status():
     })
 
 @app.route('/gui/motors/info')
+@app.route('/timeline/api/motors/info')
 def motor_info():
-    """Returns motor names and defaults so the page can build itself"""
+    """Returns motor names and defaults so the page can build itself.
+    Shared by both the Sequence Builder and the Timeline page."""
     return jsonify({'success': True, 'motors': MOTORS})
 
 
@@ -231,6 +253,7 @@ def motor_info():
 # ============================================================================
 
 @app.route('/gui/motor', methods=['POST'])
+@app.route('/timeline/api/motor', methods=['POST'])
 def move_motor():
     """
     Move a single motor.
@@ -252,6 +275,7 @@ def move_motor():
 
 
 @app.route('/gui/led', methods=['POST'])
+@app.route('/timeline/api/led', methods=['POST'])
 def set_led():
     """
     Set LED eye colour.
@@ -273,6 +297,7 @@ def set_led():
 
 
 @app.route('/gui/reset', methods=['POST'])
+@app.route('/timeline/api/reset', methods=['POST'])
 def reset_robot():
     """Reset all motors to neutral and turn off LEDs"""
     try:
@@ -781,10 +806,107 @@ def play_sequence():
 
 
 @app.route('/gui/sequence/stop', methods=['POST'])
+@app.route('/timeline/api/stop', methods=['POST'])
 def stop_sequence():
-    """Stop the currently playing sequence"""
+    """Stop the currently playing sequence — shared by the Sequence
+    Builder's Stop button and the Timeline's spacebar/stop control,
+    since after the merge they both drive the same play_state."""
     play_state['stop_requested'] = True
     return jsonify({'success': True})
+
+
+# ============================================================================
+# TIMELINE PLAYBACK  (merged in from timeline_server.py, 2026-07-13)
+# ============================================================================
+# Timeline playback is deliberately its own function, not shared with
+# play_sequence() above — it does NOT play speech (a decision made when
+# the Timeline was first built; see HANDOFF_gui_timeline.md), while the
+# Sequence Builder's playback does. Both share the same play_state and
+# OHBOT_SERIAL_LOCK though, so starting playback from one page correctly
+# blocks the other from also trying to move the robot at the same time.
+
+@app.route('/timeline/api/status')
+def timeline_status():
+    """Connection + playback status, polled by the Timeline page to
+    update its connection dot and PLAYING badge."""
+    return jsonify({
+        'success':         True,
+        'ohbot_connected': ohbot.connected,
+        'playing':         play_state['playing'],
+    })
+
+
+@app.route('/timeline/api/play', methods=['POST'])
+def play_timeline_sequence():
+    """
+    Play a run of keyframes on the robot, starting wherever the Timeline
+    page's playhead was when spacebar was pressed.
+
+    Body: { "keyframes": [ {...}, {...}, ... ] }
+
+    Motors + LED only — no speech during Timeline playback (same as
+    before the merge). Use the Sequence Builder's Play button instead
+    if you want speech played back too.
+    """
+    try:
+        data      = request.get_json()
+        keyframes = data.get('keyframes', [])
+
+        if not keyframes:
+            return jsonify({'success': False, 'error': 'No keyframes to play'}), 400
+
+        if play_state['playing']:
+            return jsonify({'success': False, 'error': 'Already playing'}), 409
+
+        def _sleep_interruptible(seconds):
+            end = time.time() + seconds
+            while time.time() < end:
+                if play_state['stop_requested']:
+                    return
+                time.sleep(min(0.05, end - time.time()))
+
+        def run_timeline_playback():
+            play_state['playing']        = True
+            play_state['stop_requested'] = False
+            try:
+                for i, frame in enumerate(keyframes):
+                    if play_state['stop_requested']:
+                        break
+
+                    frame_speed = curve_speed(frame.get('speed', 5))
+                    motors      = frame.get('motors', {})
+                    for key, position in motors.items():
+                        motor_id = KEY_TO_ID.get(key)
+                        if motor_id is not None:
+                            with OHBOT_SERIAL_LOCK:
+                                ohbot.move(motor_id, float(position), frame_speed)
+
+                    if 'led' in frame:
+                        led = frame['led']
+                        with OHBOT_SERIAL_LOCK:
+                            ohbot.baseColour(
+                                float(led.get('r', 0)),
+                                float(led.get('g', 0)),
+                                float(led.get('b', 0)),
+                            )
+
+                    print(f"▶ Timeline keyframe {i + 1}/{len(keyframes)} — "
+                          f"speed {frame_speed} — {list(motors.keys())}")
+
+                    if i < len(keyframes) - 1:
+                        pre_wait = max(0.0, float(frame.get('preWait', 0)))
+                        if pre_wait > 0:
+                            _sleep_interruptible(pre_wait)
+            finally:
+                play_state['playing'] = False
+                print("✅ Timeline playback finished")
+
+        threading.Thread(target=run_timeline_playback, daemon=True).start()
+        return jsonify({'success': True, 'message': 'Playback started'})
+
+    except Exception as e:
+        print(f"❌ Timeline playback error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 # ============================================================================
@@ -798,6 +920,7 @@ def _safe_filename(name):
 
 
 @app.route('/gui/sequence/save', methods=['POST'])
+@app.route('/timeline/api/sequence/save', methods=['POST'])
 def save_sequence():
     """
     Save a sequence to disk.
@@ -832,6 +955,7 @@ def save_sequence():
 
 
 @app.route('/gui/sequence/list')
+@app.route('/timeline/api/sequences')
 def list_sequences():
     """Return a list of all saved sequences"""
     try:
@@ -860,6 +984,7 @@ def list_sequences():
 
 
 @app.route('/gui/sequence/<filename>')
+@app.route('/timeline/api/sequence/<filename>')
 def load_sequence(filename):
     """Load a single sequence by filename"""
     try:
@@ -903,13 +1028,18 @@ def delete_sequence(filename):
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("🎛️   Ohbot Sequence Builder — GUI Server")
+    print("🎛️   Ohbot Sequence Builder + Timeline — GUI Server")
     print("=" * 60)
     print()
     print("⚠️  IMPORTANT: Make sure the conversation bot is NOT running.")
     print("   Both use the same USB serial cable and will conflict.")
     print("   Stop it with:  sudo systemctl stop ohbot-conversation")
     print("   (or Ctrl-C in the tmux window where it's running)")
+    print()
+    print("   (Merged 2026-07-13: this one program now serves both the")
+    print("   Sequence Builder at /gui and the Timeline at /timeline —")
+    print("   timeline_server.py is no longer used. See")
+    print("   HANDOFF_timeline_merge_plan.md)")
     print()
 
     # Connect to Azure speech
@@ -929,8 +1059,9 @@ if __name__ == '__main__':
         print("   This is fine if you just want to design sequences.")
 
     print()
-    print("🌐 Open the GUI in your browser:")
-    print("   http://localhost:5001/gui        (from the Pi)")
+    print("🌐 Open in your browser:")
+    print("   http://localhost:5001/gui         (Sequence Builder, from the Pi)")
+    print("   http://localhost:5001/timeline    (Timeline, from the Pi)")
 
     # Try to show the Pi's IP address
     try:
@@ -939,9 +1070,11 @@ if __name__ == '__main__':
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
         s.close()
-        print(f"   http://{ip}:5001/gui          (from your laptop / Mac)")
+        print(f"   http://{ip}:5001/gui          (Sequence Builder, from your laptop / Mac)")
+        print(f"   http://{ip}:5001/timeline     (Timeline, from your laptop / Mac)")
     except Exception:
-        print("   http://<pi-ip>:5001/gui        (from your laptop / Mac)")
+        print("   http://<pi-ip>:5001/gui        (Sequence Builder, from your laptop / Mac)")
+        print("   http://<pi-ip>:5001/timeline   (Timeline, from your laptop / Mac)")
 
     print()
     print("Press Ctrl-C to stop.")
