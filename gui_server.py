@@ -487,11 +487,11 @@ def mic_listen():
 _EMOTIONS = {
     'happy': {
         'motors': {
-            'HEADNOD': 6, 'HEADTURN': 5, 'EYETURN': 5,
-            'LIDBLINK': 10, 'TOPLIP': 6, 'BOTTOMLIP': 7,
-            'EYETILT': 6, 'HEADROLL': 5,
+            'HEADNOD': 7.5, 'HEADTURN': 5, 'EYETURN': 5,
+            'LIDBLINK': 8, 'TOPLIP': 2.5, 'BOTTOMLIP': 9,
+            'EYETILT': 8, 'HEADROLL': 6,
         },
-        'led': {'r': 10, 'g': 7, 'b': 0},   # warm yellow-orange
+        'led': {'r': 10, 'g': 6.5, 'b': 0},   # warm yellow-orange
     },
     'sad': {
         'motors': {

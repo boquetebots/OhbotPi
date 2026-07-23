@@ -487,7 +487,7 @@
       <div id="live-row">
         <label>Live mode — send as you slide</label>
         <label class="toggle">
-          <input type="checkbox" id="live-toggle">
+          <input type="checkbox" id="live-toggle" checked>
           <span class="toggle-track"></span>
         </label>
       </div>
@@ -979,7 +979,7 @@ async function loadMotorInfoTL() {
 function buildMotorSlidersTL() {
   const container = document.getElementById('motors-scroll');
   container.innerHTML = '';
-  const order = [0, 1, 2, 3, 6, 7, 4, 5]; // same preferred display order as index.html
+  const order = [1, 0, 7, 2, 6, 3, 4, 5]; // same preferred display order as index.html: Head Turn, Head Nod, Head Roll, Eye Turn, Eye Tilt, Lid/Blink, Top Lip, Bottom Lip
 
   for (const id of order) {
     const m = MOTORS[id];

@@ -737,7 +737,7 @@
     <div id="live-row">
       <label>Live mode — send as you slide</label>
       <label class="toggle">
-        <input type="checkbox" id="live-toggle">
+        <input type="checkbox" id="live-toggle" checked>
         <span class="toggle-track"></span>
       </label>
     </div>
@@ -933,7 +933,7 @@ function buildMotorSliders() {
   const container = document.getElementById('motors-scroll');
   container.innerHTML = '';
 
-  const order = [0, 1, 2, 3, 6, 7, 4, 5]; // preferred display order
+  const order = [1, 0, 7, 2, 6, 3, 4, 5]; // preferred display order: Head Turn, Head Nod, Head Roll, Eye Turn, Eye Tilt, Lid/Blink, Top Lip, Bottom Lip
 
   for (const id of order) {
     const m   = MOTORS[id];
@@ -1686,7 +1686,7 @@ async function setPersonality(personality) {
 
 // Mirror of the server's _EMOTIONS so we can update sliders locally
 const EMOTION_POSES = {
-  happy:     { HEADNOD:6, HEADTURN:5, EYETURN:5, LIDBLINK:10, TOPLIP:6, BOTTOMLIP:7, EYETILT:6, HEADROLL:5, led:{r:10,g:7,b:0}  },
+  happy:     { HEADNOD:7.5, HEADTURN:5, EYETURN:5, LIDBLINK:8, TOPLIP:2.5, BOTTOMLIP:9, EYETILT:8, HEADROLL:6, led:{r:10,g:6.5,b:0}  },
   sad:       { HEADNOD:3, HEADTURN:5, EYETURN:5, LIDBLINK:4,  TOPLIP:4, BOTTOMLIP:4, EYETILT:3, HEADROLL:4, led:{r:0,g:0,b:10}  },
   surprised: { HEADNOD:8, HEADTURN:5, EYETURN:5, LIDBLINK:10, TOPLIP:7, BOTTOMLIP:8, EYETILT:7, HEADROLL:5, led:{r:10,g:10,b:10}},
   thinking:  { HEADNOD:6, HEADTURN:4, EYETURN:3, LIDBLINK:8,  TOPLIP:5, BOTTOMLIP:5, EYETILT:7, HEADROLL:3, led:{r:0,g:6,b:10}  },
