@@ -776,6 +776,16 @@ def _loadMotorDefs():
         motorPos[idx] = restPos[idx]
         motorRev[idx] = (child.get("Reverse") == "True")
 
+        # Catch a calibration file where a motor's Min and Max ended up the
+        # same (or backwards). That motor would silently refuse to move —
+        # every slider position computes to the same servo angle — which is
+        # confusing to debug from the GUI. Warn loudly instead.
+        if motorMaxs[idx] <= motorMins[idx]:
+            name = child.get("Name") or f"motor {idx}"
+            print(f"⚠️  Calibration problem: {name} has Min={child.get('Min')} "
+                  f"Max={child.get('Max')} — no range of travel, so this motor "
+                  f"will not move. Re-run the calibration page for {name}.")
+
 
 # ============================================================================
 # SERIAL COMMUNICATION

@@ -1,10 +1,10 @@
 <Motors>
-  <Motor Name="HeadTurn" Min="50" Max="910" Motor="1" Speed="40" Reverse="False" Acceleration="60" RestPosition="5" Avoid=""/>
-  <Motor Name="HeadNod" Min="520" Max="520" Motor="0" Speed="0" Reverse="False" Acceleration="60" RestPosition="5" Avoid=""/>
+  <Motor Name="HeadTurn" Min="70" Max="870" Motor="1" Speed="40" Reverse="False" Acceleration="60" RestPosition="5" Avoid=""/>
+  <Motor Name="HeadNod" Min="340" Max="700" Motor="0" Speed="0" Reverse="False" Acceleration="60" RestPosition="5" Avoid=""/>
   <Motor Name="EyeTurn" Min="250" Max="750" Motor="2" Speed="0" Reverse="False" Acceleration="0" RestPosition="5" Avoid=""/>
-  <Motor Name="EyeTilt" Min="10" Max="610" Motor="6" Speed="0" Reverse="False" Acceleration="30" RestPosition="5" Avoid=""/>
-  <Motor Name="TopLip" Min="160" Max="720" Motor="4" Speed="0" Reverse="True" Acceleration="0" RestPosition="5" Avoid="BottomLip"/>
-  <Motor Name="BottomLip" Min="150" Max="810" Motor="5" Speed="0" Reverse="True" Acceleration="0" RestPosition="5" Avoid="TopLip"/>
-  <Motor Name="LidBlink" Min="310" Max="750" Motor="3" Speed="0" Reverse="True" Acceleration="0" RestPosition="10" Avoid=""/>
-  <Motor Name="HeadRoll" Min="230" Max="770" Motor="7" Speed="80" Reverse="True" Acceleration="0" RestPosition="5" Avoid=""/>
+  <Motor Name="EyeTilt" Min="10" Max="510" Motor="6" Speed="0" Reverse="False" Acceleration="30" RestPosition="5" Avoid=""/>
+  <Motor Name="TopLip" Min="400" Max="740" Motor="4" Speed="0" Reverse="True" Acceleration="0" RestPosition="5" Avoid="BottomLip"/>
+  <Motor Name="BottomLip" Min="70" Max="610" Motor="5" Speed="0" Reverse="True" Acceleration="0" RestPosition="5" Avoid="TopLip"/>
+  <Motor Name="LidBlink" Min="340" Max="740" Motor="3" Speed="0" Reverse="True" Acceleration="0" RestPosition="10" Avoid=""/>
+  <Motor Name="HeadRoll" Min="280" Max="740" Motor="7" Speed="80" Reverse="True" Acceleration="0" RestPosition="5" Avoid=""/>
 </Motors>

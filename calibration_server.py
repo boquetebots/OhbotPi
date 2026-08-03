@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Ohbot Motor Calibration Server
-Runs on port 5002. A standalone tool for finding each motor's min, max,
+Ohbot/Yobot Motor Calibration Server
+Runs on port 5003. A standalone tool for finding each motor's min, max,
 and center travel positions and writing a fresh MotorDefinitionsv21.omd.
+Works on the Raspberry Pi and on macOS (uses the shared yobot_core library).
 
 WHY THIS IS ITS OWN PROGRAM, NOT PART OF gui_server.py:
 Calibration needs to send RAW absolute servo positions straight to the
@@ -20,7 +21,8 @@ Usage:
     python3 calibration_server.py
 
 Then open in your browser:
-    http://<pi-ip-address>:5002/calibration
+    http://localhost:5003/calibration        (on the computer running it)
+    http://<pi-ip-address>:5003/calibration  (from another device)
 """
 
 from flask import Flask, request, jsonify, send_from_directory
@@ -42,6 +44,11 @@ BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
 CALIB_DIR     = os.path.join(BASE_DIR, 'calibration')
 OHBOT_DATA    = os.path.join(BASE_DIR, 'ohbotData')
 MOTOR_DEF_FILE = os.path.join(OHBOT_DATA, 'MotorDefinitionsv21.omd')
+
+# Port 5003 — kept separate from the conversation brain server (5002) so the
+# two can never collide. Ports in use: 5000 launcher, 5001 GUI/Timeline,
+# 5002 chat brain, 5003 calibration.
+CALIBRATION_PORT = 5003
 
 SERIAL_LOCK = threading.Lock()
 
@@ -378,14 +385,37 @@ def save():
 @app.route('/calibration/stop_service', methods=['POST'])
 def stop_service():
     """
-    Stop the ohbot-calibration systemd service — this is what "Stop & Exit"
-    on the page calls. Runs after a short delay on a background thread so
-    the success response makes it back to the browser before the process
-    gets torn down.
+    Shut down this calibration server — what "Stop & Exit" on the page calls.
+
+    On the Pi it's normally run as the ohbot-calibration systemd service, so
+    ask systemd to stop it (otherwise systemd would just restart it). Anywhere
+    else — Mac, Windows, or run by hand on the Pi — simply exit this process.
+
+    Runs after a short delay on a background thread so the success response
+    makes it back to the browser before the process gets torn down.
     """
     def do_stop():
         time.sleep(1)
-        subprocess.run(['systemctl', '--user', 'stop', 'ohbot-calibration'])
+
+        if ohbot.IS_LINUX:
+            try:
+                result = subprocess.run(
+                    ['systemctl', '--user', 'is-active', 'ohbot-calibration'],
+                    capture_output=True, text=True, timeout=5)
+                if result.stdout.strip() == 'active':
+                    subprocess.run(['systemctl', '--user', 'stop',
+                                    'ohbot-calibration'], timeout=10)
+                    return
+            except Exception:
+                pass   # systemd not managing us — fall through to plain exit
+
+        # Not under systemd: release the robot and exit this process
+        try:
+            ohbot.reset()
+            ohbot.close()
+        except Exception:
+            pass
+        os._exit(0)
 
     threading.Thread(target=do_stop, daemon=True).start()
     return jsonify({'success': True})
@@ -417,7 +447,7 @@ if __name__ == '__main__':
 
     print()
     print("🌐 Open in your browser:")
-    print("   http://localhost:5002/calibration   (from the Pi)")
+    print(f"   http://localhost:{CALIBRATION_PORT}/calibration   (on this computer)")
 
     try:
         import socket
@@ -425,13 +455,13 @@ if __name__ == '__main__':
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
         s.close()
-        print(f"   http://{ip}:5002/calibration    (from your laptop / Mac)")
+        print(f"   http://{ip}:{CALIBRATION_PORT}/calibration    (from another device)")
     except Exception:
-        print("   http://<pi-ip>:5002/calibration   (from your laptop / Mac)")
+        pass
 
     print()
     print("Press Ctrl-C to stop.")
     print("=" * 60)
     print()
 
-    app.run(host='0.0.0.0', port=5002, debug=False)
+    app.run(host='0.0.0.0', port=CALIBRATION_PORT, debug=False)

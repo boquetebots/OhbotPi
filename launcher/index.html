@@ -250,7 +250,8 @@
     </button>
   </div>
 
-  <div class="actions">
+  <!-- Pi-only power buttons — hidden automatically on Mac/Windows -->
+  <div class="actions" id="power-actions">
     <button class="btn btn-restart"  onclick="confirmAction('restart')">↺ Restart Pi</button>
     <button class="btn btn-shutdown" onclick="confirmAction('shutdown')">⏻ Shut Down Pi</button>
   </div>
@@ -292,6 +293,21 @@
     clearInterval(pollTimer);
     pollTimer = setInterval(pollStatus, 2000);
   }
+
+  // ── Platform check ────────────────────────────────────────────────────────
+  // Shut Down / Restart only make sense on the Pi. On a Mac the launcher
+  // hides them — a web page shouldn't be able to switch off your computer.
+  async function applyPlatform() {
+    try {
+      const r = await fetch('/launcher/platform');
+      const d = await r.json();
+      if (!d.can_power) {
+        const row = document.getElementById('power-actions');
+        if (row) row.style.display = 'none';
+      }
+    } catch(e) { /* leave buttons as-is if the check fails */ }
+  }
+  applyPlatform();
 
   // ── Apply UI state ────────────────────────────────────────────────────────
   function applyStatus(status) {
@@ -389,7 +405,7 @@
   async function handleCalibClick() {
     if (currentStatus === 'calibration') {
       // Already running — just open it.
-      window.open(`http://${location.hostname}:5002/calibration`, '_blank');
+      window.open(`http://${location.hostname}:5003/calibration`, '_blank');
       return;
     }
     if (currentStatus !== 'idle') {
@@ -404,7 +420,7 @@
       const d = await r.json();
       if (d.success) {
         await pollStatus();
-        window.open(`http://${location.hostname}:5002/calibration`, '_blank');
+        window.open(`http://${location.hostname}:5003/calibration`, '_blank');
       } else {
         alert(d.error || 'Could not start calibration.');
       }
