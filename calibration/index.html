@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔧 Ohbot Motor Calibration</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #1a1a2e;
+    --panel:   #16213e;
+    --card:    #0f3460;
+    --accent:  #e94560;
+    --accent2: #0f9b8e;
+    --text:    #eaeaea;
+    --muted:   #8892a4;
+    --border:  #2a3a5c;
+    --success: #2ecc71;
+    --warn:    #f39c12;
+    --danger:  #e74c3c;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .wrap { max-width: 820px; margin: 0 auto; }
+
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .header .robot { font-size: 3rem; margin-bottom: 8px; }
+  .header h1 { font-size: 1.6rem; font-weight: 700; }
+  .header p  { color: var(--muted); margin-top: 6px; font-size: 0.85rem; }
+
+  #status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 8px 20px;
+    margin: 0 auto 24px auto;
+    font-size: 0.85rem;
+    max-width: 320px;
+  }
+  .status-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--success);
+  }
+  .status-dot.off { background: var(--danger); }
+
+  .top-actions {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .btn {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    color: #fff;
+  }
+  .btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-pose { background: var(--accent2); font-size: 0.95rem; padding: 12px 28px; }
+  .btn-mark { background: var(--card); border: 1px solid var(--border); font-size: 0.75rem; padding: 7px 12px; }
+  .btn-mark.done { background: var(--success); color: #06210f; }
+  .btn-clear { background: transparent; border: 1px solid var(--border); color: var(--muted); font-size: 0.7rem; padding: 5px 10px; }
+  .btn-save { background: var(--accent); font-size: 1rem; padding: 14px 32px; }
+  .btn-exit { background: transparent; border: 1px solid var(--danger); color: var(--danger); font-size: 0.85rem; padding: 10px 20px; }
+
+  .motor-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+
+  .motor-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .motor-head h3 { font-size: 1rem; }
+  .motor-readout { color: var(--muted); font-size: 0.8rem; }
+
+  input[type="range"].motor-slider {
+    width: 100%;
+    accent-color: var(--accent2);
+    margin-bottom: 12px;
+  }
+
+  .motor-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .captured {
+    display: flex;
+    gap: 18px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .captured span.val { color: var(--text); font-weight: 600; }
+
+  .reverse-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .banner {
+    display: none;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-size: 0.88rem;
+    line-height: 1.4;
+  }
+  .banner.success { display: block; background: #0d2e1a; border: 1px solid var(--success); color: var(--success); }
+  .banner.error   { display: block; background: #2e1414; border: 1px solid var(--danger);  color: var(--danger); }
+
+  .bottom-actions {
+    display: flex;
+    justify-content: center;
+    margin: 28px 0 12px 0;
+  }
+
+  .footer { margin-top: 20px; color: var(--muted); font-size: 0.75rem; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="header">
+    <div class="robot">🔧</div>
+    <h1>Ohbot Motor Calibration</h1>
+    <p>Find min, max, and center for each motor, then save a new motor definitions file.</p>
+  </div>
+
+  <div id="status-bar">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text">Checking connection…</span>
+  </div>
+
+  <div id="banner" class="banner"></div>
+
+  <div class="top-actions">
+    <button class="btn btn-pose" onclick="setDefaultPose()">
+      Set Default Pose (500 / lips 900·800, speed 2)
+    </button>
+  </div>
+
+  <div id="motor-list"></div>
+
+  <div class="bottom-actions">
+    <button class="btn btn-save" onclick="saveCalibration()">💾 Save Calibration</button>
+  </div>
+
+  <div class="bottom-actions">
+    <button class="btn btn-exit" onclick="stopAndExit()">⏹ Stop &amp; Exit</button>
+  </div>
+
+  <div class="footer">
+    All calibration moves happen at a fixed slow speed. Saving backs up the
+    current motor file as MD_old_N.omd before writing the new one.
+    "Stop &amp; Exit" shuts down the calibration service so the USB cable is
+    free again — do this once you've saved and are done, not between motors.
+  </div>
+
+</div>
+
+<script>
+const TOPLIP    = 4;
+const BOTTOMLIP = 5;
+
+let MOTORS = {};
+let MOTOR_ORDER = [];
+let calibState = {};
+let lastRaw = {};
+
+// ── Load initial state and build the page ──────────────────────────────────
+async function init() {
+  const r = await fetch('/calibration/status');
+  const d = await r.json();
+  MOTORS      = d.motors;
+  MOTOR_ORDER = d.order;
+  calibState  = d.state;
+  lastRaw     = d.last_raw;
+
+  setConnected(d.ohbot_connected);
+  buildMotorList();
+}
+
+function setConnected(connected) {
+  const dot  = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  if (connected) {
+    dot.classList.remove('off');
+    text.textContent = 'Ohbot connected';
+  } else {
+    dot.classList.add('off');
+    text.textContent = 'Ohbot not found — sliders will not move anything';
+  }
+}
+
+function centerButtonLabel(motorId) {
+  if (motorId == TOPLIP)    return 'Top Lip Neutral OK';
+  if (motorId == BOTTOMLIP) return 'Bottom Lip Near-Touching OK';
+  return 'Center OK';
+}
+
+function buildMotorList() {
+  const container = document.getElementById('motor-list');
+  container.innerHTML = '';
+
+  // Use the server's explicit display order, not Object.keys(MOTORS) —
+  // JS silently re-sorts integer-like object keys ("0","1",...) into
+  // ascending order regardless of arrival order, so it can't carry a
+  // custom order on its own.
+  const order = (MOTOR_ORDER && MOTOR_ORDER.length) ? MOTOR_ORDER : Object.keys(MOTORS).map(Number);
+
+  order.forEach(id => {
+    const m  = MOTORS[id];
+    const raw = lastRaw[id] ?? 500;
+    const sliderVal = Math.round(raw / 10);
+
+    const card = document.createElement('div');
+    card.className = 'motor-card';
+    card.id = `card-${id}`;
+    card.innerHTML = `
+      <div class="motor-head">
+        <h3>${m.label}</h3>
+        <span class="motor-readout" id="readout-${id}">raw ${raw} / 1000</span>
+      </div>
+      <input type="range" class="motor-slider" id="slider-${id}"
+             min="1" max="100" step="1" value="${sliderVal}"
+             oninput="onSlide(${id}, this.value)">
+      <div class="motor-buttons">
+        <button class="btn btn-mark" id="btn-center-${id}" onclick="mark(${id}, 'center')">${centerButtonLabel(id)}</button>
+        <button class="btn btn-mark" id="btn-min-${id}" onclick="mark(${id}, 'min')">Min OK</button>
+        <button class="btn btn-mark" id="btn-max-${id}" onclick="mark(${id}, 'max')">Max OK</button>
+        <button class="btn btn-clear" onclick="clearMotor(${id})">Clear</button>
+        <label class="reverse-row">
+          <input type="checkbox" id="reverse-${id}" onchange="setReverse(${id}, this.checked)">
+          Reversed?
+        </label>
+      </div>
+      <div class="captured" id="captured-${id}"></div>
+    `;
+    container.appendChild(card);
+
+    document.getElementById(`reverse-${id}`).checked = !!calibState[id].reverse;
+    refreshCaptured(id);
+  });
+}
+
+function refreshCaptured(id) {
+  const st = calibState[id];
+  const found = [st.found_a, st.found_b].filter(v => v !== null && v !== undefined);
+  const min = found.length ? Math.min(...found) : null;
+  const max = found.length === 2 ? Math.max(...found) : null;
+
+  document.getElementById(`captured-${id}`).innerHTML = `
+    Center: <span class="val">${st.center ?? '—'}</span>
+    Min: <span class="val">${min ?? (found.length ? found[0] + ' (need one more)' : '—')}</span>
+    Max: <span class="val">${found.length === 2 ? max : '—'}</span>
+  `;
+
+  document.getElementById(`btn-center-${id}`).classList.toggle('done', st.center !== null && st.center !== undefined);
+  document.getElementById(`btn-min-${id}`).classList.toggle('done', found.length >= 1);
+  document.getElementById(`btn-max-${id}`).classList.toggle('done', found.length >= 2);
+}
+
+// ── Slider drag → move motor (throttled) ────────────────────────────────────
+// Note: the slider's own value is always the LOGICAL position (1-100).
+// The readout shows the PHYSICAL raw position actually sent to the servo,
+// which the server returns — these differ whenever Reversed? is ticked.
+let slideTimers = {};
+function onSlide(id, sliderVal) {
+  const logicalRaw = parseInt(sliderVal) * 10;
+
+  clearTimeout(slideTimers[id]);
+  slideTimers[id] = setTimeout(() => {
+    fetch('/calibration/move', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({motor: id, raw: logicalRaw})
+    }).then(r => r.json()).then(d => {
+      if (d.success) {
+        lastRaw[id] = d.raw;
+        document.getElementById(`readout-${id}`).textContent = `raw ${d.raw} / 1000`;
+      }
+    });
+  }, 60);
+}
+
+// ── Mark min/max/center ─────────────────────────────────────────────────────
+async function mark(id, kind) {
+  const r = await fetch('/calibration/mark', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({motor: id, kind: kind})
+  });
+  const d = await r.json();
+  if (d.success) {
+    calibState[id] = d.state;
+    refreshCaptured(id);
+  } else {
+    showBanner('error', d.error || 'Could not record that value.');
+  }
+}
+
+async function clearMotor(id) {
+  const r = await fetch('/calibration/clear', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({motor: id})
+  });
+  const d = await r.json();
+  if (d.success) {
+    calibState[id] = d.state;
+    refreshCaptured(id);
+  }
+}
+
+async function setReverse(id, checked) {
+  const r = await fetch('/calibration/reverse', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({motor: id, reverse: checked})
+  });
+  const d = await r.json();
+  calibState[id].reverse = checked;
+  if (d.success) {
+    // The motor was just re-sent to its last slider position under the
+    // new setting — update the readout to match what actually happened.
+    lastRaw[id] = d.raw;
+    document.getElementById(`readout-${id}`).textContent = `raw ${d.raw} / 1000`;
+  }
+}
+
+// ── Default pose button ──────────────────────────────────────────────────────
+async function setDefaultPose() {
+  const r = await fetch('/calibration/pose_default', {method: 'POST'});
+  const d = await r.json();
+  if (d.success) {
+    // d.targets is the LOGICAL position each motor was asked for (what the
+    // slider should show); d.last_raw is the PHYSICAL position actually
+    // sent (what the readout shows) — they differ when Reversed? is ticked.
+    Object.keys(d.targets).forEach(id => {
+      lastRaw[id] = d.last_raw[id];
+      const slider = document.getElementById(`slider-${id}`);
+      if (slider) slider.value = Math.round(d.targets[id] / 10);
+      const readout = document.getElementById(`readout-${id}`);
+      if (readout) readout.textContent = `raw ${d.last_raw[id]} / 1000`;
+    });
+  } else {
+    showBanner('error', d.error || 'Could not set default pose.');
+  }
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────
+async function saveCalibration() {
+  if (!confirm('Save calibration? This backs up the current motor file and writes a new one.')) return;
+  const r = await fetch('/calibration/save', {method: 'POST'});
+  const d = await r.json();
+  if (d.success) {
+    showBanner('success', `Saved! Old file backed up as ${d.backup}. New MotorDefinitionsv21.omd written.`);
+  } else {
+    showBanner('error', d.error || 'Save failed.');
+  }
+}
+
+// ── Stop & Exit ───────────────────────────────────────────────────────────
+async function stopAndExit() {
+  if (!confirm('Stop the calibration service and close this page? Make sure you\'ve saved first — this frees up the USB cable for the Greeter or the GUI.')) return;
+
+  await fetch('/calibration/stop_service', {method: 'POST'});
+
+  document.getElementById('motor-list').style.display = 'none';
+  document.querySelectorAll('.top-actions, .bottom-actions').forEach(el => el.style.display = 'none');
+  showBanner('success', 'Calibration service stopped. You can close this tab now.');
+
+  // window.close() only works on tabs opened by script (which is how the
+  // Launcher opens this page) — if it's a no-op, the message above is the
+  // fallback.
+  setTimeout(() => window.close(), 1500);
+}
+
+function showBanner(kind, msg) {
+  const b = document.getElementById('banner');
+  b.className = `banner ${kind}`;
+  b.textContent = msg;
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+init();
+</script>
+</body>
+</html>

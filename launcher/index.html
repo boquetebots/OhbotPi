@@ -167,6 +167,37 @@
   /* ── Footer ── */
   .footer { margin-top: 40px; color: var(--muted); font-size: 0.75rem; text-align: center; }
 
+  /* ── Small calibration link ── */
+  .calib-link-wrap {
+    text-align: center;
+    margin-top: 28px;
+  }
+  #calib-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  #calib-link:hover:not(.disabled) {
+    color: var(--text);
+    border-color: var(--accent2);
+  }
+  #calib-link.active {
+    color: var(--success);
+    border-color: var(--success);
+  }
+  #calib-link.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
   @media (max-width: 500px) {
     .cards { grid-template-columns: 1fr; }
   }
@@ -224,6 +255,13 @@
     <button class="btn btn-shutdown" onclick="confirmAction('shutdown')">⏻ Shut Down Pi</button>
   </div>
 
+  <!-- Small motor calibration link -->
+  <div class="calib-link-wrap">
+    <a href="#" id="calib-link" onclick="handleCalibClick(); return false;" title="Stop the current service first">
+      🔧 Motor Calibration
+    </a>
+  </div>
+
 </div>
 
 <!-- Shutdown/restart countdown screen -->
@@ -265,10 +303,12 @@
     const btnOpen  = document.getElementById('btn-open');
     const cardG    = document.getElementById('card-greeter');
     const cardGUI  = document.getElementById('card-gui');
+    const calibLink = document.getElementById('calib-link');
 
     // Reset card states
     cardG.classList.remove('active', 'disabled');
     cardGUI.classList.remove('active', 'disabled');
+    calibLink.classList.remove('active', 'disabled');
 
     if (status === 'idle') {
       bar.classList.remove('visible');
@@ -280,6 +320,7 @@
       barText.textContent  = 'Greeter Bot is running';
       cardG.classList.add('active');
       cardGUI.classList.add('disabled');
+      calibLink.classList.add('disabled');
       btnStop.style.display = 'inline-block';
       btnOpen.style.display = 'none';
 
@@ -288,8 +329,18 @@
       barText.textContent  = 'Sequence Builder is running';
       cardGUI.classList.add('active');
       cardG.classList.add('disabled');
+      calibLink.classList.add('disabled');
       btnStop.style.display  = 'inline-block';
       btnOpen.style.display  = 'inline-block';
+
+    } else if (status === 'calibration') {
+      bar.classList.add('visible');
+      barText.textContent  = 'Motor Calibration is running';
+      cardG.classList.add('disabled');
+      cardGUI.classList.add('disabled');
+      calibLink.classList.add('active');
+      btnStop.style.display = 'inline-block';
+      btnOpen.style.display = 'none';
     }
   }
 
@@ -332,6 +383,34 @@
   // ── Open GUI in new tab ───────────────────────────────────────────────────
   function openGui() {
     window.open(`http://${location.hostname}:5001/gui`, '_blank');
+  }
+
+  // ── Motor Calibration link ─────────────────────────────────────────────────
+  async function handleCalibClick() {
+    if (currentStatus === 'calibration') {
+      // Already running — just open it.
+      window.open(`http://${location.hostname}:5002/calibration`, '_blank');
+      return;
+    }
+    if (currentStatus !== 'idle') {
+      // Link should be disabled in this state, but guard here too.
+      return;
+    }
+
+    const link = document.getElementById('calib-link');
+    link.style.opacity = '0.6';
+    try {
+      const r = await fetch('/launcher/start/calibration', { method: 'POST' });
+      const d = await r.json();
+      if (d.success) {
+        await pollStatus();
+        window.open(`http://${location.hostname}:5002/calibration`, '_blank');
+      } else {
+        alert(d.error || 'Could not start calibration.');
+      }
+    } finally {
+      link.style.opacity = '';
+    }
   }
 
   // ── Shutdown / Restart ────────────────────────────────────────────────────

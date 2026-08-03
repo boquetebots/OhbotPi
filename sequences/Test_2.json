@@ -1,0 +1,161 @@
+{
+  "name": "Test 2",
+  "description": "",
+  "created": "2026-07-13 08:10",
+  "keyframes": [
+    {
+      "id": 1,
+      "label": "",
+      "motors": {
+        "HEADNOD": 6,
+        "HEADTURN": 5,
+        "EYETURN": 5,
+        "LIDBLINK": 10,
+        "TOPLIP": 6,
+        "BOTTOMLIP": 7,
+        "EYETILT": 6,
+        "HEADROLL": 5
+      },
+      "led": {
+        "r": 10,
+        "g": 7,
+        "b": 0
+      },
+      "text": "",
+      "speed": 5,
+      "preWait": 1
+    },
+    {
+      "id": 2,
+      "label": "",
+      "motors": {
+        "HEADNOD": 3,
+        "HEADTURN": 5,
+        "EYETURN": 5,
+        "LIDBLINK": 4,
+        "TOPLIP": 4,
+        "BOTTOMLIP": 4,
+        "EYETILT": 3,
+        "HEADROLL": 4
+      },
+      "led": {
+        "r": 0,
+        "g": 0,
+        "b": 10
+      },
+      "text": "",
+      "speed": 5,
+      "preWait": 1
+    },
+    {
+      "id": 3,
+      "label": "",
+      "motors": {
+        "HEADNOD": 8,
+        "HEADTURN": 5,
+        "EYETURN": 5,
+        "LIDBLINK": 10,
+        "TOPLIP": 7,
+        "BOTTOMLIP": 8,
+        "EYETILT": 7,
+        "HEADROLL": 5
+      },
+      "led": {
+        "r": 10,
+        "g": 10,
+        "b": 10
+      },
+      "text": "",
+      "speed": 5,
+      "preWait": 1
+    },
+    {
+      "id": 4,
+      "label": "",
+      "motors": {
+        "HEADNOD": 6,
+        "HEADTURN": 4,
+        "EYETURN": 3,
+        "LIDBLINK": 8,
+        "TOPLIP": 5,
+        "BOTTOMLIP": 5,
+        "EYETILT": 7,
+        "HEADROLL": 3
+      },
+      "led": {
+        "r": 0,
+        "g": 6,
+        "b": 10
+      },
+      "text": "",
+      "speed": 5,
+      "preWait": 1
+    },
+    {
+      "id": 5,
+      "label": "",
+      "motors": {
+        "HEADNOD": 2,
+        "HEADTURN": 5,
+        "EYETURN": 5,
+        "LIDBLINK": 0,
+        "TOPLIP": 6,
+        "BOTTOMLIP": 6,
+        "EYETILT": 5,
+        "HEADROLL": 4
+      },
+      "led": {
+        "r": 0,
+        "g": 0,
+        "b": 2
+      },
+      "text": "",
+      "speed": 5,
+      "preWait": 1
+    },
+    {
+      "id": 6,
+      "label": "",
+      "motors": {
+        "HEADNOD": 5,
+        "HEADTURN": 5,
+        "EYETURN": 5,
+        "LIDBLINK": 10,
+        "TOPLIP": 5,
+        "BOTTOMLIP": 5,
+        "EYETILT": 5,
+        "HEADROLL": 5
+      },
+      "led": {
+        "r": 0,
+        "g": 0,
+        "b": 0
+      },
+      "text": "",
+      "speed": 5,
+      "preWait": 1
+    },
+    {
+      "id": 7,
+      "label": "",
+      "motors": {
+        "HEADNOD": 8,
+        "HEADTURN": 8,
+        "EYETURN": 2,
+        "LIDBLINK": 10,
+        "TOPLIP": 8,
+        "BOTTOMLIP": 8,
+        "EYETILT": 7.5,
+        "HEADROLL": 5
+      },
+      "led": {
+        "r": 0,
+        "g": 10,
+        "b": 0
+      },
+      "text": "",
+      "speed": 5,
+      "preWait": 1
+    }
+  ]
+}

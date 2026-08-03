@@ -23,8 +23,9 @@ BASE_DIR     = os.path.dirname(os.path.abspath(__file__))
 LAUNCHER_DIR = os.path.join(BASE_DIR, 'launcher')
 
 # Systemd service names
-GREETER_SERVICES = ['ohbot-server', 'ohbot-conversation']
-GUI_SERVICE      = 'ohbot-gui'
+GREETER_SERVICES   = ['ohbot-server', 'ohbot-conversation']
+GUI_SERVICE        = 'ohbot-gui'
+CALIBRATION_SERVICE = 'ohbot-calibration'
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
@@ -45,14 +46,17 @@ def _service_active(name):
 def _get_status():
     """
     Returns the current state:
-      'greeter' — greeter bot is running
-      'gui'     — sequence builder GUI is running
-      'idle'    — nothing is running
+      'greeter'     — greeter bot is running
+      'gui'         — sequence builder GUI is running
+      'calibration' — motor calibration page is running
+      'idle'        — nothing is running
     """
     if any(_service_active(s) for s in GREETER_SERVICES):
         return 'greeter'
     if _service_active(GUI_SERVICE):
         return 'gui'
+    if _service_active(CALIBRATION_SERVICE):
+        return 'calibration'
     return 'idle'
 
 
@@ -95,12 +99,34 @@ def start_gui():
     return jsonify({'success': True, 'status': 'gui'})
 
 
+@app.route('/launcher/start/calibration', methods=['POST'])
+def start_calibration():
+    """
+    Start the motor calibration service.
+
+    Unlike Greeter/GUI, this does NOT auto-stop whatever else is running.
+    Calibration is a deliberate, careful step (finding servo limits), so
+    the user is expected to stop the current service first via the Stop
+    button — this route just refuses to start if anything else is active.
+    """
+    current = _get_status()
+    if current not in ('idle', 'calibration'):
+        return jsonify({
+            'success': False,
+            'error': f'Stop the current service first (currently running: {current}).'
+        }), 400
+
+    _run(['systemctl', '--user', 'start', CALIBRATION_SERVICE])
+    return jsonify({'success': True, 'status': 'calibration'})
+
+
 @app.route('/launcher/stop', methods=['POST'])
 def stop_all():
     """Stop whichever service is currently running."""
     for s in GREETER_SERVICES:
         _run(['systemctl', '--user', 'stop', s])
     _run(['systemctl', '--user', 'stop', GUI_SERVICE])
+    _run(['systemctl', '--user', 'stop', CALIBRATION_SERVICE])
     return jsonify({'success': True, 'status': 'idle'})
 
 

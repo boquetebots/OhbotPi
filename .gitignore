@@ -15,6 +15,11 @@
 *.pyc
 __pycache__/
 
+# --- SAMBA leftovers + cleanup quarantine ---
+.smbdelete*
+**/.smbdelete*
+_trash_cleanup/
+
 # --- Python virtual environment ---
 venv/
 .venv/

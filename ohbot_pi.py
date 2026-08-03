@@ -512,9 +512,12 @@ def baseColour(r, g, b):
     g = int((255 / 10) * g)
     b = int((255 / 10) * b)
     
-    # Swap R and G for Pi GRB LEDs
-    msg1 = f"l00,{g},{r},{b}\n"
-    msg2 = f"l01,{g},{r},{b}\n"
+    # Swap R and G for Pi GRB LEDs -- disabled 2026-07-23, Yobot's LEDs
+    # are wired normally and don't need this (colors were backwards)
+    # msg1 = f"l00,{g},{r},{b}\n"
+    # msg2 = f"l01,{g},{r},{b}\n"
+    msg1 = f"l00,{r},{g},{b}\n"
+    msg2 = f"l01,{r},{g},{b}\n"
     
     _serwrite(msg1)
     _serwrite(msg2)
@@ -622,7 +625,7 @@ def _loadMotorDefs():
         idx = int(child.get("Motor"))
         motorMins[idx] = int(int(child.get("Min")) / 1000 * 180)
         motorMaxs[idx] = int(int(child.get("Max")) / 1000 * 180)
-        restPos[idx] = int(child.get("RestPosition"))
+        restPos[idx] = float(child.get("RestPosition"))
         motorPos[idx] = restPos[idx]
         motorRev[idx] = (child.get("Reverse") == "True")
 

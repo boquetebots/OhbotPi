@@ -1,0 +1,73 @@
+{
+  "name": "happy-sad",
+  "description": "happy and sad ping pong",
+  "created": "2026-07-09 18:39",
+  "keyframes": [
+    {
+      "id": 1,
+      "label": "",
+      "led": {
+        "b": 0,
+        "g": 7,
+        "r": 10
+      },
+      "motors": {
+        "BOTTOMLIP": 7,
+        "EYETILT": 6,
+        "EYETURN": 5,
+        "HEADNOD": 6,
+        "HEADROLL": 5,
+        "HEADTURN": 5,
+        "LIDBLINK": 10,
+        "TOPLIP": 6
+      },
+      "preWait": 1,
+      "speed": 5,
+      "text": ""
+    },
+    {
+      "id": 2,
+      "label": "",
+      "led": {
+        "b": 10,
+        "g": 0,
+        "r": 0
+      },
+      "motors": {
+        "BOTTOMLIP": 4,
+        "EYETILT": 3,
+        "EYETURN": 5,
+        "HEADNOD": 3,
+        "HEADROLL": 4,
+        "HEADTURN": 5,
+        "LIDBLINK": 4,
+        "TOPLIP": 4
+      },
+      "preWait": 1,
+      "speed": 5,
+      "text": ""
+    },
+    {
+      "id": 3,
+      "label": "",
+      "led": {
+        "b": 0,
+        "g": 7,
+        "r": 10
+      },
+      "motors": {
+        "BOTTOMLIP": 7,
+        "EYETILT": 6,
+        "EYETURN": 5,
+        "HEADNOD": 6,
+        "HEADROLL": 5,
+        "HEADTURN": 5,
+        "LIDBLINK": 10,
+        "TOPLIP": 6
+      },
+      "preWait": 1,
+      "speed": 5,
+      "text": ""
+    }
+  ]
+}

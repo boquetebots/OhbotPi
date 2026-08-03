@@ -109,15 +109,36 @@ class VisemeMapper:
         21: (6, 6.5),   # w, r
     }
 
+    # Neutral/closed position for both lips (see calibration note above).
+    NEUTRAL = 5.0
+
+    # How much bigger to make lip-sync movement than the base VISEME_MAP
+    # values above. 1.0 = no change, 1.6 = 60% more exaggerated.
+    # This scales each viseme's distance from NEUTRAL, so closed-mouth
+    # sounds (silence, m/b/p, etc.) still land exactly on NEUTRAL — only
+    # the open-mouth shapes get bigger. Raise/lower this one number to
+    # tune how exaggerated lip-sync looks; results are capped to the
+    # motors' 0-10 range so nothing can overshoot.
+    EXAGGERATION = 1.6
+
     @classmethod
     def get_lip_positions(cls, viseme_id: int) -> Tuple[float, float]:
         """
-        Get (top_lip, bottom_lip) positions for a viseme.
+        Get (top_lip, bottom_lip) positions for a viseme, scaled by
+        EXAGGERATION and clamped to the motors' 0-10 range.
 
         Returns:
             Tuple of (top_lip_pos, bottom_lip_pos) in 0-10 range
         """
-        return cls.VISEME_MAP.get(viseme_id, (5, 5))
+        top, bottom = cls.VISEME_MAP.get(viseme_id, (5, 5))
+
+        top = cls.NEUTRAL + (top - cls.NEUTRAL) * cls.EXAGGERATION
+        bottom = cls.NEUTRAL + (bottom - cls.NEUTRAL) * cls.EXAGGERATION
+
+        top = max(0.0, min(10.0, top))
+        bottom = max(0.0, min(10.0, bottom))
+
+        return (top, bottom)
 
 
 # ============================================================================
@@ -476,9 +497,16 @@ class AsyncOhbotController:
         await self.move(ohbot.BOTTOMLIP, 5, 10, avoid=False)
 
     async def _play_audio_async(self, audio_file: str):
-        """Play audio file asynchronously using aplay"""
+        """Play audio file asynchronously using pw-play (PipeWire).
+
+        Switched from `aplay` because on this Pi's PipeWire setup, aplay's
+        direct ALSA "default" device open fails silently/oddly (error 524)
+        even when PipeWire itself plays audio fine via pw-play. Using
+        pw-play routes through PipeWire properly, honoring whatever sink
+        is set as default (set with `wpctl set-default <id>`).
+        """
         process = await asyncio.create_subprocess_exec(
-            'aplay', '-D', 'plug:default', audio_file,
+            'pw-play', audio_file,
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL
         )
