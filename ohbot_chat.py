@@ -64,7 +64,8 @@ CHIME_FILE  = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "thinking_chime.wav")
 PHRASES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "phrases")
-AUDIO_DEVICE = "plug:default"   # same device as speech
+# Playback goes through yobot_core's cross-platform player (via the ohbot
+# module) — pw-play/aplay on the Pi, afplay on Mac, winsound on Windows.
 
 # ── LED colour constants ──────────────────────────────────────────────────────
 COLOR_GREEN   = (0, 10, 0)    # Ready / idle
@@ -350,11 +351,7 @@ class AsyncOhbotConversation:
                 return
 
             while not stop_event.is_set():
-                proc = await asyncio.create_subprocess_exec(
-                    'aplay', '-D', AUDIO_DEVICE, CHIME_FILE,
-                    stdout=asyncio.subprocess.DEVNULL,
-                    stderr=asyncio.subprocess.DEVNULL
-                )
+                proc = await ohbot.start_wav(CHIME_FILE)
                 done, _ = await asyncio.wait(
                     [
                         asyncio.create_task(proc.wait()),
@@ -786,6 +783,55 @@ class GPIOWakeButton:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# KEYBOARD WAKE (Mac / Windows / any computer without GPIO)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class KeyboardWake:
+    """
+    Wake the bot by pressing Enter in the terminal.
+
+    Used on Mac/Windows where there is no GPIO wake button. Without this,
+    the bot would fall asleep after the first session with no way to wake
+    it (voice wake is normally disabled to save Azure costs).
+
+    One background thread reads the keyboard for the whole life of the
+    program; pressing Enter only wakes the bot while it's actually
+    sleeping ("armed"), and is ignored the rest of the time.
+    """
+
+    def __init__(self):
+        self._armed_event: Optional[asyncio.Event] = None
+        self._loop = None
+        self._started = False
+        self.available = True
+
+    def arm(self, wake_event: asyncio.Event, loop: asyncio.AbstractEventLoop):
+        self._armed_event = wake_event
+        self._loop = loop
+        if not self._started:
+            import threading
+            thread = threading.Thread(target=self._reader, daemon=True)
+            thread.start()
+            self._started = True
+
+    def _reader(self):
+        while True:
+            try:
+                input()   # blocks until Enter is pressed
+            except (EOFError, OSError):
+                # No usable keyboard (e.g. running as a background service)
+                self.available = False
+                return
+            ev, lp = self._armed_event, self._loop
+            if ev and lp:
+                print("  [keyboard] Enter pressed — waking up")
+                lp.call_soon_threadsafe(ev.set)
+
+    def disarm(self):
+        self._armed_event = None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # MAIN LOOP
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -825,9 +871,17 @@ async def main():
 
     wake_button = GPIOWakeButton(pin=GPIO_WAKE_PIN)
 
+    # On computers without GPIO (Mac/Windows), wake with the Enter key instead
+    keyboard_wake = None
+    if not wake_button.available:
+        keyboard_wake = KeyboardWake()
+
     print("\n" + "=" * 60)
     print("  Starting — press Ctrl-C to exit")
-    print("  Press GPIO button (pin 17) to wake Ohbot from sleep")
+    if wake_button.available:
+        print("  Press GPIO button (pin 17) to wake from sleep")
+    else:
+        print("  Press Enter to wake from sleep")
     print("=" * 60 + "\n")
 
     loop = asyncio.get_event_loop()
@@ -844,6 +898,9 @@ async def main():
 
             wake_event = asyncio.Event()
             wake_button.arm(wake_event, loop)
+            if keyboard_wake:
+                print("  [sleep] Press Enter to wake")
+                keyboard_wake.arm(wake_event, loop)
 
             sleep_stop = asyncio.Event()
             sleep_task = asyncio.create_task(
@@ -878,6 +935,8 @@ async def main():
             sleep_stop.set()
             await sleep_task
             wake_button.disarm()
+            if keyboard_wake:
+                keyboard_wake.disarm()
             conversation.is_sleeping = False
 
             await conversation.set_color(COLOR_GREEN)

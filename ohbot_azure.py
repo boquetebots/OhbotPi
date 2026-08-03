@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """
 Ohbot Azure Controller - Async-First with Azure Speech Services
-Version: 1.0.0
-Platform: Raspberry Pi 5
+Version: 1.1.0
+Platforms: Raspberry Pi / Linux, macOS (Windows pending)
 Features: Azure STT/TTS, Viseme-based lip sync, Async motor control
+
+Microphone: on Mac/Windows the system default microphone is used.
+On Linux/Pi the device comes from AZURE_MIC_DEVICE in the .env file
+(default plughw:3,0 — this Pi's USB mic).
+Speaker: playback goes through yobot_core's cross-platform player
+(pw-play/aplay on Linux, afplay on Mac → default output device).
 """
 
 import asyncio
@@ -18,9 +24,9 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, Dict, List, Tuple
 
 # Global lock — all calls into the ohbot serial library (ohbot.move,
-# ohbot.baseColour, ohbot.reset) must hold this lock.  The Ohbot C extension
-# is NOT thread-safe: two threads calling it simultaneously causes a
-# segmentation fault.  Both gui_server.py and this module import this lock.
+# ohbot.baseColour, ohbot.reset) must hold this lock.  The serial port is
+# NOT thread-safe: two threads writing to it simultaneously corrupts
+# commands/crashes.  Both gui_server.py and this module import this lock.
 OHBOT_SERIAL_LOCK = threading.Lock()
 
 # Add project directory to path
@@ -215,8 +221,21 @@ class AzureSpeechManager:
         )
 
     async def recognize_once(self, timeout: float = 10.0, language: str = None) -> str:
-        """Recognize speech from microphone (single utterance)."""
-        audio_config = speechsdk.audio.AudioConfig(device_name="plughw:3,0")
+        """Recognize speech from microphone (single utterance).
+
+        Microphone selection is platform-aware:
+          - Mac/Windows: the system default microphone (whatever is selected
+            in Sound settings).
+          - Linux/Pi: the ALSA device named in AZURE_MIC_DEVICE in .env
+            (defaults to plughw:3,0, this Pi's USB mic). If the mic ever
+            stops being found, check `arecord -l` for the card number and
+            update AZURE_MIC_DEVICE.
+        """
+        if ohbot.IS_LINUX:
+            mic_device = os.environ.get("AZURE_MIC_DEVICE", "plughw:3,0")
+            audio_config = speechsdk.audio.AudioConfig(device_name=mic_device)
+        else:
+            audio_config = speechsdk.audio.AudioConfig(use_default_microphone=True)
 
         if language:
             recognizer = speechsdk.SpeechRecognizer(
@@ -419,6 +438,7 @@ class AsyncOhbotController:
 
         async with self.speech_lock:
             self.is_speaking = True
+            temp_file = None
 
             try:
                 with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
@@ -445,10 +465,14 @@ class AsyncOhbotController:
                 if lip_task:
                     await lip_task
 
-                os.unlink(temp_file)
-
             finally:
                 self.is_speaking = False
+                # Always clean up the temp file, even if synthesis/playback failed
+                if temp_file:
+                    try:
+                        os.unlink(temp_file)
+                    except OSError:
+                        pass
                 if lip_sync:
                     await self.move(ohbot.TOPLIP, 5, 10, avoid=False)
                     await self.move(ohbot.BOTTOMLIP, 5, 10, avoid=False)
@@ -497,20 +521,12 @@ class AsyncOhbotController:
         await self.move(ohbot.BOTTOMLIP, 5, 10, avoid=False)
 
     async def _play_audio_async(self, audio_file: str):
-        """Play audio file asynchronously using pw-play (PipeWire).
-
-        Switched from `aplay` because on this Pi's PipeWire setup, aplay's
-        direct ALSA "default" device open fails silently/oddly (error 524)
-        even when PipeWire itself plays audio fine via pw-play. Using
-        pw-play routes through PipeWire properly, honoring whatever sink
-        is set as default (set with `wpctl set-default <id>`).
+        """Play audio file asynchronously via yobot_core's cross-platform
+        player: pw-play/aplay on Linux (pw-play preferred — on this Pi,
+        aplay's direct ALSA open fails with error 524), afplay on Mac
+        (default output device), winsound on Windows.
         """
-        process = await asyncio.create_subprocess_exec(
-            'pw-play', audio_file,
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL
-        )
-        await process.wait()
+        await ohbot.play_wav(audio_file)
 
     async def listen(self, timeout: float = 10.0, language: str = None) -> str:
         """Listen for speech input using Azure STT."""

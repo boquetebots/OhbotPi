@@ -14,7 +14,17 @@ from flask import Flask, request, jsonify
 from openai import OpenAI
 import json
 import os
+import sys
 from collections import deque
+
+# Load API keys from the .env file next to this script (works on any
+# platform, with or without systemd)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from yobot_core import load_env
+    load_env()
+except ImportError:
+    pass
 
 app = Flask(__name__)
 
