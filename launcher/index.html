@@ -138,6 +138,7 @@
 
   .btn-stop     { background: var(--warn);   color: #000; }
   .btn-open     { background: var(--accent2); color: #fff; }
+  .btn-wake     { background: var(--accent2); color: #fff; }
   .btn-shutdown { background: #2a1a1a; color: var(--danger); border: 1px solid var(--danger); }
   .btn-restart  { background: #1a2a2a; color: var(--muted); border: 1px solid var(--border); }
 
@@ -339,6 +340,12 @@
             data-i18n="launcher.opengui">
       Open GUI ↗
     </button>
+    <!-- Only shown while the Greeter is running. Wakes Yobot if he has
+         nodded off, so you don't need a GPIO button wired up. -->
+    <button class="btn btn-wake" id="btn-wake" onclick="wakeGreeter()" style="display:none"
+            data-i18n="launcher.wake">
+      ⏰ Wake Yobot
+    </button>
   </div>
 
   <!-- Pi-only power buttons — hidden automatically on Mac/Windows -->
@@ -455,6 +462,7 @@
     const barText  = document.getElementById('status-text');
     const btnStop  = document.getElementById('btn-stop');
     const btnOpen  = document.getElementById('btn-open');
+    const btnWake  = document.getElementById('btn-wake');
     const cardG    = document.getElementById('card-greeter');
     const cardGUI  = document.getElementById('card-gui');
     const calibLink = document.getElementById('calib-link');
@@ -463,6 +471,8 @@
     cardG.classList.remove('active', 'disabled');
     cardGUI.classList.remove('active', 'disabled');
     calibLink.classList.remove('active', 'disabled');
+
+    btnWake.style.display = 'none';   // only the Greeter can be woken
 
     if (status === 'idle') {
       bar.classList.remove('visible');
@@ -477,6 +487,7 @@
       calibLink.classList.add('disabled');
       btnStop.style.display = 'inline-block';
       btnOpen.style.display = 'none';
+      btnWake.style.display = 'inline-block';
 
     } else if (status === 'gui') {
       bar.classList.add('visible');
@@ -496,6 +507,43 @@
       btnStop.style.display = 'inline-block';
       btnOpen.style.display = 'none';
     }
+  }
+
+  // ── Wake Yobot from sleep ─────────────────────────────────────────────────
+  // Raises a flag on the Greeter's server. The conversation loop checks that
+  // flag once a second while it's asleep and wakes when it sees it — so the
+  // robot may take a second or two to open his eyes. That's normal.
+  async function wakeGreeter() {
+    const btn = document.getElementById('btn-wake');
+    const original = btn.textContent;
+    btn.disabled = true;
+
+    // The two ways this fails look identical to you but mean very different
+    // things, so say which one it was instead of a vague "could not wake":
+    //   404 → the Launcher program itself is running older code and has no
+    //         wake route yet. Restart ohbot-launcher.
+    //   502 → the Launcher is fine, but the Greeter's server didn't answer.
+    //         Usually the Greeter isn't actually running.
+    try {
+      const r = await fetch('/launcher/wake', { method: 'POST' });
+      if (r.status === 404) {
+        btn.textContent = t('launcher.wake.oldcode');
+        console.error('Wake: /launcher/wake returned 404 — restart the ohbot-launcher service.');
+      } else {
+        let data = {};
+        try { data = await r.json(); } catch (e) {}
+        if (data.success) {
+          btn.textContent = t('launcher.wake.sent');
+        } else {
+          btn.textContent = t('launcher.wake.noserver');
+          console.error('Wake failed:', r.status, data.error || '(no detail)');
+        }
+      }
+    } catch (e) {
+      btn.textContent = t('launcher.wake.fail');
+      console.error('Wake request failed outright:', e);
+    }
+    setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 3500);
   }
 
   // ── Start a service ───────────────────────────────────────────────────────

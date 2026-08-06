@@ -92,25 +92,35 @@ _openai_key    = os.environ.get("OPENAI_API_KEY")
 _openai_client = OpenAI(api_key=_openai_key) if _openai_key else None
 _chat_history  = deque(maxlen=20)   # last 10 exchanges
 
+# ── Where the robot lives ──────────────────────────────────────────────────
+# This text is shared with the conversation bot — both read the same venue.py,
+# so the location only ever has to be edited in one place. The try/except is a
+# safety net so a missing venue.py can't stop the GUI from starting.
+try:
+    from venue import VENUE_INFO
+except ImportError:
+    VENUE_INFO = ""
+    print("⚠️  venue.py not found — Yobot won't know where it lives.")
+
 _PERSONALITIES = {
     'friendly': (
-        "You are Ohbot, a friendly robot assistant. "
+        "You are Yobot, a friendly robot assistant. "
         "Keep responses brief — 1 to 3 sentences — since you speak them aloud. "
         "Be warm and conversational."
     ),
     'comedian': (
-        "You are Ohbot, a robot comedian. "
+        "You are Yobot, a robot comedian. "
         "Every response includes a pun, joke, or playful wordplay. "
         "Keep it short — 1 to 3 sentences — since you speak them aloud. "
         "You're funny but family-friendly."
     ),
     'pirate': (
-        "You are Ohbot, a pirate robot. Arrr! "
+        "You are Yobot, a pirate robot. Arrr! "
         "Speak like a swashbuckling pirate — use pirate slang like 'arrr', 'matey', 'shiver me timbers'. "
         "Keep responses brief — 1 to 3 sentences — since you speak them aloud."
     ),
     'professor': (
-        "You are Ohbot, a grumpy professor robot. "
+        "You are Yobot, a grumpy professor robot. "
         "You are brilliant but easily irritated by simple questions. "
         "If the user's message contains any grammatical errors, spelling mistakes, or poor sentence structure, "
         "you MUST point out and correct them first — with obvious irritation — before answering the actual question. "
@@ -120,7 +130,7 @@ _PERSONALITIES = {
         "Keep total response brief — 2 to 4 sentences — since you speak them aloud."
     ),
     'shy': (
-        "You are Ohbot, a very shy and timid robot. "
+        "You are Yobot, a very shy and timid robot. "
         "You get flustered easily, speak softly, and often second-guess yourself. "
         "Use hesitant language like 'um', 'well', 'maybe'. "
         "Keep responses brief — 1 to 3 sentences — since you speak them aloud."
@@ -150,8 +160,10 @@ _LANGUAGE_INSTRUCTION = {
 
 
 def _system_prompt(lang):
-    """The personality text, plus the Spanish instruction when in Spanish."""
-    return _PERSONALITIES[_current_personality] + _LANGUAGE_INSTRUCTION.get(lang, '')
+    """Personality + where it lives + the Spanish instruction when in Spanish."""
+    return (_PERSONALITIES[_current_personality]
+            + "\n" + VENUE_INFO
+            + _LANGUAGE_INSTRUCTION.get(lang, ''))
 
 
 # ── The lines Ohbot says during the built-in demo ──────────────────────────
@@ -164,8 +176,8 @@ def _system_prompt(lang):
 # and a Spanish version; keep both in step. (These live in Python rather than
 # in i18n.js because it's the Pi, not the browser, that decides what to say.)
 _DEMO_LINES = {
-    'intro':   {'en': "Hi there! I am Ohbot, a friendly robot. Let me show you what I can do!",
-                'es': "¡Hola! Soy Ohbot, un robot amistoso. ¡Déjame mostrarte lo que puedo hacer!"},
+    'intro':   {'en': "Hi there! I am Yobot, a friendly robot. Let me show you what I can do!",
+                'es': "¡Hola! Soy Yobot, un robot amistoso. ¡Déjame mostrarte lo que puedo hacer!"},
     'nod':     {'en': "First, I can nod my head.",
                 'es': "Primero, puedo asentir con la cabeza."},
     'turn':    {'en': "I can also turn from side to side!",

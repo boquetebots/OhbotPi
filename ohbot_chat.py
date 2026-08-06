@@ -84,7 +84,7 @@ SLEEP_LISTEN_SECS  = 5.0   # listen window while sleeping (longer = better picku
 GPIO_WAKE_PIN      = 17    # BCM pin number for the wake button
 
 # Set to False to use GPIO button only — eliminates all Azure STT cost while sleeping.
-# Set to True to also allow voice wake words ("Ohbot", "wake up").
+# Set to True to also allow voice wake words ("Yobot", "wake up").
 VOICE_WAKE_ENABLED = False
 
 # Azure voice — Jenny Multilingual handles both English and Spanish
@@ -543,7 +543,7 @@ class AsyncOhbotConversation:
 
         await self.speak_phrase_or_synthesise(
             "en_greeting",
-            "Hi there! I'm Ohbot. How can I help you today?"
+            "Hi there! I'm Yobot. How can I help you today?"
         )
 
     # ── session loop ──────────────────────────────────────────────────────────
@@ -686,7 +686,7 @@ class AsyncOhbotConversation:
     @staticmethod
     def _is_pure_wake_command(text: str) -> bool:
         t = text.lower().strip().rstrip(".!,?")
-        for w in ["ohbot", "oh bot", "wake up", "despierta",
+        for w in ["yobot", "yo bot", "ohbot", "oh bot", "wake up", "despierta",
                   "despiértate", "despiertate", "hey", "hi", "hola"]:
             t = t.replace(w, "").strip()
         return len(t) < 3
@@ -694,7 +694,7 @@ class AsyncOhbotConversation:
     @staticmethod
     def _is_wake_phrase(text: str) -> bool:
         t = text.lower().strip()
-        wake_triggers = ["ohbot", "oh bot", "wake up",
+        wake_triggers = ["yobot", "yo bot", "ohbot", "oh bot", "wake up",
                          "despierta", "despiértate", "despiertate"]
         return any(trigger in t for trigger in wake_triggers)
 
@@ -879,9 +879,11 @@ async def main():
     print("\n" + "=" * 60)
     print("  Starting — press Ctrl-C to exit")
     if wake_button.available:
-        print("  Press GPIO button (pin 17) to wake from sleep")
+        print("  Wake from sleep: GPIO button (pin 17), or the Wake button")
+        print("  on the Launcher page — http://<this-pi>:5000")
     else:
-        print("  Press Enter to wake from sleep")
+        print("  Wake from sleep: press Enter, or the Wake button on the")
+        print("  Launcher page — http://localhost:5000")
     print("=" * 60 + "\n")
 
     loop = asyncio.get_event_loop()
@@ -892,7 +894,7 @@ async def main():
             await conversation.run_session(wake_text=pending_wake_text)
             pending_wake_text = None
 
-            print("\n  [sleep] Ohbot is sleeping")
+            print("\n  [sleep] Yobot is sleeping — press Wake on the Launcher page")
             await conversation.set_color(COLOR_DIM)
             conversation.is_sleeping = True
 
@@ -905,6 +907,50 @@ async def main():
             sleep_stop = asyncio.Event()
             sleep_task = asyncio.create_task(
                 conversation.sleep_animation(sleep_stop))
+
+            # ── Wake button on the Launcher web page ──────────────────────
+            # Checks in with the Flask server once a second to ask whether
+            # anyone pressed Wake. This is a local request to the same Pi, so
+            # it costs nothing — unlike voice wake, which pays Azure to listen
+            # the whole time he's asleep.
+            #
+            # A press made while he was still saying goodbye counts too — the
+            # server remembers presses for a minute, so nothing is lost in the
+            # few seconds between "the button was pressed" and "he is asleep
+            # and watching for it".
+            async def web_wake_listener():
+                async def check():
+                    r = await conversation.http_client.get(
+                        f"{conversation.server_url}/wake/pending", timeout=5.0)
+                    return r.status_code == 200 and r.json().get('wake')
+
+                checks   = 0
+                failures = 0
+                last_err = None
+
+                while not wake_event.is_set():
+                    await asyncio.sleep(1.0)
+                    try:
+                        checks += 1
+                        if await check():
+                            print("  [wake] Wake button pressed on the Launcher page")
+                            wake_event.set()
+                            return
+                    except Exception as e:
+                        # Don't swallow this silently — if the check is broken,
+                        # the Wake button stops working with no clue why.
+                        failures += 1
+                        err = f"{type(e).__name__}: {e}"
+                        if err != last_err:
+                            print(f"  [wake] check failing — {err}")
+                            last_err = err
+
+                    # Heartbeat, so the log shows whether we're still watching.
+                    if checks % 30 == 0:
+                        print(f"  [wake] still watching "
+                              f"({checks} checks, {failures} failed)")
+
+            web_task = asyncio.create_task(web_wake_listener())
 
             if VOICE_WAKE_ENABLED:
                 async def voice_wake_listener():
@@ -924,6 +970,12 @@ async def main():
                 voice_task = asyncio.create_task(voice_wake_listener())
 
             await wake_event.wait()
+
+            web_task.cancel()
+            try:
+                await web_task
+            except asyncio.CancelledError:
+                pass
 
             if VOICE_WAKE_ENABLED:
                 voice_task.cancel()

@@ -632,7 +632,7 @@ async def demo_basic(controller: AsyncOhbotController):
     print("\n🎯 Running basic demo...")
 
     await controller.set_eye_color(5, 0, 10)
-    await controller.say("Hello! I am Ohbot running on Azure Speech Services.")
+    await controller.say("Hello! I am Yobot running on Azure Speech Services.")
     await asyncio.sleep(0.5)
 
     speech_task = asyncio.create_task(

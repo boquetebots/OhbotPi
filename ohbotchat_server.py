@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Ohbot Flask Server — OpenAI Integration
+Yobot Flask Server — OpenAI Integration
 Receives visitor input, classifies intent, and returns a response.
 
 Two intents:
@@ -15,6 +15,7 @@ from openai import OpenAI
 import json
 import os
 import sys
+import time
 from collections import deque
 
 # Load API keys from the .env file next to this script (works on any
@@ -46,34 +47,37 @@ conversation_history = deque(maxlen=20)
 # CUSTOMIZE THIS SECTION
 # ============================================================================
 #
-# SYSTEM_PROMPT tells Ohbot who it is and how to behave.
-# Rewrite this completely for your own use case.
+# SYSTEM_PROMPT tells Yobot who it is and how to behave — its character.
 #
-# Tips:
-#   - Give Ohbot a name, a location, and a purpose
+# WHERE the robot lives is deliberately NOT in here. That text lives in
+# venue.py and gets added on automatically just below. Keeping the two apart
+# means you can change the robot's personality without retyping the venue
+# description, and move the robot to a new building without rewriting its
+# personality. Both files feed the GUI chat panel too.
+#
+# Tips for editing the character text:
 #   - Keep responses brief — they are spoken aloud
-#   - Mention any specific topics Ohbot should know about
 #   - Describe the personality you want (friendly, funny, formal, etc.)
+#   - Leave facts about the building to venue.py
 #
-# Example for a museum:
-#   "You are Robo, a friendly robot guide at the City Science Museum.
-#    Help visitors find exhibits, answer questions about science, and
-#    make learning fun. Keep responses to 1-3 sentences."
-#
-# Example for a reception desk:
-#   "You are Ohbot, a cheerful robot receptionist at Acme HQ.
-#    Help visitors check in, find meeting rooms, and contact staff.
-#    Be professional but warm. Keep responses brief."
-#
-SYSTEM_PROMPT = """You are Ohbot, a friendly and curious robot assistant.
+SYSTEM_PROMPT = """You are Yobot, a friendly and curious robot assistant.
 
 Keep your responses brief — 1 to 3 sentences — since they are spoken aloud.
 Be warm, conversational, and a little playful.
 You are talking face-to-face with someone standing right in front of you.
-
-Customize this prompt to give Ohbot a specific name, location, personality,
-and area of knowledge that suits your project.
 """
+
+# ── The venue description, loaded from venue.py ─────────────────────────────
+# The try/except is a safety net: if venue.py ever goes missing, the robot
+# still starts and talks — it just won't know where it is.
+try:
+    from venue import VENUE_INFO
+except ImportError:
+    VENUE_INFO = ""
+    print("⚠️  venue.py not found — Yobot won't know where it lives.")
+
+# What actually gets sent to the AI: character first, then location.
+FULL_SYSTEM_PROMPT = SYSTEM_PROMPT + "\n" + VENUE_INFO
 
 # ── Language detection ─────────────────────────────────────────────────────────
 
@@ -301,7 +305,7 @@ def chat():
 
         print(f"📥 Received: {user_message}")
 
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        messages = [{"role": "system", "content": FULL_SYSTEM_PROMPT}]
         messages.extend(conversation_history)
         messages.append({"role": "user", "content": user_message})
 
@@ -337,6 +341,56 @@ def reset():
     return jsonify({'success': True, 'message': 'Conversation reset'})
 
 
+# ============================================================================
+# WAKE FROM SLEEP
+# ============================================================================
+#
+# After a couple of quiet turns Yobot goes to sleep to stop paying Azure to
+# listen to an empty room. Something then has to wake him back up.
+#
+# On the Pi that used to mean a physical button wired to GPIO pin 17 — and if
+# no button is wired, he sleeps forever with no way back. These two routes are
+# the way out: the Launcher web page can now ask for a wake, so any phone or
+# laptop on the network can do the job of that button.
+#
+# It's deliberately just a flag, not a live connection. The conversation loop
+# (ohbot_chat.py) is a separate program, so while it's sleeping it checks in
+# here once a second and asks "has anyone pressed wake?" That check is a local
+# request to this same Pi — it costs nothing and never touches Azure.
+#
+# A press counts for this long. Long enough that pressing Wake *while* he is
+# still saying goodbye is remembered until he's actually asleep and looking;
+# short enough that a press from this morning can't wake him this afternoon.
+WAKE_PRESS_VALID_FOR = 60.0     # seconds
+
+_wake_pressed_at = 0.0
+
+
+@app.route('/wake', methods=['POST'])
+def request_wake():
+    """Record a Wake press. Called by the Launcher's Wake button."""
+    global _wake_pressed_at
+    _wake_pressed_at = time.time()
+    print("⏰ Wake requested")
+    return jsonify({'success': True})
+
+
+@app.route('/wake/pending', methods=['GET'])
+def wake_pending():
+    """Report whether there's a recent, unused Wake press — and use it up.
+
+    Storing WHEN the button was pressed rather than just THAT it was pressed
+    is what makes a press during the goodbye speech still work. The old
+    version threw away any press made before he finished falling asleep,
+    which made the button look broken.
+    """
+    global _wake_pressed_at
+    fresh = (time.time() - _wake_pressed_at) < WAKE_PRESS_VALID_FOR
+    if fresh:
+        _wake_pressed_at = 0.0      # used up — one press, one wake
+    return jsonify({'wake': fresh})
+
+
 @app.route('/health', methods=['GET'])
 def health():
     """Health check — called by ohbot_chat.py on startup."""
@@ -350,9 +404,9 @@ def health():
 @app.route('/', methods=['GET'])
 def home():
     return """
-    <html><head><title>Ohbot Server</title></head>
+    <html><head><title>Yobot Server</title></head>
     <body>
-        <h1>🤖 Ohbot Server — Running</h1>
+        <h1>🤖 Yobot Server — Running</h1>
         <p>OpenAI API Key: <strong>{key}</strong></p>
         <p>Conversation History: <strong>{hist} exchanges</strong></p>
         <hr>
@@ -372,7 +426,7 @@ def home():
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("🤖  Ohbot Server starting...")
+    print("🤖  Yobot Server starting...")
     print("=" * 60)
     print(f"  OpenAI key: {'✅ Set' if api_key else '❌ NOT SET'}")
     print(f"  Model: gpt-4o-mini")

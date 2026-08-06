@@ -36,6 +36,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.request   # used by the Wake button to talk to the Greeter
 
 # Saved per-robot calibrations (ohbotData/robots/). See robot_profiles.py.
 import robot_profiles
@@ -329,6 +330,26 @@ def get_platform():
         'is_pi':       USE_SYSTEMD,
         'can_power':   USE_SYSTEMD,
     })
+
+
+@app.route('/launcher/wake', methods=['POST'])
+def wake_greeter():
+    """Wake Yobot from sleep.
+
+    The page can't call the Greeter's server (port 5002) directly — a browser
+    blocks a page served from one port talking to another. So the request
+    comes here, to port 5000, and this passes it along from the Pi itself
+    where that rule doesn't apply.
+    """
+    try:
+        req = urllib.request.Request(
+            'http://127.0.0.1:5002/wake', data=b'', method='POST')
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            resp.read()
+        return jsonify({'success': True})
+    except Exception as e:
+        # Almost always means the Greeter isn't running.
+        return jsonify({'success': False, 'error': str(e)}), 502
 
 
 @app.route('/launcher/start/greeter', methods=['POST'])

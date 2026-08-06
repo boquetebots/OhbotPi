@@ -1,5 +1,5 @@
 {
-    "_instructions": "Ohbot's instant-answer knowledge base. Answers here are spoken aloud — keep them short and conversational. Edit answer_en to update. Add answer_es if you want Spanish responses. To add a new topic: copy an existing block, give it a unique key, and add a matching keyword block in ohbot_server.py.",
+    "_instructions": "Yobot's instant-answer knowledge base. Answers here are spoken aloud — keep them short and conversational. Edit answer_en to update. Add answer_es if you want Spanish responses. To add a new topic: copy an existing block, give it a unique key, and add a matching keyword block in ohbotchat_server.py.",
 
     "greeting": {
         "answer_en": "Hi there! Great to meet you. How can I help?",
@@ -12,8 +12,8 @@
     },
 
     "who_are_you": {
-        "answer_en": "I'm Ohbot — a friendly robot assistant. I'm here to chat and answer questions. What would you like to know?",
-        "answer_es": "Soy Ohbot, un robot asistente. Estoy aquí para charlar y responder preguntas."
+        "answer_en": "I'm Yobot — a friendly robot here at the Rincon Clubhouse. I'm here to chat and answer questions. What would you like to know?",
+        "answer_es": "Soy Yobot, un robot aquí en el Rincón Clubhouse. Estoy aquí para charlar y responder preguntas."
     },
 
     "what_can_you_do": {
@@ -22,13 +22,13 @@
     },
 
     "your_name": {
-        "answer_en": "My name is Ohbot! You can change that in the knowledge.json file if you'd like to give me a different name.",
-        "answer_es": "Me llamo Ohbot. ¡Puedes cambiar mi nombre en el archivo knowledge.json!"
+        "answer_en": "My name is Yobot! Nice to meet you.",
+        "answer_es": "¡Me llamo Yobot! Mucho gusto."
     },
 
     "who_made_you": {
-        "answer_en": "I was built using the Ohbot robot kit and Python. The software is open source — you can find it on GitHub!",
-        "answer_es": "Fui construido con el kit de robot Ohbot y Python. ¡El software es de código abierto!"
+        "answer_en": "I was built here at the Clubhouse using an Ohbot robot kit and Python. The software is open source — you can find it on GitHub!",
+        "answer_es": "Fui construido aquí en el Clubhouse con un kit de robot Ohbot y Python. ¡El software es de código abierto!"
     },
 
     "are_you_alive": {
@@ -52,7 +52,7 @@
     },
 
     "take_me_home": {
-        "answer_en": "Ha! I'm flattered, but I think I need to stay right here. You can build your own though — check out the Ohbot website!",
-        "answer_es": "¡Me halaga! Pero creo que debo quedarme aquí. Aunque puedes construir el tuyo — ¡visita el sitio web de Ohbot!"
+        "answer_en": "Ha! I'm flattered, but I belong here at the Clubhouse. You could build your own though — that's exactly the kind of thing we do here!",
+        "answer_es": "¡Me halaga! Pero mi lugar está aquí en el Clubhouse. Aunque podrías construir el tuyo — ¡eso es justo lo que hacemos aquí!"
     }
 }
