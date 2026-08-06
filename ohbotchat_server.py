@@ -76,8 +76,16 @@ except ImportError:
     VENUE_INFO = ""
     print("⚠️  venue.py not found — Yobot won't know where it lives.")
 
-# What actually gets sent to the AI: character first, then location.
-FULL_SYSTEM_PROMPT = SYSTEM_PROMPT + "\n" + VENUE_INFO
+# ── The safety rules, loaded from guardrails.py ─────────────────────────────
+# These come last on purpose — see the note at the top of guardrails.py.
+try:
+    from guardrails import SAFETY_RULES
+except ImportError:
+    SAFETY_RULES = ""
+    print("⚠️  guardrails.py not found — Yobot is running WITHOUT safety rules.")
+
+# What actually gets sent to the AI: character, then location, then the rules.
+FULL_SYSTEM_PROMPT = "\n".join([SYSTEM_PROMPT, VENUE_INFO, SAFETY_RULES])
 
 # ── Language detection ─────────────────────────────────────────────────────────
 

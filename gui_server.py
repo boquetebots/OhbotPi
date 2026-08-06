@@ -102,6 +102,15 @@ except ImportError:
     VENUE_INFO = ""
     print("⚠️  venue.py not found — Yobot won't know where it lives.")
 
+# ── Safety rules, shared with the Greeter ──────────────────────────────────
+# Applied to every personality, including the silly ones. Pirate Yobot is as
+# kid-safe as friendly Yobot. See guardrails.py.
+try:
+    from guardrails import SAFETY_RULES
+except ImportError:
+    SAFETY_RULES = ""
+    print("⚠️  guardrails.py not found — Yobot is running WITHOUT safety rules.")
+
 _PERSONALITIES = {
     'friendly': (
         "You are Yobot, a friendly robot assistant. "
@@ -160,10 +169,17 @@ _LANGUAGE_INSTRUCTION = {
 
 
 def _system_prompt(lang):
-    """Personality + where it lives + the Spanish instruction when in Spanish."""
-    return (_PERSONALITIES[_current_personality]
-            + "\n" + VENUE_INFO
-            + _LANGUAGE_INSTRUCTION.get(lang, ''))
+    """Personality, then where it lives, then the rules, then the language.
+
+    Order matters: the safety rules sit after the personality so they win if
+    the two ever disagree.
+    """
+    return "\n".join([
+        _PERSONALITIES[_current_personality],
+        VENUE_INFO,
+        SAFETY_RULES,
+        _LANGUAGE_INSTRUCTION.get(lang, ''),
+    ])
 
 
 # ── The lines Ohbot says during the built-in demo ──────────────────────────
