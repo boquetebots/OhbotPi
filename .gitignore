@@ -31,6 +31,21 @@ README_github.md
 README_ohbot_assistant.md
 Ohbot\ Pi\ 4.txt
 
+# --- Per-machine files (NOT shared between the Mac and the Pi) ---
+# These record what THIS machine last did, or are calibration scratch copies.
+# Keeping them out of git is deliberate: if they were shared, pulling on the
+# Pi would overwrite the Pi's own calibration with the Mac's, which has caused
+# trouble before. Real robot profiles live in ohbotData/robots/ and ARE shared.
+ohbotData/active_robot.txt
+ohbotData/language.txt
+ohbotData/MD_old_*.omd
+ohbotData/MD_Goldie.omd
+ohbotData/MD_blueboy.omd
+ohbotData/MD_before_3point_backup.omd
+ohbotData/archive/
+# If one of these ever turns out to be a robot you want to share, don't delete
+# the line — copy the file into ohbotData/robots/ instead, which is tracked.
+
 # --- Large binary / archive files ---
 *.zip
 *.docx

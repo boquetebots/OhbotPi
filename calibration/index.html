@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🔧 Ohbot Motor Calibration</title>
+<script src="/i18n.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -152,25 +153,25 @@
   .footer { margin-top: 20px; color: var(--muted); font-size: 0.75rem; text-align: center; }
 </style>
 </head>
-<body>
+<body data-i18n-pagetitle="cal.pagetitle">
 
 <div class="wrap">
 
   <div class="header">
     <div class="robot">🔧</div>
-    <h1>Ohbot Motor Calibration</h1>
-    <p>Find min, max, and center for each motor, then save a new motor definitions file.</p>
+    <h1 data-i18n="cal.title">Ohbot Motor Calibration</h1>
+    <p data-i18n="cal.subtitle">Find min, max, and center for each motor, then save a new motor definitions file.</p>
   </div>
 
   <div id="status-bar">
     <div class="status-dot" id="status-dot"></div>
-    <span id="status-text">Checking connection…</span>
+    <span id="status-text" data-i18n="cal.checking">Checking connection…</span>
   </div>
 
   <div id="banner" class="banner"></div>
 
   <div class="top-actions">
-    <button class="btn btn-pose" onclick="setDefaultPose()">
+    <button class="btn btn-pose" onclick="setDefaultPose()" data-i18n="cal.defaultpose">
       Set Default Pose (500 / lips 900·800, speed 2)
     </button>
   </div>
@@ -178,14 +179,14 @@
   <div id="motor-list"></div>
 
   <div class="bottom-actions">
-    <button class="btn btn-save" onclick="saveCalibration()">💾 Save Calibration</button>
+    <button class="btn btn-save" onclick="saveCalibration()" data-i18n="cal.save">💾 Save Calibration</button>
   </div>
 
   <div class="bottom-actions">
-    <button class="btn btn-exit" onclick="stopAndExit()">⏹ Stop &amp; Exit</button>
+    <button class="btn btn-exit" onclick="stopAndExit()" data-i18n="cal.exit">⏹ Stop &amp; Exit</button>
   </div>
 
-  <div class="footer">
+  <div class="footer" data-i18n="cal.footer">
     All calibration moves happen at a fixed slow speed. Saving backs up the
     current motor file as MD_old_N.omd before writing the new one.
     "Stop &amp; Exit" shuts down the calibration service so the USB cable is
@@ -219,19 +220,32 @@ async function init() {
 function setConnected(connected) {
   const dot  = document.getElementById('status-dot');
   const text = document.getElementById('status-text');
-  if (connected) {
-    dot.classList.remove('off');
-    text.textContent = 'Ohbot connected';
-  } else {
-    dot.classList.add('off');
-    text.textContent = 'Ohbot not found — sliders will not move anything';
-  }
+  const key = connected ? 'cal.connected' : 'cal.notfound';
+  dot.classList.toggle('off', !connected);
+  // Tag it as well as set it, so switching language re-translates the line.
+  text.setAttribute('data-i18n', key);
+  text.textContent = t(key);
 }
 
+// For the lips, "centre" is not a halfway point — it is the mouth-closed
+// position where the two lips just touch. Slider position 5 lands exactly
+// there, and lip sync treats 5 as closed (VisemeMapper.NEUTRAL in
+// ohbot_azure.py), so getting this point right matters more than any other
+// button on this page. Hence the explicit labels rather than "Center OK".
 function centerButtonLabel(motorId) {
-  if (motorId == TOPLIP)    return 'Top Lip Neutral OK';
-  if (motorId == BOTTOMLIP) return 'Bottom Lip Near-Touching OK';
-  return 'Center OK';
+  if (motorId == TOPLIP)    return t('cal.btn.center.toplip');
+  if (motorId == BOTTOMLIP) return t('cal.btn.center.botlip');
+  return t('cal.btn.center');
+}
+
+// The server reports which motors it saved using their English names
+// ("Head Nod", "Top Lip"). This turns that list back into the current
+// language before it goes on screen.
+function motorList(englishNames) {
+  return englishNames.map(name => {
+    const m = Object.values(MOTORS).find(mm => mm.label === name);
+    return m ? OhbotI18n.motorLabel(m.key, name) : name;
+  }).join(', ');
 }
 
 function buildMotorList() {
@@ -254,20 +268,20 @@ function buildMotorList() {
     card.id = `card-${id}`;
     card.innerHTML = `
       <div class="motor-head">
-        <h3>${m.label}</h3>
-        <span class="motor-readout" id="readout-${id}">raw ${raw} / 1000</span>
+        <h3>${OhbotI18n.motorLabel(m.key, m.label)}</h3>
+        <span class="motor-readout" id="readout-${id}">${t('cal.readout', {raw})}</span>
       </div>
       <input type="range" class="motor-slider" id="slider-${id}"
              min="1" max="100" step="1" value="${sliderVal}"
              oninput="onSlide(${id}, this.value)">
       <div class="motor-buttons">
         <button class="btn btn-mark" id="btn-center-${id}" onclick="mark(${id}, 'center')">${centerButtonLabel(id)}</button>
-        <button class="btn btn-mark" id="btn-min-${id}" onclick="mark(${id}, 'min')">Min OK</button>
-        <button class="btn btn-mark" id="btn-max-${id}" onclick="mark(${id}, 'max')">Max OK</button>
-        <button class="btn btn-clear" onclick="clearMotor(${id})">Clear</button>
+        <button class="btn btn-mark" id="btn-min-${id}" onclick="mark(${id}, 'min')">${t('cal.btn.min')}</button>
+        <button class="btn btn-mark" id="btn-max-${id}" onclick="mark(${id}, 'max')">${t('cal.btn.max')}</button>
+        <button class="btn btn-clear" onclick="clearMotor(${id})">${t('cal.btn.clear')}</button>
         <label class="reverse-row">
           <input type="checkbox" id="reverse-${id}" onchange="setReverse(${id}, this.checked)">
-          Reversed?
+          ${t('cal.reversed')}
         </label>
       </div>
       <div class="captured" id="captured-${id}"></div>
@@ -285,10 +299,14 @@ function refreshCaptured(id) {
   const min = found.length ? Math.min(...found) : null;
   const max = found.length === 2 ? Math.max(...found) : null;
 
+  const minShown = min ?? (found.length
+    ? t('cal.cap.needmore', { v: found[0] })
+    : '—');
+
   document.getElementById(`captured-${id}`).innerHTML = `
-    Center: <span class="val">${st.center ?? '—'}</span>
-    Min: <span class="val">${min ?? (found.length ? found[0] + ' (need one more)' : '—')}</span>
-    Max: <span class="val">${found.length === 2 ? max : '—'}</span>
+    ${t('cal.cap.center')}: <span class="val">${st.center ?? '—'}</span>
+    ${t('cal.cap.min')}: <span class="val">${minShown}</span>
+    ${t('cal.cap.max')}: <span class="val">${found.length === 2 ? max : '—'}</span>
   `;
 
   document.getElementById(`btn-center-${id}`).classList.toggle('done', st.center !== null && st.center !== undefined);
@@ -313,7 +331,7 @@ function onSlide(id, sliderVal) {
     }).then(r => r.json()).then(d => {
       if (d.success) {
         lastRaw[id] = d.raw;
-        document.getElementById(`readout-${id}`).textContent = `raw ${d.raw} / 1000`;
+        document.getElementById(`readout-${id}`).textContent = t('cal.readout', {raw: d.raw});
       }
     });
   }, 60);
@@ -331,7 +349,7 @@ async function mark(id, kind) {
     calibState[id] = d.state;
     refreshCaptured(id);
   } else {
-    showBanner('error', d.error || 'Could not record that value.');
+    showBanner('error', d.error || t('cal.markfail'));
   }
 }
 
@@ -360,7 +378,7 @@ async function setReverse(id, checked) {
     // The motor was just re-sent to its last slider position under the
     // new setting — update the readout to match what actually happened.
     lastRaw[id] = d.raw;
-    document.getElementById(`readout-${id}`).textContent = `raw ${d.raw} / 1000`;
+    document.getElementById(`readout-${id}`).textContent = t('cal.readout', {raw: d.raw});
   }
 }
 
@@ -377,34 +395,131 @@ async function setDefaultPose() {
       const slider = document.getElementById(`slider-${id}`);
       if (slider) slider.value = Math.round(d.targets[id] / 10);
       const readout = document.getElementById(`readout-${id}`);
-      if (readout) readout.textContent = `raw ${d.last_raw[id]} / 1000`;
+      if (readout) readout.textContent = t('cal.readout', {raw: d.last_raw[id]});
     });
   } else {
-    showBanner('error', d.error || 'Could not set default pose.');
+    showBanner('error', d.error || t('cal.defaultpose.fail'));
   }
 }
 
 // ── Save ──────────────────────────────────────────────────────────────────
+// Two things happen on save:
+//   1. The live motor file (MotorDefinitionsv21.omd) is rewritten — this is
+//      what the robot actually uses, and it happens exactly as it always has.
+//   2. A copy is filed under the robot's name in ohbotData/robots/, so this
+//      calibration can be loaded back later from the launcher page.
+// Step 2 is optional. Leave the name blank and you get the old behaviour.
 async function saveCalibration() {
-  if (!confirm('Save calibration? This backs up the current motor file and writes a new one.')) return;
-  const r = await fetch('/calibration/save', {method: 'POST'});
+  // Ask which robot this calibration belongs to. Pre-filled with whichever
+  // robot is currently loaded, since re-calibrating the same head is the
+  // common case.
+  let known = { robots: [], active: null };
+  try {
+    const rr = await fetch('/calibration/robots');
+    const dd = await rr.json();
+    if (dd.success) known = dd;
+  } catch (e) { /* no list is not fatal — carry on without it */ }
+
+  const existing = known.robots.map(r => r.name);
+  const listNote = existing.length
+    ? t('cal.robot.already', { names: existing.join(', ') })
+    : t('cal.robot.first');
+
+  const typed = prompt(
+    t('cal.robot.prompt', { list: listNote }),
+    known.active || ''
+  );
+
+  // Cancel means cancel — don't save anything at all.
+  if (typed === null) return;
+
+  const robotName = typed.trim();
+
+  // Warn before quietly writing over another robot's saved calibration.
+  if (robotName && existing.some(n => n.toLowerCase() === robotName.toLowerCase())) {
+    if (!confirm(t('cal.robot.exists', { name: robotName }))) return;
+  }
+
+  const what = robotName
+    ? t('cal.save.named', { name: robotName })
+    : t('cal.save.unnamed');
+
+  if (!confirm(t('cal.save.backupnote', { what }))) return;
+
+  const r = await fetch('/calibration/save', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ robot_name: robotName })
+  });
   const d = await r.json();
   if (d.success) {
-    showBanner('success', `Saved! Old file backed up as ${d.backup}. New MotorDefinitionsv21.omd written.`);
+    // Spell out exactly what happened to each motor, so a partial save
+    // can't quietly do something other than what you expected:
+    //   3-point   - Min/Center/Max saved as measured, full travel kept
+    //   full range- Min/Max saved as measured, no centre (Lid/Blink)
+    //   trimmed   - old behaviour (the lips), centre forced halfway
+    //   left as-is- not calibrated this session, file entry untouched
+    //   NOT SAVED - only some of the three buttons were pressed
+    let detail = '';
+    if (d.three_point && d.three_point.length) {
+      detail += t('cal.save.d3pt',       { list: motorList(d.three_point) });
+    }
+    if (d.full_range && d.full_range.length) {
+      detail += t('cal.save.dfull',      { list: motorList(d.full_range) });
+    }
+    if (d.trimmed && d.trimmed.length) {
+      detail += t('cal.save.dtrim',      { list: motorList(d.trimmed) });
+    }
+    if (d.untouched && d.untouched.length) {
+      detail += t('cal.save.duntouched', { list: motorList(d.untouched) });
+    }
+    // Say plainly whether the named copy was filed, so there's no doubt
+    // about whether this robot can be loaded back later.
+    let named = '';
+    if (d.saved_as) {
+      named  = t('cal.save.filed', { name: d.saved_as.name });
+      named += d.saved_as.replaced ? t('cal.save.filed.replaced')
+                                   : t('cal.save.filed.end');
+    }
+
+    showBanner('success', t('cal.save.ok', { backup: d.backup, named, detail }));
+
+    // Warnings replace the green banner after a beat. Gathered into ONE
+    // message rather than two timers — two setTimeout calls at the same
+    // delay would have raced, and whichever landed second would silently
+    // wipe out the other one's warning.
+    const warnings = [];
+
+    // Half-finished motors are the easy mistake to make (press Min OK and
+    // Max OK, forget Center OK, then wonder why nothing changed).
+    if (d.half_done && d.half_done.length) {
+      warnings.push(t('cal.save.halfdone', { list: motorList(d.half_done) }));
+    }
+
+    // The live file saved but the named copy didn't — unusual, but worth
+    // shouting about: you'd otherwise assume you could load this robot back
+    // later and find it missing.
+    if (d.robot_error) {
+      warnings.push(t('cal.save.roboterr', { msg: d.robot_error }));
+    }
+
+    if (warnings.length) {
+      setTimeout(() => showBanner('error', warnings.join('  ⚠  ')), 100);
+    }
   } else {
-    showBanner('error', d.error || 'Save failed.');
+    showBanner('error', d.error || t('cal.save.fail'));
   }
 }
 
 // ── Stop & Exit ───────────────────────────────────────────────────────────
 async function stopAndExit() {
-  if (!confirm('Stop the calibration service and close this page? Make sure you\'ve saved first — this frees up the USB cable for the Greeter or the GUI.')) return;
+  if (!confirm(t('cal.exit.confirm'))) return;
 
   await fetch('/calibration/stop_service', {method: 'POST'});
 
   document.getElementById('motor-list').style.display = 'none';
   document.querySelectorAll('.top-actions, .bottom-actions').forEach(el => el.style.display = 'none');
-  showBanner('success', 'Calibration service stopped. You can close this tab now.');
+  showBanner('success', t('cal.exit.done'));
 
   // window.close() only works on tabs opened by script (which is how the
   // Launcher opens this page) — if it's a no-op, the message above is the
@@ -418,6 +533,12 @@ function showBanner(kind, msg) {
   b.textContent = msg;
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
+
+// The motor cards are built here in JavaScript, so they have to be rebuilt
+// when the language changes — i18n.js only handles the fixed text.
+window.addEventListener('ohbot-lang-change', () => {
+  if (Object.keys(MOTORS).length) buildMotorList();
+});
 
 init();
 </script>

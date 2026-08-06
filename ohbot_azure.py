@@ -88,8 +88,14 @@ class VisemeMapper:
 
     # Viseme reference: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/how-to-speech-synthesis-viseme
     # Lip position calibration: neutral/closed = 5 for both lips.
-    # Bottom lip servo range adjusted in MotorDefinitionsv21.omd so
-    # position 5 produces the same physical closed position as top lip.
+    #
+    # Position 5 lands on each lip's measured Center in
+    # MotorDefinitionsv21.omd, and for the lips that centre is calibrated as
+    # "the two lips just touching" — so 5 is genuinely mouth-closed on both
+    # motors by measurement. This replaced an older hack where BottomLip's
+    # Min/Max were hand-adjusted to force position 5 to match the top lip.
+    # If the lips are ever recalibrated, the Center OK step MUST be taken at
+    # the just-touching point or everything below breaks.
     VISEME_MAP = {
         0: (5, 5),      # Silence / closed
         1: (6, 6),      # ae, ax, ah (as in "bat")
@@ -125,7 +131,22 @@ class VisemeMapper:
     # the open-mouth shapes get bigger. Raise/lower this one number to
     # tune how exaggerated lip-sync looks; results are capped to the
     # motors' 0-10 range so nothing can overshoot.
-    EXAGGERATION = 1.6
+    #
+    # History. Was 1.6 for a long time, but that was compensating for the
+    # lips only getting half their opening travel — with centre stuck at the
+    # midpoint, slider 5-10 covered just half the range, so the visemes had
+    # to be stretched to look like anything. After the lips were three-point
+    # calibrated on 2026-08-05 (centre = "just touching"), slider 5-10 covers
+    # nearly the whole opening range, so this was dropped to 1.0.
+    #
+    # Then raised to 1.4 on 2026-08-05 after watching it on the robot: 1.0
+    # was working but read as a little understated.
+    #
+    # Headroom: the widest viseme in VISEME_MAP is 8, and 5 + (8-5) * 1.4 =
+    # 9.2, still under the 10 ceiling, so nothing clips. Pushing much past
+    # 1.6 would start flattening the biggest mouth shapes against that
+    # ceiling, which makes different sounds start to look the same.
+    EXAGGERATION = 1.4
 
     @classmethod
     def get_lip_positions(cls, viseme_id: int) -> Tuple[float, float]:
@@ -194,28 +215,73 @@ class AzureSpeechManager:
         "en-US-JennyMultilingualNeural": "+2%",
     }
 
+    # Which Azure locale each of our two languages maps to.
+    #
+    # The voice itself does NOT change between English and Spanish — Jenny
+    # Multilingual is one voice that speaks both, so Ohbot sounds like the
+    # same robot either way. What changes is the xml:lang tag we hand Azure,
+    # which tells it which set of pronunciation rules to use. Without it,
+    # Spanish text gets read with an English accent ("Hola" → "HOH-lah" with
+    # an American L), and the visemes (lip shapes) come out wrong to match.
+    #
+    # 'es-MX' is Mexican Spanish, matching what the conversation bot already
+    # listens for. Change it to 'es-ES' here if you ever want Castilian.
+    LANG_LOCALE = {
+        'en': 'en-US',
+        'es': 'es-MX',
+    }
+    DEFAULT_LANG = 'en'
+
+    @classmethod
+    def locale_for(cls, language):
+        """Turn 'en' or 'es' (or a full locale, or None) into an Azure locale.
+
+        Deliberately forgiving: anything unrecognised falls back to English
+        rather than raising, because a bad language string should never stop
+        the robot from talking.
+        """
+        if not language:
+            return cls.LANG_LOCALE[cls.DEFAULT_LANG]
+        language = str(language).strip()
+        if language.lower() in cls.LANG_LOCALE:
+            return cls.LANG_LOCALE[language.lower()]
+        if '-' in language:            # already a full locale, e.g. 'es-MX'
+            return language            # kept as typed — Azure wants es-MX, not es-mx
+        return cls.LANG_LOCALE[cls.DEFAULT_LANG]
+
     # Words that need IPA correction in English synthesis
     # Add entries here if Azure mispronounces a word specific to your location or use case.
     # Example: "Ohbot": '<phoneme alphabet="ipa" ph="oʊbɒt">Ohbot</phoneme>'
     PHONEME_FIXES = {
     }
 
-    def _make_ssml(self, text: str) -> str:
-        """Wrap text in SSML with per-voice pitch and phoneme corrections."""
-        voice = self.speech_config.speech_synthesis_voice_name
-        pitch = self.VOICE_PITCH.get(voice, "+0%")
+    def _make_ssml(self, text: str, language: str = None) -> str:
+        """Wrap text in SSML with per-voice pitch and phoneme corrections.
 
+        `language` is 'en' or 'es' (or None for English). It sets the xml:lang
+        tag, which is what makes Jenny Multilingual switch her accent from
+        English to Spanish. See LANG_LOCALE above.
+        """
+        voice  = self.speech_config.speech_synthesis_voice_name
+        pitch  = self.VOICE_PITCH.get(voice, "+0%")
+        locale = self.locale_for(language)
+
+        # The phoneme fixes are English spellings, so they only apply when
+        # we're actually speaking English. Applying them to Spanish text would
+        # mangle it.
         ssml_text = text
-        if voice.startswith("en-"):
+        if locale.startswith("en-"):
             for word, replacement in self.PHONEME_FIXES.items():
                 ssml_text = ssml_text.replace(word, replacement)
 
         return (
             '<speak version="1.0" '
             'xmlns="http://www.w3.org/2001/10/synthesis" '
-            'xml:lang="en-US">\n'
+            f'xml:lang="{locale}">\n'
             f'  <voice name="{voice}">\n'
-            f'    <prosody pitch="{pitch}">{ssml_text}</prosody>\n'
+            f'    <lang xml:lang="{locale}">\n'
+            f'      <prosody pitch="{pitch}">{ssml_text}</prosody>\n'
+            '    </lang>\n'
             '  </voice>\n'
             '</speak>'
         )
@@ -236,6 +302,11 @@ class AzureSpeechManager:
             audio_config = speechsdk.audio.AudioConfig(device_name=mic_device)
         else:
             audio_config = speechsdk.audio.AudioConfig(use_default_microphone=True)
+
+        # Accept either a short code ('es') or a full Azure locale ('es-MX').
+        # Passing nothing still means "auto-detect between the two".
+        if language:
+            language = self.locale_for(language)
 
         if language:
             recognizer = speechsdk.SpeechRecognizer(
@@ -296,8 +367,13 @@ class AzureSpeechManager:
             print(f"❌ Recognition failed: {result.reason}")
             return ""
 
-    def synthesize_to_file_with_visemes(self, text: str, output_file: str) -> List[Dict]:
-        """Synthesize speech to file and capture viseme events."""
+    def synthesize_to_file_with_visemes(self, text: str, output_file: str,
+                                        language: str = None) -> List[Dict]:
+        """Synthesize speech to file and capture viseme events.
+
+        `language` is 'en' or 'es' (None means English). It only affects
+        pronunciation and the resulting lip shapes — the voice stays the same.
+        """
         visemes = []
 
         audio_config = speechsdk.audio.AudioOutputConfig(filename=output_file)
@@ -314,7 +390,7 @@ class AzureSpeechManager:
 
         synthesizer.viseme_received.connect(viseme_callback)
 
-        ssml   = self._make_ssml(text)
+        ssml   = self._make_ssml(text, language)
         result = synthesizer.speak_ssml(ssml)
 
         if result.reason != speechsdk.ResultReason.SynthesizingAudioCompleted:
@@ -431,8 +507,13 @@ class AsyncOhbotController:
 
         await self.motor_queues[motor].put(cmd)
 
-    async def say(self, text: str, lip_sync: bool = True) -> None:
-        """Speak text using Azure TTS with optional viseme-based lip sync."""
+    async def say(self, text: str, lip_sync: bool = True,
+                  language: str = None) -> None:
+        """Speak text using Azure TTS with optional viseme-based lip sync.
+
+        `language` is 'en' or 'es'. Leaving it out keeps the old behaviour
+        (English), so every existing caller carries on working unchanged.
+        """
         if not text or text.isspace():
             return
 
@@ -444,13 +525,14 @@ class AsyncOhbotController:
                 with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
                     temp_file = f.name
 
-                print(f"🗣️ Speaking: {text}")
+                print(f"🗣️ Speaking [{self.azure.locale_for(language)}]: {text}")
 
                 visemes = await asyncio.get_event_loop().run_in_executor(
                     self.executor,
                     self.azure.synthesize_to_file_with_visemes,
                     text,
-                    temp_file
+                    temp_file,
+                    language
                 )
 
                 if lip_sync and visemes:

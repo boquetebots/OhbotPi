@@ -64,6 +64,12 @@ import ohbot_pi as ohbot
 
 app = Flask(__name__)
 
+# ── English / Spanish ──────────────────────────────────────────────────────
+# Adds two routes: /i18n.js (hands the web pages their wording) and /lang
+# (remembers which language was picked). See ohbot_lang.py.
+from ohbot_lang import register_language_routes
+register_language_routes(app)
+
 # ── Paths ──────────────────────────────────────────────────────────────────
 # Same folder gui_server.py already uses — the timeline reads sequences
 # that were saved from the existing sequence-builder GUI. Nothing new to

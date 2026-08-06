@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🤖 Ohbot Sequence Builder</title>
+<script src="/i18n.js"></script>
 <style>
   /* ── Reset & Base ──────────────────────────────────────────────────── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -120,22 +121,39 @@
   #motors-scroll {
     flex: 1;
     overflow-y: auto;
-    padding: 8px 14px;
+
+    /* Extra top and bottom padding on purpose. The round slider handles are
+       18px tall but sit on a 6px track, so they stick out past their row.
+       Without this the first and last handles get clipped by the scrolling
+       edge. (Each row used to carry its own bottom margin, which happened to
+       leave that space; the shared grid puts gaps only BETWEEN rows.) */
+    padding: 13px 14px;
+
+    /* The whole motor list is ONE grid, not a grid per row. That does two
+       things: the three columns stay lined up down the list, and the name
+       column measures itself against the longest name actually on screen.
+       It used to be pinned at 90px, which was fine for "Head Turn" but too
+       narrow for "Inclinación de cabeza" — the Spanish ran under the
+       sliders. fit-content means it can't overflow in any language. */
+    display: grid;
+    grid-template-columns: fit-content(150px) 1fr 36px;
+    align-items: center;
+    align-content: start;
+    column-gap: 8px;
+    row-gap: 10px;
   }
 
-  /* Individual motor row */
-  .motor-row {
-    display: grid;
-    grid-template-columns: 90px 1fr 36px;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
+  /* Each row hands its three children straight up to the grid above, so they
+     share its columns instead of each row measuring itself separately. */
+  .motor-row { display: contents; }
+
   .motor-label {
     font-size: 0.78rem;
     font-weight: 600;
     color: var(--text);
-    white-space: nowrap;
+    /* Wrapping allowed as a backstop: if a name is ever longer than the
+       150px cap it goes onto two lines rather than under the slider. */
+    line-height: 1.25;
   }
   .motor-slider {
     -webkit-appearance: none;
@@ -698,20 +716,20 @@
 </style>
 </head>
 
-<body>
+<body data-i18n-pagetitle="gui.pagetitle">
 
 <!-- ── Top bar ──────────────────────────────────────────────────────────── -->
 <div id="topbar">
   <div id="status-dot"></div>
-  <h1>🤖 Ohbot Sequence Builder</h1>
-  <span id="status-text">Connecting…</span>
+  <h1 data-i18n="gui.title">🤖 Ohbot Sequence Builder</h1>
+  <span id="status-text" data-i18n="gui.connecting">Connecting…</span>
   <div class="topbar-spacer"></div>
-  <span id="demo-badge">✨ DEMO RUNNING</span>
-  <span id="playing-badge">▶ PLAYING</span>
-  <button id="demo-stop-btn" class="btn btn-danger btn-sm" onclick="stopDemo()">⏹ Stop Demo</button>
-  <button id="demo-btn" class="btn btn-demo" onclick="startDemo()">✨ Show me what you can do!</button>
-  <a id="timeline-link" href="/timeline">🎬 Timeline</a>
-  <a id="home-btn" href="http://localhost:5000" onclick="goHome(event)">⬅ Launcher</a>
+  <span id="demo-badge" data-i18n="gui.badge.demo">✨ DEMO RUNNING</span>
+  <span id="playing-badge" data-i18n="gui.badge.playing">▶ PLAYING</span>
+  <button id="demo-stop-btn" class="btn btn-danger btn-sm" onclick="stopDemo()" data-i18n="gui.demo.stop">⏹ Stop Demo</button>
+  <button id="demo-btn" class="btn btn-demo" onclick="startDemo()" data-i18n="gui.demo.start">✨ Show me what you can do!</button>
+  <a id="timeline-link" href="/timeline" data-i18n="gui.link.timeline">🎬 Timeline</a>
+  <a id="home-btn" href="http://localhost:5000" onclick="goHome(event)" data-i18n="gui.link.launcher">⬅ Launcher</a>
 </div>
 
 <!-- ── Main layout ─────────────────────────────────────────────────────── -->
@@ -720,7 +738,7 @@
   <!-- ── Left panel: motor & LED controls ────────────────────────────── -->
   <div id="left-panel">
 
-    <div class="section-title">Motor Controls</div>
+    <div class="section-title" data-i18n="gui.motorcontrols">Motor Controls</div>
 
     <div id="motors-scroll">
       <!-- Motor sliders are inserted here by JavaScript -->
@@ -728,14 +746,14 @@
 
     <!-- Speed control -->
     <div id="speed-row">
-      <label>Move Speed</label>
+      <label data-i18n="common.speed">Move Speed</label>
       <input type="range" id="speed-slider" min="1" max="10" step="1" value="5">
       <span id="speed-value">5</span>
     </div>
 
     <!-- Live mode toggle -->
     <div id="live-row">
-      <label>Live mode — send as you slide</label>
+      <label data-i18n="common.livemode">Live mode — send as you slide</label>
       <label class="toggle">
         <input type="checkbox" id="live-toggle" checked>
         <span class="toggle-track"></span>
@@ -744,7 +762,7 @@
 
     <!-- LED section -->
     <div id="led-section">
-      <div class="section-title">Eye Colour (LED)</div>
+      <div class="section-title" data-i18n="common.eyecolour">Eye Colour (LED)</div>
       <div class="led-row">
         <span class="led-label r">R</span>
         <input type="range" class="led-slider" id="led-r" min="0" max="10" step="0.5" value="0">
@@ -762,47 +780,50 @@
       </div>
       <div id="led-preview"></div>
       <div class="led-presets">
-        <div class="led-preset" style="background:#000"           title="Off"     onclick="setLedPreset(0,0,0)"></div>
-        <div class="led-preset" style="background:rgb(255,0,0)"   title="Red"     onclick="setLedPreset(10,0,0)"></div>
-        <div class="led-preset" style="background:rgb(0,255,0)"   title="Green"   onclick="setLedPreset(0,10,0)"></div>
-        <div class="led-preset" style="background:rgb(0,0,255)"   title="Blue"    onclick="setLedPreset(0,0,10)"></div>
-        <div class="led-preset" style="background:rgb(255,255,0)" title="Yellow"  onclick="setLedPreset(10,10,0)"></div>
-        <div class="led-preset" style="background:rgb(0,255,255)" title="Cyan"    onclick="setLedPreset(0,10,10)"></div>
-        <div class="led-preset" style="background:rgb(255,0,255)" title="Purple"  onclick="setLedPreset(10,0,10)"></div>
-        <div class="led-preset" style="background:rgb(255,255,255)" title="White" onclick="setLedPreset(10,10,10)"></div>
-        <div class="led-preset" style="background:rgb(0,150,255)" title="Ice Blue" onclick="setLedPreset(0,6,10)"></div>
+        <div class="led-preset" style="background:#000"             data-i18n-title="led.off"     title="Off"      onclick="setLedPreset(0,0,0)"></div>
+        <div class="led-preset" style="background:rgb(255,0,0)"     data-i18n-title="led.red"     title="Red"      onclick="setLedPreset(10,0,0)"></div>
+        <div class="led-preset" style="background:rgb(0,255,0)"     data-i18n-title="led.green"   title="Green"    onclick="setLedPreset(0,10,0)"></div>
+        <div class="led-preset" style="background:rgb(0,0,255)"     data-i18n-title="led.blue"    title="Blue"     onclick="setLedPreset(0,0,10)"></div>
+        <div class="led-preset" style="background:rgb(255,255,0)"   data-i18n-title="led.yellow"  title="Yellow"   onclick="setLedPreset(10,10,0)"></div>
+        <div class="led-preset" style="background:rgb(0,255,255)"   data-i18n-title="led.cyan"    title="Cyan"     onclick="setLedPreset(0,10,10)"></div>
+        <div class="led-preset" style="background:rgb(255,0,255)"   data-i18n-title="led.purple"  title="Purple"   onclick="setLedPreset(10,0,10)"></div>
+        <div class="led-preset" style="background:rgb(255,255,255)" data-i18n-title="led.white"   title="White"    onclick="setLedPreset(10,10,10)"></div>
+        <div class="led-preset" style="background:rgb(0,150,255)"   data-i18n-title="led.iceblue" title="Ice Blue" onclick="setLedPreset(0,6,10)"></div>
       </div>
     </div>
 
     <!-- Emotion presets -->
     <div id="emotion-section">
-      <div class="section-title">🎭 Emotion Presets</div>
+      <div class="section-title" data-i18n="gui.emotions">🎭 Emotion Presets</div>
       <div class="emotion-buttons">
-        <button class="btn-emotion happy"     onclick="setEmotion('happy')">😊 Happy</button>
-        <button class="btn-emotion sad"       onclick="setEmotion('sad')">😢 Sad</button>
-        <button class="btn-emotion surprised" onclick="setEmotion('surprised')">😮 Surprised</button>
-        <button class="btn-emotion thinking"  onclick="setEmotion('thinking')">🤔 Thinking</button>
-        <button class="btn-emotion sleeping"  onclick="setEmotion('sleeping')">😴 Sleeping</button>
+        <button class="btn-emotion happy"     onclick="setEmotion('happy')"     data-i18n="gui.emotion.happy">😊 Happy</button>
+        <button class="btn-emotion sad"       onclick="setEmotion('sad')"       data-i18n="gui.emotion.sad">😢 Sad</button>
+        <button class="btn-emotion surprised" onclick="setEmotion('surprised')" data-i18n="gui.emotion.surprised">😮 Surprised</button>
+        <button class="btn-emotion thinking"  onclick="setEmotion('thinking')"  data-i18n="gui.emotion.thinking">🤔 Thinking</button>
+        <button class="btn-emotion sleeping"  onclick="setEmotion('sleeping')"  data-i18n="gui.emotion.sleeping">😴 Sleeping</button>
       </div>
     </div>
 
     <!-- Speech section -->
     <div id="speech-section">
-      <div class="section-title">🔊 Speech (with lip sync)</div>
+      <div class="section-title" data-i18n="gui.speech.title">🔊 Speech (with lip sync)</div>
       <textarea id="speech-textarea"
+                data-i18n-placeholder="gui.speech.ph"
                 placeholder="Type what Ohbot should say…"></textarea>
       <div class="speech-btn-row">
-        <button class="btn btn-ghost" onclick="speakNow()">🔊 Say It Now</button>
-        <button class="btn btn-ghost btn-sm" onclick="clearSpeech()" title="Clear text">✕ Clear</button>
-        <span id="speaking-indicator">🎙 Speaking…</span>
+        <button class="btn btn-ghost" onclick="speakNow()" data-i18n="gui.speech.say">🔊 Say It Now</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearSpeech()"
+                data-i18n="gui.speech.clear" data-i18n-title="gui.speech.clear.tip"
+                title="Clear text">✕ Clear</button>
+        <span id="speaking-indicator" data-i18n="gui.speech.speaking">🎙 Speaking…</span>
       </div>
     </div>
 
     <!-- Action buttons -->
     <div id="left-buttons">
-      <button class="btn btn-ghost"    onclick="sendAllMotors()">📡 Send to Robot</button>
-      <button class="btn btn-ghost"    onclick="resetRobot()">↩ Reset</button>
-      <button class="btn btn-primary"  onclick="captureKeyframe()">📸 Capture Keyframe</button>
+      <button class="btn btn-ghost"    onclick="sendAllMotors()"   data-i18n="gui.sendrobot">📡 Send to Robot</button>
+      <button class="btn btn-ghost"    onclick="resetRobot()"      data-i18n="gui.reset">↩ Reset</button>
+      <button class="btn btn-primary"  onclick="captureKeyframe()" data-i18n="common.capture">📸 Capture Keyframe</button>
     </div>
 
   </div><!-- end left-panel -->
@@ -812,15 +833,15 @@
 
     <!-- Sequence name + description bar -->
     <div id="seq-header">
-      <input type="text" id="seq-name"  placeholder="Sequence name…" value="">
-      <input type="text" id="seq-desc"  placeholder="Description (optional)">
+      <input type="text" id="seq-name"  data-i18n-placeholder="common.seqname.ph" placeholder="Sequence name…" value="">
+      <input type="text" id="seq-desc"  data-i18n-placeholder="common.seqdesc.ph" placeholder="Description (optional)">
     </div>
 
     <!-- Keyframe timeline -->
     <div id="timeline">
       <div id="timeline-empty">
         <div class="hint">🎬</div>
-        <p>No keyframes yet.<br>
+        <p data-i18n-html="gui.empty">No keyframes yet.<br>
            Use the <strong>motor sliders</strong> on the left to pose Ohbot,<br>
            then click <strong>📸 Capture Keyframe</strong> to save that pose.<br>
            Repeat to build a sequence!</p>
@@ -829,45 +850,49 @@
 
     <!-- Sequence controls footer -->
     <div id="seq-footer">
-      <button class="btn btn-success"  id="play-btn"  onclick="playSequence()">▶ Play</button>
-      <button class="btn btn-danger"   id="stop-btn"  onclick="stopSequence()" disabled>⏹ Stop</button>
+      <button class="btn btn-success"  id="play-btn"  onclick="playSequence()" data-i18n="gui.play">▶ Play</button>
+      <button class="btn btn-danger"   id="stop-btn"  onclick="stopSequence()" disabled data-i18n="gui.stop">⏹ Stop</button>
       <div class="footer-sep"></div>
-      <button class="btn btn-primary"  onclick="saveSequence()">💾 Save</button>
+      <button class="btn btn-primary"  onclick="saveSequence()" data-i18n="common.save">💾 Save</button>
       <select id="load-select" onchange="loadSequence(this.value)">
-        <option value="">📂 Load saved…</option>
+        <option value="" data-i18n="gui.loadsaved">📂 Load saved…</option>
       </select>
       <button class="btn btn-ghost btn-sm" onclick="refreshSequenceList()">↻</button>
       <div class="footer-sep"></div>
-      <button class="btn btn-ghost"    onclick="newSequence()">＋ New</button>
-      <button class="btn btn-danger btn-sm" id="clear-btn" onclick="clearTimeline()">🗑 Clear</button>
+      <button class="btn btn-ghost"    onclick="newSequence()" data-i18n="common.new">＋ New</button>
+      <button class="btn btn-danger btn-sm" id="clear-btn" onclick="clearTimeline()" data-i18n="gui.clear">🗑 Clear</button>
     </div>
 
     <!-- LLM Chat panel -->
     <div id="chat-panel">
       <div id="chat-header" onclick="toggleChat()">
-        <span id="chat-header-title">💬 LLM Chat</span>
+        <span id="chat-header-title" data-i18n="gui.chat.title">💬 LLM Chat</span>
         <span id="chat-toggle-icon">▲</span>
       </div>
       <div id="chat-body">
         <div id="chat-messages">
-          <div class="chat-msg bot">Hi! I'm Ohbot 🤖 Type a message and I'll respond — check "Speak" to hear me say it!</div>
+          <div class="chat-msg bot" data-i18n="gui.chat.greeting">Hi! I'm Ohbot 🤖 Type a message and I'll respond — check "Speak" to hear me say it!</div>
         </div>
         <div id="chat-input-row">
           <input type="text" id="chat-input"
+                 data-i18n-placeholder="gui.chat.ph"
                  placeholder="Ask Ohbot something…"
                  onkeydown="if(event.key==='Enter'){ sendChat(); event.preventDefault(); }">
           <label id="chat-speak-label">
-            <input type="checkbox" id="chat-speak" checked> 🔊 Speak
+            <input type="checkbox" id="chat-speak" checked> <span data-i18n="gui.chat.speak">🔊 Speak</span>
           </label>
-          <select id="personality-select" title="Ohbot's personality" onchange="setPersonality(this.value)">
-            <option value="friendly">😊 Friendly</option>
-            <option value="comedian">😄 Comedian</option>
-            <option value="pirate">🏴‍☠️ Pirate</option>
-            <option value="professor">🎓 Grumpy Prof</option>
-            <option value="shy">😳 Shy</option>
+          <select id="personality-select" data-i18n-title="gui.chat.personality.tip"
+                  title="Ohbot's personality" onchange="setPersonality(this.value)">
+            <option value="friendly"  data-i18n="gui.pers.friendly">😊 Friendly</option>
+            <option value="comedian"  data-i18n="gui.pers.comedian">😄 Comedian</option>
+            <option value="pirate"    data-i18n="gui.pers.pirate">🏴‍☠️ Pirate</option>
+            <option value="professor" data-i18n="gui.pers.professor">🎓 Grumpy Prof</option>
+            <option value="shy"       data-i18n="gui.pers.shy">😳 Shy</option>
           </select>
-          <button class="btn btn-primary btn-sm" onclick="sendChat()">Send</button>
-          <button class="btn btn-ghost btn-sm" onclick="clearChatHistory()" title="Clear conversation">↺ Clear</button>
+          <button class="btn btn-primary btn-sm" onclick="sendChat()" data-i18n="gui.chat.send">Send</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearChatHistory()"
+                  data-i18n="gui.chat.clear" data-i18n-title="gui.chat.clear.tip"
+                  title="Clear conversation">↺ Clear</button>
         </div>
       </div>
     </div>
@@ -943,7 +968,7 @@ function buildMotorSliders() {
     const row = document.createElement('div');
     row.className = 'motor-row';
     row.innerHTML = `
-      <span class="motor-label">${m.label}</span>
+      <span class="motor-label">${OhbotI18n.motorLabel(m.key, m.label)}</span>
       <input type="range"
              class="motor-slider"
              id="motor-${m.key}"
@@ -1036,7 +1061,7 @@ async function sendAllMotors() {
     await sendMotor(parseInt(id), val);
   }
   await sendLed();
-  toast('Sent to robot ✓');
+  toast(t('gui.toast.sent'));
 }
 
 async function sendLed() {
@@ -1070,9 +1095,9 @@ async function resetRobot() {
     });
     updateLedPreview();
 
-    toast('Reset to neutral ✓');
+    toast(t('gui.toast.reset'));
   } catch (e) {
-    toast('Reset failed', true);
+    toast(t('gui.toast.resetfail'), true);
   }
 }
 
@@ -1106,9 +1131,9 @@ async function previewFrame(kf) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ motors: kf.motors, led: kf.led, speed: kf.speed ?? 5 })
     });
-    toast(`Previewing frame ${kf.id} ✓`);
+    toast(t('gui.toast.preview', {id: kf.id}));
   } catch (e) {
-    toast('Preview failed', true);
+    toast(t('gui.toast.previewfail'), true);
   }
 }
 
@@ -1144,8 +1169,8 @@ function captureKeyframe() {
   keyframes.push(kf);
   renderTimeline();
 
-  const speechNote = speechText ? ` + 🔊 speech` : '';
-  toast(`Keyframe ${kf.id} captured (#${keyframes.length} in sequence)${speechNote}`);
+  const speechNote = speechText ? t('gui.speechnote') : '';
+  toast(t('gui.toast.captured', {id: kf.id, count: keyframes.length, speech: speechNote}));
 }
 
 function renderTimeline() {
@@ -1182,7 +1207,9 @@ function renderTimeline() {
     const chips = Object.entries(kf.motors).map(([key, val]) => {
       // Find label for key
       const motorInfo = Object.values(MOTORS).find(m => m.key === key);
-      const shortName = motorInfo ? motorInfo.label.split(' ')[0] : key;
+      const shortName = motorInfo
+        ? OhbotI18n.motorLabel(motorInfo.key, motorInfo.label).split(' ')[0]
+        : key;
       return `<span class="kf-motor-chip">${shortName}: ${val}</span>`;
     }).join('');
 
@@ -1194,38 +1221,38 @@ function renderTimeline() {
         <input type="number" class="kf-time"
                value="${kf.speed ?? 5}" min="1" max="10" step="1"
                onchange="updateKfSpeed(${kf.id}, this.value)"
-               title="Native Ohbot ramp speed for this keyframe's move (1=slow/smooth, 10=fast)">
+               title="${escAttr(t('gui.kf.speed.tip'))}">
       </div>
       <div class="kf-time-wrap">
         <span>⏳</span>
         <input type="number" class="kf-time"
                value="${kf.preWait ?? 1.0}" min="0" step="0.1"
                onchange="updateKfPreWait(${kf.id}, this.value)"
-               title="Pre-wait: seconds to hold after THIS move is sent before the NEXT keyframe's move is sent. Tune by watching the robot — this should cover this move's real travel time plus any extra pause you want.">
+               title="${escAttr(t('gui.kf.prewait.tip'))}">
         <span>s</span>
       </div>
       <input type="text" class="kf-label"
              value="${kf.label}"
-             placeholder="Label…"
+             placeholder="${escAttr(t('gui.kf.label.ph'))}"
              onchange="updateKfLabel(${kf.id}, this.value)"
-             title="Optional label for this keyframe">
+             title="${escAttr(t('gui.kf.label.tip'))}">
       <div class="kf-motors">${chips}</div>
       <div class="kf-led-dot" style="background:${ledColor}" title="LED: R${kf.led.r} G${kf.led.g} B${kf.led.b}"></div>
       <div class="kf-actions">
-        <button class="btn btn-ghost btn-sm" title="Move earlier in the sequence"
+        <button class="btn btn-ghost btn-sm" title="${escAttr(t('gui.kf.up.tip'))}"
                 onclick="moveKfUp(${kf.id})" ${idx === 0 ? 'disabled' : ''}>▲</button>
-        <button class="btn btn-ghost btn-sm" title="Move later in the sequence"
+        <button class="btn btn-ghost btn-sm" title="${escAttr(t('gui.kf.down.tip'))}"
                 onclick="moveKfDown(${kf.id})" ${idx === keyframes.length - 1 ? 'disabled' : ''}>▼</button>
-        <button class="btn btn-ghost btn-sm" title="Preview this pose on robot"
+        <button class="btn btn-ghost btn-sm" title="${escAttr(t('gui.kf.preview.tip'))}"
                 onclick="previewFrame(getKf(${kf.id}))">👁</button>
-        <button class="btn btn-danger btn-sm" title="Delete this keyframe"
+        <button class="btn btn-danger btn-sm" title="${escAttr(t('gui.kf.delete.tip'))}"
                 onclick="deleteKf(${kf.id})">✕</button>
       </div>
       <div class="kf-speech-row">
         <span class="kf-speech-icon">🔊</span>
         <input type="text" class="kf-speech-input"
                value="${escapedText}"
-               placeholder="What Ohbot says at this moment… (leave blank for silence)"
+               placeholder="${escAttr(t('gui.kf.speech.ph'))}"
                onchange="updateKfSpeech(${kf.id}, this.value)">
       </div>
     `;
@@ -1236,6 +1263,20 @@ function renderTimeline() {
 
 function getKf(id) {
   return keyframes.find(k => k.id === id);
+}
+
+// Puts a phrase in the top-bar status line and remembers which phrase it was,
+// so switching language re-translates it straight away.
+function setStatusText(el, key) {
+  el.setAttribute('data-i18n', key);
+  el.textContent = t(key);
+}
+
+// Translated text going into a title="…" or placeholder="…" inside one of the
+// HTML templates below has to have its quotes neutered first, or a Spanish
+// phrase containing a " would break the tag it sits in.
+function escAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 }
 
 function updateKfPreWait(id, val) {
@@ -1286,23 +1327,23 @@ function moveKfDown(id) {
 
 function clearTimeline() {
   if (keyframes.length === 0) return;
-  if (!confirm('Clear all keyframes? This cannot be undone.')) return;
+  if (!confirm(t('gui.confirm.clear'))) return;
   keyframes = [];
   nextKfId  = 1;
   renderTimeline();
-  toast('Timeline cleared');
+  toast(t('gui.toast.cleared'));
 }
 
 function newSequence() {
   if (keyframes.length > 0) {
-    if (!confirm('Start a new sequence? Unsaved keyframes will be lost.')) return;
+    if (!confirm(t('gui.confirm.new'))) return;
   }
   keyframes = [];
   nextKfId  = 1;
   document.getElementById('seq-name').value = '';
   document.getElementById('seq-desc').value = '';
   renderTimeline();
-  toast('New sequence started');
+  toast(t('gui.toast.newseq'));
 }
 
 // ============================================================================
@@ -1311,7 +1352,7 @@ function newSequence() {
 
 async function playSequence() {
   if (keyframes.length === 0) {
-    toast('Nothing to play — capture some keyframes first!', true);
+    toast(t('gui.toast.nothingplay'), true);
     return;
   }
 
@@ -1319,18 +1360,18 @@ async function playSequence() {
     const res  = await fetch('/gui/sequence/play', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keyframes })
+      body: JSON.stringify(langBody({ keyframes }))
     });
     const data = await res.json();
 
     if (data.success) {
       setPlayingState(true);
-      toast('▶ Playing…');
+      toast(t('gui.toast.playing'));
     } else {
-      toast(data.error || 'Playback failed', true);
+      toast(data.error || t('gui.toast.playfail'), true);
     }
   } catch (e) {
-    toast('Could not reach server', true);
+    toast(t('gui.toast.noserver'), true);
   }
 }
 
@@ -1338,7 +1379,7 @@ async function stopSequence() {
   try {
     await fetch('/gui/sequence/stop', { method: 'POST' });
     setPlayingState(false);
-    toast('⏹ Stopped');
+    toast(t('gui.toast.stopped'));
   } catch (e) { /* silent */ }
 }
 
@@ -1356,12 +1397,12 @@ function setPlayingState(playing) {
 async function saveSequence() {
   const name = document.getElementById('seq-name').value.trim();
   if (!name) {
-    toast('Give the sequence a name first!', true);
+    toast(t('gui.toast.needname'), true);
     document.getElementById('seq-name').focus();
     return;
   }
   if (keyframes.length === 0) {
-    toast('No keyframes to save!', true);
+    toast(t('gui.toast.nokf'), true);
     return;
   }
 
@@ -1377,9 +1418,10 @@ async function saveSequence() {
         s => s.name.trim().toLowerCase() === name.toLowerCase()
       );
       if (collision) {
-        const proceed = confirm(
-          `A sequence named "${collision.name}" already exists (${collision.keyframe_count} keyframes).\n\nOverwrite it?`
-        );
+        const proceed = confirm(t('gui.confirm.overwrite', {
+          name:  collision.name,
+          count: collision.keyframe_count
+        }));
         if (!proceed) return;
       }
     }
@@ -1398,13 +1440,13 @@ async function saveSequence() {
     const data = await res.json();
 
     if (data.success) {
-      toast(`💾 Saved as "${data.filename}" ✓`);
+      toast(t('gui.toast.saved', {name: data.filename}));
       await refreshSequenceList();
     } else {
-      toast(data.error || 'Save failed', true);
+      toast(data.error || t('gui.toast.savefail'), true);
     }
   } catch (e) {
-    toast('Could not reach server', true);
+    toast(t('gui.toast.noserver'), true);
   }
 }
 
@@ -1415,13 +1457,13 @@ async function refreshSequenceList() {
     const sel  = document.getElementById('load-select');
 
     // Keep the placeholder
-    sel.innerHTML = '<option value="">📂 Load saved…</option>';
+    sel.innerHTML = `<option value="">${t('gui.loadsaved')}</option>`;
 
     if (data.success && data.sequences.length > 0) {
       for (const seq of data.sequences) {
         const opt = document.createElement('option');
         opt.value       = seq.filename;
-        opt.textContent = `${seq.name} (${seq.keyframe_count} frames)`;
+        opt.textContent = t('gui.seq.frames', {name: seq.name, count: seq.keyframe_count});
         sel.appendChild(opt);
       }
     }
@@ -1432,7 +1474,7 @@ async function loadSequence(filename) {
   if (!filename) return;
 
   if (keyframes.length > 0) {
-    if (!confirm('Load a saved sequence? Unsaved changes will be lost.')) {
+    if (!confirm(t('gui.confirm.load'))) {
       document.getElementById('load-select').value = '';
       return;
     }
@@ -1480,15 +1522,17 @@ async function loadSequence(filename) {
 
       renderTimeline();
       if (!isCurrentFormat) {
-        toast(`Loaded "${seq.name}" — old-format timing reset to defaults (speed ${DEFAULT_SPEED}, ${DEFAULT_PRE_WAIT}s wait). Re-tune each keyframe as needed.`);
+        toast(t('gui.toast.loadedold', {
+          name: seq.name, speed: DEFAULT_SPEED, wait: DEFAULT_PRE_WAIT
+        }));
       } else {
-        toast(`Loaded "${seq.name}" (${keyframes.length} frames) ✓`);
+        toast(t('gui.toast.loaded', {name: seq.name, count: keyframes.length}));
       }
     } else {
-      toast(data.error || 'Load failed', true);
+      toast(data.error || t('gui.toast.loadfail'), true);
     }
   } catch (e) {
-    toast('Could not reach server', true);
+    toast(t('gui.toast.noserver'), true);
   }
 
   document.getElementById('load-select').value = '';
@@ -1501,7 +1545,7 @@ async function loadSequence(filename) {
 async function speakNow() {
   const text = document.getElementById('speech-textarea').value.trim();
   if (!text) {
-    toast('Type something for Ohbot to say first!', true);
+    toast(t('gui.toast.needspeech'), true);
     document.getElementById('speech-textarea').focus();
     return;
   }
@@ -1510,18 +1554,18 @@ async function speakNow() {
     const res  = await fetch('/gui/speak', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text })
+      body: JSON.stringify(langBody({ text }))
     });
     const data = await res.json();
 
     if (data.success) {
       setSpeakingState(true);
-      toast(`🔊 Speaking…`);
+      toast(t('gui.toast.speaking'));
     } else {
-      toast(data.error || 'Speech failed', true);
+      toast(data.error || t('gui.toast.speechfail'), true);
     }
   } catch (e) {
-    toast('Could not reach server', true);
+    toast(t('gui.toast.noserver'), true);
   }
 }
 
@@ -1549,10 +1593,10 @@ function startStatusPolling() {
 
       if (data.ohbot_connected) {
         dot.classList.add('connected');
-        text.textContent = data.speaking ? '🎙 Speaking…' : 'Ohbot connected';
+        setStatusText(text, data.speaking ? 'gui.speech.speaking' : 'gui.status.connected');
       } else {
         dot.classList.remove('connected');
-        text.textContent = 'Robot not found (sliders still work)';
+        setStatusText(text, 'gui.status.notfound');
       }
 
       // Update speaking indicator
@@ -1561,16 +1605,16 @@ function startStatusPolling() {
       // If a playback just finished, update buttons
       if (!data.playing && isPlaying) {
         setPlayingState(false);
-        toast('Playback complete ✓');
+        toast(t('gui.toast.playdone'));
       }
       if (!data.demo_running && isDemoRunning) {
-        setDemoState(false); toast('✨ Demo complete!');
+        setDemoState(false); toast(t('gui.toast.demodone'));
       } else if (data.demo_running && !isDemoRunning) {
         setDemoState(true);
       }
     } catch (e) {
       document.getElementById('status-dot').classList.remove('connected');
-      document.getElementById('status-text').textContent = 'Server unreachable';
+      setStatusText(document.getElementById('status-text'), 'gui.status.unreachable');
     }
   }, 2000);
 }
@@ -1595,13 +1639,13 @@ async function sendChat() {
   input.value = '';
   appendChatMessage(message, 'user');
 
-  const thinkEl = appendChatMessage('Thinking…', 'thinking');
+  const thinkEl = appendChatMessage(t('gui.chat.thinking'), 'thinking');
 
   try {
     const res  = await fetch('/gui/chat', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ message })
+      body:    JSON.stringify(langBody({ message }))
     });
     const data = await res.json();
     thinkEl.remove();
@@ -1635,7 +1679,7 @@ async function speakChatResponse(text) {
     const res  = await fetch('/gui/speak', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ text })
+      body:    JSON.stringify(langBody({ text }))
     });
     const data = await res.json();
     if (!data.success) console.warn('Speech failed:', data.error);
@@ -1646,20 +1690,20 @@ async function speakChatResponse(text) {
 
 async function clearChatHistory() {
   document.getElementById('chat-messages').innerHTML =
-    '<div class="chat-msg bot">Conversation cleared — let\'s start fresh! 🤖</div>';
+    `<div class="chat-msg bot">${t('gui.chat.cleared')}</div>`;
   try {
     await fetch('/gui/chat/reset', { method: 'POST' });
   } catch (e) { /* silent */ }
-  toast('Chat cleared');
+  toast(t('gui.chat.toast.cleared'));
 }
 
 async function setPersonality(personality) {
   const labels = {
-    friendly:  '😊 Friendly Robot',
-    comedian:  '😄 Comedian',
-    pirate:    '🏴‍☠️ Pirate',
-    professor: '🎓 Grumpy Professor',
-    shy:       '😳 Shy Robot',
+    friendly:  t('gui.pers.friendly.long'),
+    comedian:  t('gui.pers.comedian.long'),
+    pirate:    t('gui.pers.pirate.long'),
+    professor: t('gui.pers.professor.long'),
+    shy:       t('gui.pers.shy.long'),
   };
   try {
     const res  = await fetch('/gui/chat/personality', {
@@ -1670,13 +1714,13 @@ async function setPersonality(personality) {
     const data = await res.json();
     if (data.success) {
       document.getElementById('chat-messages').innerHTML =
-        `<div class="chat-msg bot">Personality switched to ${labels[personality] || personality}! 🎭</div>`;
+        `<div class="chat-msg bot">${t('gui.chat.switched', {name: labels[personality] || personality})}</div>`;
       toast(`🎭 ${labels[personality] || personality}`);
     } else {
-      toast(data.error || 'Could not change personality', true);
+      toast(data.error || t('gui.chat.persfail'), true);
     }
   } catch (e) {
-    toast('Could not reach server', true);
+    toast(t('gui.toast.noserver'), true);
   }
 }
 
@@ -1693,10 +1737,9 @@ const EMOTION_POSES = {
   sleeping:  { HEADNOD:2, HEADTURN:5, EYETURN:5, LIDBLINK:0,  TOPLIP:6, BOTTOMLIP:6, EYETILT:5, HEADROLL:4, led:{r:0,g:0,b:2}   },
 };
 
-const EMOTION_LABELS = {
-  happy:'😊 Happy', sad:'😢 Sad', surprised:'😮 Surprised',
-  thinking:'🤔 Thinking', sleeping:'😴 Sleeping'
-};
+function emotionLabel(name) {
+  return t('gui.emotion.' + name);
+}
 
 async function setEmotion(emotion) {
   try {
@@ -1726,12 +1769,12 @@ async function setEmotion(emotion) {
         });
         updateLedPreview();
       }
-      toast(EMOTION_LABELS[emotion] || emotion);
+      toast(emotionLabel(emotion));
     } else {
-      toast(data.error || 'Emotion failed', true);
+      toast(data.error || t('gui.toast.emotionfail'), true);
     }
   } catch (e) {
-    toast('Could not reach server', true);
+    toast(t('gui.toast.noserver'), true);
   }
 }
 
@@ -1749,15 +1792,19 @@ function goHome(e) {
 
 async function startDemo() {
   try {
-    const res  = await fetch('/gui/demo', { method: 'POST' });
+    const res  = await fetch('/gui/demo', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(langBody())
+    });
     const data = await res.json();
-    if (data.success) { setDemoState(true); toast('✨ Demo starting…'); }
-    else { toast(data.error || 'Could not start demo', true); }
-  } catch (e) { toast('Could not reach server', true); }
+    if (data.success) { setDemoState(true); toast(t('gui.toast.demostart')); }
+    else { toast(data.error || t('gui.toast.demofail'), true); }
+  } catch (e) { toast(t('gui.toast.noserver'), true); }
 }
 
 async function stopDemo() {
-  try { await fetch('/gui/demo/stop', { method: 'POST' }); toast('Demo stopped'); }
+  try { await fetch('/gui/demo/stop', { method: 'POST' }); toast(t('gui.toast.demostopped')); }
   catch (e) {}
 }
 
@@ -1780,6 +1827,29 @@ function toast(message, isError = false) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { el.className = ''; }, 2800);
 }
+
+// ============================================================================
+// Language switching
+// ============================================================================
+// i18n.js re-translates all the fixed text by itself. The motor sliders, the
+// keyframe cards and the saved-sequence dropdown are built here in
+// JavaScript, so they have to be rebuilt by hand.
+window.addEventListener('ohbot-lang-change', () => {
+  if (Object.keys(MOTORS).length) {
+    buildMotorSliders();
+    wireUpSliders();
+    // Put the sliders back where they were before the rebuild.
+    for (const m of Object.values(MOTORS)) {
+      const val = currentMotors[m.key] ?? m.default;
+      const slider = document.getElementById(`motor-${m.key}`);
+      const valEl  = document.getElementById(`val-${m.key}`);
+      if (slider) slider.value = val;
+      if (valEl)  valEl.textContent = val;
+    }
+  }
+  renderTimeline();
+  refreshSequenceList();
+});
 </script>
 </body>
 </html>

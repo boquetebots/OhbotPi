@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🤖 Ohbot Launcher</title>
+<script src="/i18n.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -198,23 +199,111 @@
     pointer-events: none;
   }
 
+  /* ── Robot picker (bottom of the page) ── */
+  #robot-panel {
+    margin-top: 34px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 22px;
+    text-align: center;
+  }
+  #robot-panel h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  #robot-panel .hint {
+    color: var(--muted);
+    font-size: 0.75rem;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .robot-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  #robot-select {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    min-width: 190px;
+  }
+  #robot-select:disabled { opacity: 0.45; cursor: not-allowed; }
+  #btn-load-robot {
+    background: var(--accent2);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  #btn-load-robot:hover:not(:disabled) { opacity: 0.85; }
+  #btn-load-robot:disabled { opacity: 0.35; cursor: not-allowed; }
+  #btn-save-robot {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  #btn-save-robot:hover:not(:disabled) {
+    color: var(--text);
+    border-color: var(--accent2);
+  }
+  #btn-save-robot:disabled { opacity: 0.35; cursor: not-allowed; }
+  #robot-active {
+    margin-top: 12px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  #robot-active strong { color: var(--success); }
+  #robot-msg {
+    display: none;
+    margin-top: 12px;
+    font-size: 0.78rem;
+    border-radius: 8px;
+    padding: 9px 12px;
+    line-height: 1.5;
+  }
+  #robot-msg.show    { display: block; }
+  #robot-msg.ok      { background: #0d2e1a; border: 1px solid var(--success); color: var(--success); }
+  #robot-msg.problem { background: #2e1414; border: 1px solid var(--danger);  color: var(--danger); }
+
   @media (max-width: 500px) {
     .cards { grid-template-columns: 1fr; }
+    .robot-row { flex-direction: column; }
+    #robot-select, #btn-load-robot { width: 100%; }
   }
 </style>
 </head>
-<body>
+<body data-i18n-pagetitle="launcher.pagetitle">
 
 <div class="header">
   <div class="robot">🤖</div>
-  <h1>Ohbot Launcher</h1>
-  <p>Choose what you'd like to do</p>
+  <h1 data-i18n="launcher.title">Ohbot Launcher</h1>
+  <p data-i18n="launcher.subtitle">Choose what you'd like to do</p>
 </div>
 
 <!-- Status bar — shown when a service is running -->
 <div id="status-bar">
   <div class="status-dot"></div>
-  <span id="status-text">Something is running</span>
+  <span id="status-text" data-i18n="launcher.running.some">Something is running</span>
 </div>
 
 <!-- Main choice screen -->
@@ -224,43 +313,79 @@
 
     <!-- Greeter Bot card -->
     <div class="card" id="card-greeter" onclick="startService('greeter')">
-      <div class="active-badge">Running</div>
+      <div class="active-badge" data-i18n="launcher.badge.running">Running</div>
       <div class="icon">🎙️</div>
-      <h2>Greeter Bot</h2>
-      <p>Voice-activated conversation mode. Ohbot listens, talks, and chats with visitors.</p>
+      <h2 data-i18n="launcher.greeter.name">Greeter Bot</h2>
+      <p data-i18n="launcher.greeter.desc">Voice-activated conversation mode. Ohbot listens, talks, and chats with visitors.</p>
     </div>
 
     <!-- Sequence Builder card -->
     <div class="card" id="card-gui" onclick="startService('gui')">
-      <div class="active-badge">Running</div>
+      <div class="active-badge" data-i18n="launcher.badge.running">Running</div>
       <div class="icon">🎛️</div>
-      <h2>Sequence Builder</h2>
-      <p>Web GUI for controlling motors, setting emotions, and building animation sequences.</p>
+      <h2 data-i18n="launcher.gui.name">Sequence Builder</h2>
+      <p data-i18n="launcher.gui.desc">Web GUI for controlling motors, setting emotions, and building animation sequences.</p>
     </div>
 
   </div>
 
   <!-- Action buttons -->
   <div class="actions">
-    <button class="btn btn-stop" id="btn-stop" onclick="stopService()" style="display:none">
+    <button class="btn btn-stop" id="btn-stop" onclick="stopService()" style="display:none"
+            data-i18n="launcher.stop">
       ⏹ Stop Current Service
     </button>
-    <button class="btn btn-open" id="btn-open" onclick="openGui()" style="display:none">
+    <button class="btn btn-open" id="btn-open" onclick="openGui()" style="display:none"
+            data-i18n="launcher.opengui">
       Open GUI ↗
     </button>
   </div>
 
   <!-- Pi-only power buttons — hidden automatically on Mac/Windows -->
   <div class="actions" id="power-actions">
-    <button class="btn btn-restart"  onclick="confirmAction('restart')">↺ Restart Pi</button>
-    <button class="btn btn-shutdown" onclick="confirmAction('shutdown')">⏻ Shut Down Pi</button>
+    <button class="btn btn-restart"  onclick="confirmAction('restart')"  data-i18n="launcher.restart">↺ Restart Pi</button>
+    <button class="btn btn-shutdown" onclick="confirmAction('shutdown')" data-i18n="launcher.shutdown">⏻ Shut Down Pi</button>
   </div>
 
   <!-- Small motor calibration link -->
   <div class="calib-link-wrap">
-    <a href="#" id="calib-link" onclick="handleCalibClick(); return false;" title="Stop the current service first">
+    <a href="#" id="calib-link" onclick="handleCalibClick(); return false;"
+       data-i18n="launcher.calib" data-i18n-title="launcher.calib.tip"
+       title="Stop the current service first">
       🔧 Motor Calibration
     </a>
+  </div>
+
+  <!-- ── Which robot are you using? ────────────────────────────────────────
+       Loading a robot copies its saved calibration over the live motor file
+       that everything reads. Only offered while nothing is running, because
+       programs read that file once at startup. -->
+  <div id="robot-panel">
+    <h3 data-i18n="launcher.robot.title">🤖 Which robot are you using?</h3>
+    <p class="hint" data-i18n-html="launcher.robot.hint">
+      Load its calibration here before starting the Greeter or the GUI.<br>
+      Robots are saved by name when you finish a motor calibration.
+    </p>
+
+    <div class="robot-row">
+      <select id="robot-select">
+        <option value="" data-i18n="common.loading">Loading…</option>
+      </select>
+      <button id="btn-load-robot" onclick="loadRobot()" data-i18n="launcher.robot.load">Load calibration</button>
+    </div>
+
+    <!-- Files whatever calibration is in the live file right now under a
+         name. Needed because the calibration page won't save unless you've
+         measured motors in that session — so this is the only way to name
+         a calibration you already have. -->
+    <div class="robot-row" style="margin-top:10px">
+      <button id="btn-save-robot" onclick="saveCurrentRobot()" data-i18n="launcher.robot.savecur">
+        💾 Save current calibration as a robot…
+      </button>
+    </div>
+
+    <div id="robot-active" data-i18n-html="launcher.robot.active.none">Currently loaded: <strong>—</strong></div>
+    <div id="robot-msg"></div>
   </div>
 
 </div>
@@ -268,12 +393,12 @@
 <!-- Shutdown/restart countdown screen -->
 <div id="shutdown-screen">
   <div class="icon" id="shutdown-icon">⏻</div>
-  <h2 id="shutdown-title">Shutting down…</h2>
+  <h2 id="shutdown-title" data-i18n="launcher.power.shutdown.title">Shutting down…</h2>
   <div id="countdown">3</div>
-  <p id="shutdown-msg">You can safely unplug the power after the light goes out.</p>
+  <p id="shutdown-msg" data-i18n="launcher.power.shutdown.msg">You can safely unplug the power after the light goes out.</p>
 </div>
 
-<div class="footer">Ohbot Web Launcher — <a href="https://github.com/ohbot" style="color:var(--muted)">ohbot.co.uk</a></div>
+<div class="footer"><span data-i18n="launcher.footer">Ohbot Web Launcher — </span><a href="https://github.com/ohbot" style="color:var(--muted)">ohbot.co.uk</a></div>
 
 <script>
   let currentStatus = 'idle';
@@ -309,9 +434,22 @@
   }
   applyPlatform();
 
+  // Put a phrase into the status bar AND remember which phrase it was, so the
+  // language switcher can re-translate it later without waiting for a poll.
+  function setBarText(el, key) {
+    el.setAttribute('data-i18n', key);
+    el.textContent = t(key);
+  }
+
   // ── Apply UI state ────────────────────────────────────────────────────────
   function applyStatus(status) {
+    const changed = (status !== currentStatus);
     currentStatus = status;
+
+    // Only re-fetch the robot list when something actually started or
+    // stopped — the status poll runs every 2 seconds and there's no reason
+    // to hammer the disk that often.
+    if (changed) refreshRobots();
 
     const bar      = document.getElementById('status-bar');
     const barText  = document.getElementById('status-text');
@@ -333,7 +471,7 @@
 
     } else if (status === 'greeter') {
       bar.classList.add('visible');
-      barText.textContent  = 'Greeter Bot is running';
+      setBarText(barText, 'launcher.status.greeter');
       cardG.classList.add('active');
       cardGUI.classList.add('disabled');
       calibLink.classList.add('disabled');
@@ -342,7 +480,7 @@
 
     } else if (status === 'gui') {
       bar.classList.add('visible');
-      barText.textContent  = 'Sequence Builder is running';
+      setBarText(barText, 'launcher.status.gui');
       cardGUI.classList.add('active');
       cardG.classList.add('disabled');
       calibLink.classList.add('disabled');
@@ -351,7 +489,7 @@
 
     } else if (status === 'calibration') {
       bar.classList.add('visible');
-      barText.textContent  = 'Motor Calibration is running';
+      setBarText(barText, 'launcher.status.calib');
       cardG.classList.add('disabled');
       cardGUI.classList.add('disabled');
       calibLink.classList.add('active');
@@ -370,9 +508,9 @@
 
     // If something else is running, confirm switch
     if (currentStatus !== 'idle') {
-      const other = currentStatus === 'greeter' ? 'Greeter Bot' : 'Sequence Builder';
-      const target = which === 'greeter' ? 'Greeter Bot' : 'Sequence Builder';
-      if (!confirm(`Stop the ${other} and switch to the ${target}?`)) return;
+      const other  = t(currentStatus === 'greeter' ? 'launcher.greeter.name' : 'launcher.gui.name');
+      const target = t(which === 'greeter' ? 'launcher.greeter.name' : 'launcher.gui.name');
+      if (!confirm(t('launcher.switch.confirm', { other, target }))) return;
     }
 
     const card = which === 'greeter'
@@ -391,7 +529,7 @@
 
   // ── Stop current service ──────────────────────────────────────────────────
   async function stopService() {
-    if (!confirm('Stop the current service?')) return;
+    if (!confirm(t('launcher.stop.confirm'))) return;
     await fetch('/launcher/stop', { method: 'POST' });
     await pollStatus();
   }
@@ -422,7 +560,7 @@
         await pollStatus();
         window.open(`http://${location.hostname}:5003/calibration`, '_blank');
       } else {
-        alert(d.error || 'Could not start calibration.');
+        alert(d.error || t('launcher.calib.failed'));
       }
     } finally {
       link.style.opacity = '';
@@ -431,8 +569,10 @@
 
   // ── Shutdown / Restart ────────────────────────────────────────────────────
   function confirmAction(action) {
-    const label  = action === 'shutdown' ? 'shut down' : 'restart';
-    if (!confirm(`Are you sure you want to ${label} the Pi?`)) return;
+    const key = action === 'shutdown'
+      ? 'launcher.power.shutdown.confirm'
+      : 'launcher.power.restart.confirm';
+    if (!confirm(t(key))) return;
     doAction(action);
   }
 
@@ -445,10 +585,10 @@
 
     const isShutdown = (action === 'shutdown');
     document.getElementById('shutdown-icon').textContent  = isShutdown ? '⏻' : '↺';
-    document.getElementById('shutdown-title').textContent = isShutdown ? 'Shutting down…' : 'Restarting…';
-    document.getElementById('shutdown-msg').textContent   = isShutdown
-      ? 'You can safely unplug the power after the lights go out.'
-      : 'The page will reload when the Pi is back online.';
+    setBarText(document.getElementById('shutdown-title'),
+      isShutdown ? 'launcher.power.shutdown.title' : 'launcher.power.restart.title');
+    setBarText(document.getElementById('shutdown-msg'),
+      isShutdown ? 'launcher.power.shutdown.msg2' : 'launcher.power.restart.msg');
 
     // Countdown
     let n = 3;
@@ -467,8 +607,236 @@
     }
   }
 
+  // ── Robot calibrations ────────────────────────────────────────────────────
+  // Each robot head has its own motor calibration, saved by name when you
+  // finish calibrating. Loading one copies its numbers over the single live
+  // motor file that the Greeter, the GUI and the Timeline all read.
+  //
+  // Switching is blocked while something is running. Those programs read the
+  // motor file once when they start, so swapping it underneath them would
+  // change nothing until a restart — and the page would then be lying about
+  // which robot is loaded.
+
+  let robotsKnown = [];
+
+  // The panel's help text swaps between two versions depending on whether
+  // any robots exist yet. Both live in i18n.js; we just point at the right
+  // key so the language switcher can re-translate whichever is showing.
+  function setHint(key) {
+    const el = document.querySelector('#robot-panel .hint');
+    el.setAttribute('data-i18n-html', key);
+    el.innerHTML = t(key);
+  }
+
+  // "Currently loaded: X". When there's a real robot name in the line we
+  // strip the data-i18n tag off it, otherwise the language switcher would
+  // helpfully overwrite the name with the generic empty version.
+  function setActive(name) {
+    const el = document.getElementById('robot-active');
+    if (name) {
+      el.removeAttribute('data-i18n-html');
+      el.innerHTML = t('launcher.robot.active', { name });
+    } else {
+      const key = robotsKnown.length
+        ? 'launcher.robot.active.unnamed'
+        : 'launcher.robot.active.none';
+      el.setAttribute('data-i18n-html', key);
+      el.innerHTML = t(key);
+    }
+  }
+
+  function robotMsg(kind, text) {
+    const el = document.getElementById('robot-msg');
+    if (!text) { el.className = ''; el.textContent = ''; return; }
+    el.className = `show ${kind}`;
+    el.textContent = text;
+  }
+
+  function clearProblemOnly() {
+    const el = document.getElementById('robot-msg');
+    if (el.classList.contains('problem')) robotMsg('', '');
+  }
+
+  async function refreshRobots() {
+    const sel    = document.getElementById('robot-select');
+    const btn    = document.getElementById('btn-load-robot');
+
+    let d;
+    try {
+      const r = await fetch('/launcher/robots');
+      d = await r.json();
+    } catch (e) {
+      sel.innerHTML = `<option value="">${t('common.noserver')}</option>`;
+      sel.disabled = true; btn.disabled = true;
+      return;
+    }
+
+    if (!d.success) {
+      sel.innerHTML = `<option value="">${t('common.error')}</option>`;
+      sel.disabled = true; btn.disabled = true;
+      robotMsg('problem', d.error || t('launcher.robot.readfail'));
+      return;
+    }
+
+    robotsKnown = d.robots || [];
+
+    // Remember what was picked so a background refresh doesn't yank the
+    // selection out from under you mid-click.
+    const wasPicked = sel.value;
+
+    if (!robotsKnown.length) {
+      sel.innerHTML = `<option value="">${t('launcher.robot.none')}</option>`;
+      sel.disabled = true;
+      btn.disabled = true;
+      setActive(null);
+      clearProblemOnly();
+      setHint('launcher.robot.hint.none');
+      return;
+    }
+
+    setHint('launcher.robot.hint');
+
+    sel.innerHTML = robotsKnown.map(rb => {
+      const cal = rb.three_point_count > 0
+        ? t('launcher.robot.cal3pt', { n: rb.three_point_count })
+        : t('launcher.robot.cal2pt');
+      const bad = rb.valid ? '' : t('launcher.robot.badfile');
+      const label = t('launcher.robot.option',
+                      { name: rb.name, saved: rb.saved, cal, bad });
+      return `<option value="${rb.name}"${rb.valid ? '' : ' disabled'}>${label}</option>`;
+    }).join('');
+
+    // Restore the previous pick, else default to whichever is loaded now.
+    if (wasPicked && robotsKnown.some(rb => rb.name === wasPicked)) {
+      sel.value = wasPicked;
+    } else if (d.active && robotsKnown.some(rb => rb.name === d.active)) {
+      sel.value = d.active;
+    }
+
+    setActive(d.active);
+
+    // Lock the controls while a service is holding the robot.
+    if (d.can_switch) {
+      sel.disabled = false;
+      btn.disabled = false;
+      // Clear a stale "can't switch" warning, but never wipe the green
+      // "X is loaded" confirmation — loadRobot() calls this straight after
+      // showing it.
+      clearProblemOnly();
+    } else {
+      sel.disabled = true;
+      btn.disabled = true;
+      robotMsg('problem', t('launcher.robot.locked', { running: d.running }));
+    }
+  }
+
+  // Name whatever calibration is sitting in the live motor file right now.
+  // Nothing is measured or changed — it's purely "remember this one as X".
+  async function saveCurrentRobot() {
+    const btn = document.getElementById('btn-save-robot');
+
+    const typed = prompt(t('launcher.save.prompt'), '');
+    if (typed === null) return;
+
+    const name = typed.trim();
+    if (!name) {
+      robotMsg('problem', t('launcher.save.noname'));
+      return;
+    }
+
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = t('common.saving');
+
+    // First attempt deliberately does NOT overwrite, so an existing name
+    // comes back as a question rather than quietly replacing a robot.
+    const post = (overwrite) => fetch('/launcher/robots/save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ name, overwrite })
+    });
+
+    try {
+      let r = await post(false);
+      let d = await r.json();
+
+      if (!d.success && r.status === 409) {
+        if (confirm(t('launcher.save.exists', { name }))) {
+          r = await post(true);
+          d = await r.json();
+        } else {
+          robotMsg('problem', t('launcher.save.nothing'));
+          return;
+        }
+      }
+
+      if (d.success) {
+        const cal = d.three_point_count > 0
+          ? t('launcher.save.cal3pt', { n: d.three_point_count })
+          : t('launcher.save.cal2pt');
+        robotMsg('ok', t('launcher.save.ok', { name: d.name, cal }));
+      } else {
+        robotMsg('problem', d.error || t('launcher.save.fail'));
+      }
+    } catch (e) {
+      robotMsg('problem', t('common.noserver.detail', { msg: e.message }));
+    } finally {
+      btn.textContent = original;
+      btn.disabled = false;
+      await refreshRobots();
+    }
+  }
+
+  async function loadRobot() {
+    const sel  = document.getElementById('robot-select');
+    const btn  = document.getElementById('btn-load-robot');
+    const name = sel.value;
+    if (!name) return;
+
+    const info = robotsKnown.find(rb => rb.name === name);
+    const note = (info && info.three_point_count === 0)
+      ? t('launcher.load.note2pt')
+      : '';
+
+    if (!confirm(t('launcher.load.confirm', { name, note }))) return;
+
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = t('common.loading');
+
+    try {
+      const r = await fetch('/launcher/robots/load', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name })
+      });
+      const d = await r.json();
+
+      if (d.success) {
+        const kept = d.backup ? t('launcher.load.backup', { backup: d.backup }) : '';
+        robotMsg('ok', t('launcher.load.ok', { name: d.name, kept }));
+      } else {
+        robotMsg('problem', d.error || t('launcher.load.fail'));
+      }
+    } catch (e) {
+      robotMsg('problem', t('common.noserver.detail', { msg: e.message }));
+    } finally {
+      btn.textContent = original;
+      // refreshRobots re-enables the button only if switching is still allowed
+      await refreshRobots();
+    }
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────
   startPolling();
+  refreshRobots();
+
+  // When the language is switched, i18n.js re-translates all the fixed text
+  // on its own. The robot dropdown is built here in JavaScript, so it has to
+  // be rebuilt by hand.
+  window.addEventListener('ohbot-lang-change', () => {
+    refreshRobots();
+  });
 </script>
 </body>
 </html>

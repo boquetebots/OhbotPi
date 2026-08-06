@@ -38,7 +38,16 @@ from lxml import etree
 # (those apply Min/Max/Reverse, which is exactly what we're trying to find).
 import ohbot_pi as ohbot
 
+# Saving/loading calibrations under a robot's name (ohbotData/robots/).
+import robot_profiles
+
 app = Flask(__name__)
+
+# ── English / Spanish ──────────────────────────────────────────────────────
+# Adds two routes: /i18n.js (hands the web pages their wording) and /lang
+# (remembers which language was picked). See ohbot_lang.py.
+from ohbot_lang import register_language_routes
+register_language_routes(app)
 
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
 CALIB_DIR     = os.path.join(BASE_DIR, 'calibration')
@@ -66,6 +75,54 @@ MOTORS = {
 TOPLIP    = 4
 BOTTOMLIP = 5
 LIP_MOTORS = (TOPLIP, BOTTOMLIP)
+
+# ── How each motor gets saved ──────────────────────────────────────────────
+# There are three different treatments, because the eight motors genuinely
+# want different things. A motor listed in neither tuple below gets the old
+# original behaviour.
+#
+# 1. THREE_POINT_MOTORS — "keep full travel AND use a measured centre"
+#    The head and eye motors, where "centre" has an obvious physical meaning
+#    (head straight ahead, eyes looking straight). Min, Center and Max are
+#    all saved exactly as measured. Slider 5 lands on the real neutral and
+#    no travel is discarded.
+#
+# 2. FULL_RANGE_MOTORS — "keep full travel, but NO centre"
+#    Lid/Blink. Every blink in the codebase is move(LIDBLINK, 0) or
+#    move(LIDBLINK, 10) — nothing ever uses a position in between, so a
+#    measured centre would change precisely nothing about blinking. What
+#    the lid DOES want is its full range, so the eye can properly close and
+#    properly open instead of being trimmed. So: save the found Min and Max
+#    untouched, and write no Center. With no Center, yobot_core falls back
+#    to the midpoint, which keeps the mapping a single straight line exactly
+#    as it has always been — just a longer one. No kink, nothing to re-tune.
+#
+# 3. Anything in neither tuple — the original behaviour: Min/Max trimmed so
+#    centre sits exactly halfway, no Center written. Nothing uses this now,
+#    but it is kept as the fallback for any motor added in future before
+#    someone has decided which of the two modes above it belongs in.
+#
+# On the lips specifically (added to THREE_POINT_MOTORS 2026-08-05):
+# their "centre" is the mouth-closed position where the two lips just touch,
+# NOT a halfway point. This matters because lip sync only ever uses slider
+# 5-10 — see VisemeMapper in ohbot_azure.py, where NEUTRAL is 5 (meaning
+# closed) and every viseme sits between 5 and 8. With centre at the midpoint
+# the old way, roughly half of each lip's opening travel sat in the 0-5
+# range that lip sync never touches. Putting centre at "just touching" hands
+# almost all of that travel to the 5-10 range lip sync actually uses.
+THREE_POINT_MOTORS = (
+    0,   # HeadNod
+    1,   # HeadTurn
+    2,   # EyeTurn
+    4,   # TopLip     — centre = lips just touching (mouth closed)
+    5,   # BottomLip  — centre = lips just touching (mouth closed)
+    6,   # EyeTilt
+    7,   # HeadRoll
+)
+
+FULL_RANGE_MOTORS = (
+    3,   # LidBlink
+)
 
 # Display order on the calibration page — mechanical calibration order,
 # not motor index order (chosen by Michael: head tilt/nod/turn, then lid,
@@ -309,14 +366,42 @@ def save():
     """
     Write a new MotorDefinitionsv21.omd from the calibration results.
     - Backs up the current file to ohbotData/MD_old_N.omd first.
-    - Only overwrites Min, Max, Reverse on each <Motor> element — Name,
-      Motor (index), Speed, Acceleration, RestPosition and Avoid are all
-      carried over from the existing file untouched.
-    - Trims min/max so the found center stays exactly halfway between them
-      (using whichever side — below or above center — had the smaller
-      found range).
+    - If the page sent a robot_name, ALSO files a copy of the finished
+      calibration under that name in ohbotData/robots/ so it can be loaded
+      back later from the launcher page. The live file is still written
+      either way — the named copy is an archive, not a replacement.
+    - Only overwrites Min, Center, Max and Reverse on each <Motor> element —
+      Name, Motor (index), Speed, Acceleration, RestPosition and Avoid are
+      all carried over from the existing file untouched.
+    - For the THREE_POINT_MOTORS (head and eyes): saves the measured Min,
+      Center and Max as three independent numbers. Nothing is trimmed, so
+      the motor keeps all the travel it actually has, and slider position 5
+      lands on the real measured neutral.
+    - For the FULL_RANGE_MOTORS (Lid/Blink): saves the measured Min and Max
+      untrimmed but writes no Center, so the lid gets its full travel while
+      the mapping stays the straight line it has always been.
+    - Any motor in neither tuple falls back to the old behaviour: min/max
+      trimmed so centre sits exactly halfway between them, and no Center
+      written. See the notes above the two tuples for why each motor is
+      where it is.
     """
     try:
+        # Optional: the name the page asked for. Cleaned and checked BEFORE
+        # anything is written, so a bad name can't leave the live file
+        # rewritten but the named copy missing.
+        payload = request.get_json(silent=True) or {}
+        raw_robot_name = payload.get('robot_name')
+        robot_name = None
+        if raw_robot_name is not None and str(raw_robot_name).strip():
+            robot_name = robot_profiles.clean_name(raw_robot_name)
+            if not robot_name:
+                return jsonify({
+                    'success': False,
+                    'error': 'That robot name has no usable characters in it. '
+                             'Use letters, numbers, spaces, dashes or '
+                             'underscores. Nothing was saved.'
+                }), 400
+
         if not os.path.exists(MOTOR_DEF_FILE):
             return jsonify({
                 'success': False,
@@ -325,16 +410,38 @@ def save():
                          f'Speed/Acceleration/Avoid for each motor.'
             }), 400
 
-        # Check every motor has all three values before touching anything.
-        missing = []
-        for m, label in ((m, MOTORS[m]['label']) for m in MOTORS):
+        # ── Partial saves ─────────────────────────────────────────────────
+        # A motor is only rewritten if it has ALL THREE values (Min, Center,
+        # Max) recorded in this session. Any motor you didn't touch is left
+        # completely alone in the file — its Min/Center/Max/Reverse stay
+        # exactly as they were. That's what lets you re-calibrate one or two
+        # servos without having to redo all eight.
+        #
+        # A motor with only one or two of the three recorded is treated as
+        # half-finished: it is NOT saved, and it's reported back so you know
+        # it didn't take. Saving a motor with a missing Min or Max would
+        # produce a nonsense range.
+        ready = []
+        half_done = []
+        untouched = []
+        for m in MOTORS:
             st = calib_state[m]
-            if st['center'] is None or st['found_a'] is None or st['found_b'] is None:
-                missing.append(label)
-        if missing:
+            got = sum(1 for k in ('center', 'found_a', 'found_b')
+                      if st[k] is not None)
+            if got == 3:
+                ready.append(m)
+            elif got == 0:
+                untouched.append(m)
+            else:
+                half_done.append(m)
+
+        if not ready:
             return jsonify({
                 'success': False,
-                'error': 'Still missing calibration data for: ' + ', '.join(missing)
+                'error': 'No motor has all three of Min, Center and Max '
+                         'recorded yet, so there is nothing to save. Use the '
+                         'Min OK / Center OK / Max OK buttons on at least one '
+                         'motor first.'
             }), 400
 
         tree = etree.parse(MOTOR_DEF_FILE)
@@ -353,31 +460,111 @@ def save():
         backup_name = _next_backup_name()
         shutil.copy2(MOTOR_DEF_FILE, os.path.join(OHBOT_DATA, backup_name))
 
+        three_point_saved = []
+        full_range_saved = []
+        trimmed_saved = []
+
         for child in root:
             idx = int(child.get('Motor'))
             st = calib_state[idx]
+            label = MOTORS[idx]['label']
+
+            # Skip anything not fully measured this session — leave that
+            # motor's existing settings in the file completely untouched.
+            if idx not in ready:
+                continue
 
             found_min = min(st['found_a'], st['found_b'])
             found_max = max(st['found_a'], st['found_b'])
             center    = st['center']
 
-            below = center - found_min
-            above = found_max - center
-            half  = min(below, above)
-            if half < 0:
-                half = 0  # center was outside the found range — clamp to 0 width rather than invert
+            if idx in THREE_POINT_MOTORS and found_min <= center <= found_max:
+                # Three-point: keep all three measurements exactly as found.
+                # No trimming, so no travel is thrown away.
+                new_min    = int(round(found_min))
+                new_max    = int(round(found_max))
+                new_center = int(round(center))
+                three_point_saved.append(label)
+            elif idx in FULL_RANGE_MOTORS:
+                # Full range, no centre: keep the measured Min and Max, but
+                # write no Center so the mapping stays the single straight
+                # line it has always been. The Center OK value you recorded
+                # is used only as a sanity check (below) — it is deliberately
+                # not saved, because for Lid/Blink it would have no effect
+                # and would only be misleading in the file.
+                new_min    = int(round(found_min))
+                new_max    = int(round(found_max))
+                new_center = None
+                full_range_saved.append(label)
+            else:
+                # Old two-point behaviour: pull min/max in until centre sits
+                # exactly halfway. Used for the lips and Lid/Blink, and as a
+                # safe fallback for any motor whose recorded centre somehow
+                # landed outside its own found range.
+                below = center - found_min
+                above = found_max - center
+                half  = min(below, above)
+                if half < 0:
+                    half = 0  # center was outside the found range — clamp to 0 width rather than invert
 
-            new_min = int(round(center - half))
-            new_max = int(round(center + half))
+                new_min    = int(round(center - half))
+                new_max    = int(round(center + half))
+                new_center = None
+                trimmed_saved.append(label)
 
             child.set('Min', str(new_min))
             child.set('Max', str(new_max))
             child.set('Reverse', 'True' if st['reverse'] else 'False')
 
+            # A Center attribute is written ONLY for three-point motors.
+            # Leaving it off for the trimmed motors is deliberate: yobot_core
+            # then falls back to the exact halfway point it has always used,
+            # so those motors are guaranteed byte-for-byte unchanged rather
+            # than "changed by a rounding hair". Presence of Center is also a
+            # clear signal of which motors have been three-point calibrated.
+            if new_center is not None:
+                child.set('Center', str(new_center))
+            elif child.get('Center') is not None:
+                del child.attrib['Center']
+
         tree.write(MOTOR_DEF_FILE, pretty_print=True, xml_declaration=False)
 
-        return jsonify({'success': True, 'backup': backup_name})
+        # ── File a named copy for this robot ──────────────────────────────
+        # Done AFTER the live file is written, so the copy captures the
+        # finished calibration. If this step fails the live file is still
+        # correct and the robot works — we just report that the named copy
+        # didn't happen, rather than pretending the whole save failed.
+        saved_as = None
+        robot_error = None
+        if robot_name:
+            ok, result = robot_profiles.save_profile(robot_name)
+            if ok:
+                saved_as = result
+            else:
+                robot_error = result
 
+        return jsonify({
+            'success': True,
+            'backup': backup_name,
+            'three_point': three_point_saved,
+            'full_range': full_range_saved,
+            'trimmed': trimmed_saved,
+            'untouched': [MOTORS[m]['label'] for m in untouched],
+            'half_done': [MOTORS[m]['label'] for m in half_done],
+            'saved_as': saved_as,
+            'robot_error': robot_error,
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/calibration/robots')
+def robots():
+    """The list of saved robots and which one is currently loaded. The page
+    uses this to pre-fill the name box and to warn before overwriting."""
+    try:
+        return jsonify({'success': True, **robot_profiles.summary()})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

@@ -99,6 +99,14 @@ motorMins = [0, 0, 0, 0, 0, 0, 0, 0]
 motorMaxs = [0, 0, 0, 0, 0, 0, 0, 0]
 motorRev = [False, False, False, False, False, False, False, False]
 restPos = [5, 5, 5, 5, 5, 5, 5, 5]
+
+# 3-point calibration: the measured neutral for each motor, in degrees.
+# Slider position 5 lands exactly here. Filled in by _loadMotorDefs() from
+# the Center="..." attribute in the .omd file; if that attribute is missing
+# it defaults to the halfway point between Min and Max, which reproduces
+# the old two-point behaviour exactly.
+motorCenters = [0, 0, 0, 0, 0, 0, 0, 0]
+
 isAttached = [False, False, False, False, False, False, False, False]
 
 # Eye state
@@ -617,9 +625,34 @@ def detach(m):
 
 
 def _getPos(m, pos):
-    """Calculate motor position"""
-    mRange = motorMaxs[m] - motorMins[m]
-    return (mRange / 10) * pos + motorMins[m]
+    """Turn a 0-10 slider position into a servo angle in degrees.
+
+    Three-point mapping: instead of one straight line from Min to Max, this
+    uses two straight lines that meet at the motor's measured Center.
+
+        slider  0 -> 5   maps  Min    -> Center
+        slider  5 -> 10  maps  Center -> Max
+
+    Why: a servo's true mechanical neutral (head genuinely straight ahead)
+    is almost never at the arithmetic halfway point of its travel. The old
+    single-line version had no way to express that, so the calibration tool
+    used to throw away travel on the roomier side to force symmetry. Now
+    both sides keep their full range and slider 5 is the real neutral.
+
+    Note this means one slider step is worth more degrees on one side of
+    centre than the other. That is intended — it is what lets 0 and 10 mean
+    "as far as this motor actually goes" in both directions.
+
+    If a motor's Center is the exact midpoint (which is what happens when
+    the .omd file has no Center attribute), both halves have identical
+    slope and this is arithmetically identical to the old version.
+    """
+    centre = motorCenters[m]
+
+    if pos <= 5:
+        return motorMins[m] + (centre - motorMins[m]) * (pos / 5)
+    else:
+        return centre + (motorMaxs[m] - centre) * ((pos - 5) / 5)
 
 
 def reset():
@@ -761,7 +794,7 @@ def _reverseBits(hex_str):
 
 def _loadMotorDefs():
     """Load motor definitions"""
-    global motorMins, motorMaxs, motorRev, restPos
+    global motorMins, motorMaxs, motorRev, restPos, motorCenters
 
     if not os.path.exists(motorDefFile):
         # Use defaults
@@ -776,6 +809,18 @@ def _loadMotorDefs():
         motorPos[idx] = restPos[idx]
         motorRev[idx] = (child.get("Reverse") == "True")
 
+        # ── Three-point calibration: the measured neutral ──────────────────
+        # Center is optional. Older motor files written before three-point
+        # calibration don't have it, and files where centre genuinely is the
+        # midpoint don't need it. In both cases we fall back to the halfway
+        # point, which makes _getPos() behave exactly like the old two-point
+        # version. So old files keep working with no changes.
+        centre_raw = child.get("Center")
+        if centre_raw is not None:
+            motorCenters[idx] = int(centre_raw) / 1000 * 180
+        else:
+            motorCenters[idx] = (motorMins[idx] + motorMaxs[idx]) / 2
+
         # Catch a calibration file where a motor's Min and Max ended up the
         # same (or backwards). That motor would silently refuse to move —
         # every slider position computes to the same servo angle — which is
@@ -785,6 +830,16 @@ def _loadMotorDefs():
             print(f"⚠️  Calibration problem: {name} has Min={child.get('Min')} "
                   f"Max={child.get('Max')} — no range of travel, so this motor "
                   f"will not move. Re-run the calibration page for {name}.")
+
+        # Catch a Center that sits outside the motor's own travel. That would
+        # make one half of the slider run backwards, which looks like a wildly
+        # broken motor. Pull it back inside and say so.
+        elif not (motorMins[idx] <= motorCenters[idx] <= motorMaxs[idx]):
+            name = child.get("Name") or f"motor {idx}"
+            print(f"⚠️  Calibration problem: {name} has Center={centre_raw}, "
+                  f"which is outside its Min/Max travel. Falling back to the "
+                  f"midpoint. Re-run the calibration page for {name}.")
+            motorCenters[idx] = (motorMins[idx] + motorMaxs[idx]) / 2
 
 
 # ============================================================================

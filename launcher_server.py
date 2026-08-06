@@ -28,7 +28,7 @@ Which mode is in use is decided automatically at startup and shown in the
 console when the launcher starts.
 """
 
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory
 import os
 import platform
 import shutil
@@ -37,7 +37,16 @@ import sys
 import threading
 import time
 
+# Saved per-robot calibrations (ohbotData/robots/). See robot_profiles.py.
+import robot_profiles
+
 app = Flask(__name__)
+
+# ── English / Spanish ──────────────────────────────────────────────────────
+# Adds two routes: /i18n.js (hands the web pages their wording) and /lang
+# (remembers which language was picked). See ohbot_lang.py.
+from ohbot_lang import register_language_routes
+register_language_routes(app)
 
 BASE_DIR     = os.path.dirname(os.path.abspath(__file__))
 LAUNCHER_DIR = os.path.join(BASE_DIR, 'launcher')
@@ -229,6 +238,87 @@ def serve_launcher():
 def get_status():
     """The page polls this every 2 seconds to know what's running."""
     return jsonify({'status': _get_status()})
+
+
+@app.route('/launcher/robots')
+def list_robots():
+    """
+    The saved robots, which one is loaded, and whether it's safe to switch
+    right now.
+
+    Switching is only offered when nothing is running. Every program reads
+    the motor file once at startup, so swapping it underneath a running
+    greeter or GUI would change nothing until a restart — and would leave
+    the page claiming a robot is loaded when the running program is still
+    driving the previous one.
+    """
+    try:
+        data = robot_profiles.summary()
+        data['can_switch'] = (_get_status() == 'idle')
+        data['running'] = _get_status()
+        return jsonify({'success': True, **data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/launcher/robots/save', methods=['POST'])
+def save_robot():
+    """
+    File the CURRENT live motor file into the robot library under a name,
+    without re-measuring anything.
+
+    This exists because the calibration page — correctly — refuses to save
+    when you haven't measured any motors in that session. So there was no
+    way to say "the calibration already in the file belongs to this robot,
+    remember it". That's exactly what you need when you already have a
+    calibrated head and are about to introduce a second one.
+
+    Allowed while a service is running: this only reads the live file and
+    copies it, so it can't disturb anything.
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        overwrite = bool(data.get('overwrite', False))
+        ok, result = robot_profiles.save_profile(data.get('name'),
+                                                 overwrite=overwrite)
+        if not ok:
+            # 409 specifically means "that name is taken" — the page uses
+            # this to ask before replacing, rather than clobbering silently.
+            code = 409 if 'already exists' in str(result) else 400
+            return jsonify({'success': False, 'error': result}), code
+        return jsonify({'success': True, **result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/launcher/robots/load', methods=['POST'])
+def load_robot():
+    """
+    Copy a saved robot's calibration over the live motor file, so everything
+    started from now on drives that robot.
+
+    The current live file is backed up to ohbotData/MD_old_N.omd first, so
+    an accidental switch is always recoverable.
+    """
+    try:
+        running = _get_status()
+        if running != 'idle':
+            return jsonify({
+                'success': False,
+                'error': f'Stop the {running} first — it is already running and '
+                         f'has the current robot\'s numbers loaded in memory. '
+                         f'Switching robots now would have no effect until it '
+                         f'restarts. Press "Stop Current Service", then try '
+                         f'again.'
+            }), 409
+
+        data = request.get_json(silent=True) or {}
+        ok, result = robot_profiles.load_profile(data.get('name'))
+        if not ok:
+            return jsonify({'success': False, 'error': result}), 400
+        return jsonify({'success': True, **result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/launcher/platform')

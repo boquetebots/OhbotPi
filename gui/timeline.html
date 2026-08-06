@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🎬 Ohbot Timeline (Preview)</title>
+<script src="/i18n.js"></script>
 <style>
   /* Same color palette as gui/index.html so this feels like the same toolset */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -319,16 +320,33 @@
     margin-bottom: 6px;
   }
 
-  #motors-scroll { flex: 1; overflow-y: auto; padding: 8px 14px; min-height: 0; }
-
-  .motor-row {
+  /* One grid for the whole motor list, so the columns line up down the list
+     AND the name column sizes itself to the longest name on screen. It used
+     to be pinned at 78px, which was too narrow for the Spanish names — they
+     ran under the sliders. fit-content can't overflow in any language. */
+  #motors-scroll {
+    flex: 1; overflow-y: auto; min-height: 0;
     display: grid;
-    grid-template-columns: 78px 1fr 32px;
+    grid-template-columns: fit-content(128px) 1fr 32px;
     align-items: center;
-    gap: 6px;
-    margin-bottom: 9px;
+    align-content: start;
+    column-gap: 6px;
+    row-gap: 9px;
+
+    /* Extra top and bottom padding on purpose. The round slider handles are
+       16px tall but sit on a 6px track, so they stick out past their row.
+       Without this the first and last handles get clipped by the scrolling
+       edge. (Each row used to carry its own bottom margin, which happened to
+       leave that space; the shared grid puts gaps only BETWEEN rows.) */
+    padding: 12px 14px;
   }
-  .motor-label { font-size: 0.74rem; font-weight: 600; color: var(--text); white-space: nowrap; }
+
+  /* Each row hands its three children up to the grid above. */
+  .motor-row { display: contents; }
+
+  /* Wrapping allowed as a backstop: a name longer than the 128px cap goes
+     onto two lines rather than under the slider. */
+  .motor-label { font-size: 0.74rem; font-weight: 600; color: var(--text); line-height: 1.25; }
   .motor-slider {
     -webkit-appearance: none; appearance: none;
     width: 100%; height: 6px; border-radius: 3px;
@@ -406,6 +424,8 @@
     background: var(--card); border: 1px solid var(--border); border-radius: 6px;
     color: var(--text); font-size: 0.8rem; padding: 6px 8px; font-family: inherit;
   }
+  #speech-preview-btn { width: 100%; margin-top: 6px; }
+  #speech-preview-btn:disabled { opacity: 0.5; cursor: default; border-color: var(--border); }
   #speech-hint { font-size: 0.68rem; color: var(--muted); margin-top: 4px; }
 
   #capture-buttons { display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; border-top: 1px solid var(--border); flex-shrink: 0; }
@@ -437,30 +457,30 @@
   .clip:hover .clip-delete { display: flex; }
 </style>
 </head>
-<body>
+<body data-i18n-pagetitle="tl.pagetitle">
 
   <div id="topbar">
-    <h1>🎬 Ohbot Timeline</h1>
-    <span id="phase-badge">PHASE 2B — LIVE CAPTURE</span>
+    <h1 data-i18n="tl.title">🎬 Ohbot Timeline</h1>
+    <span id="phase-badge" data-i18n="tl.phase">PHASE 2B — LIVE CAPTURE</span>
     <span id="status-dot"></span>
-    <span id="status-text">Checking robot…</span>
-    <span id="playing-badge">▶ PLAYING</span>
-    <div id="loaded-info">Pick a sequence on the left to preview it.</div>
+    <span id="status-text" data-i18n="tl.checking">Checking robot…</span>
+    <span id="playing-badge" data-i18n="tl.badge.playing">▶ PLAYING</span>
+    <div id="loaded-info" data-i18n="tl.pickone">Pick a sequence on the left to preview it.</div>
     <div class="topbar-spacer"></div>
-    <a href="http://192.168.50.155:5001/gui" id="home-btn">← Sequence Builder</a>
+    <a href="http://192.168.50.155:5001/gui" id="home-btn" data-i18n="tl.link.builder">← Sequence Builder</a>
   </div>
 
   <div id="main">
     <div id="left-panel">
-      <h2>Saved Sequences</h2>
-      <div id="left-panel-hint">Click a sequence to open it (replaces what's on the timeline now). Use <b>Insert at playhead</b> to splice its keyframes into what you're currently building instead.</div>
+      <h2 data-i18n="tl.saved">Saved Sequences</h2>
+      <div id="left-panel-hint" data-i18n-html="tl.leftHint">Click a sequence to open it (replaces what's on the timeline now). Use <b>Insert at playhead</b> to splice its keyframes into what you're currently building instead.</div>
       <div id="sequence-list">
-        <div class="empty-msg">Loading…</div>
+        <div class="empty-msg" data-i18n="common.loading">Loading…</div>
       </div>
     </div>
 
     <div id="timeline-area">
-      <div id="empty-state">
+      <div id="empty-state" data-i18n-html="tl.empty">
         Select a saved sequence on the left, or pose Ohbot with the<br>
         panel on the right and click <strong>📸 Capture Keyframe</strong> to start a new one.
       </div>
@@ -469,23 +489,23 @@
         <div id="ruler"></div>
         <div id="track"></div>
         <div id="total-duration"></div>
-        <div id="hint-bar">Click the ruler or track to move the playhead — new keyframes (and inserted sequences) land there. Press spacebar to play from there (the playhead travels along as it plays), press again to stop. Hover a clip to delete it.</div>
+        <div id="hint-bar" data-i18n="tl.hintbar">Click the ruler or track to move the playhead — new keyframes (and inserted sequences) land there. Press spacebar to play from there (the playhead travels along as it plays), press again to stop. Hover a clip to delete it.</div>
       </div>
     </div>
 
     <div id="capture-panel">
-      <div class="panel-title">Pose &amp; Capture</div>
+      <div class="panel-title" data-i18n="tl.pose">Pose &amp; Capture</div>
 
       <div id="motors-scroll"><!-- motor sliders inserted by JS --></div>
 
       <div id="speed-row">
-        <label>Move Speed</label>
+        <label data-i18n="common.speed">Move Speed</label>
         <input type="range" id="speed-slider" min="1" max="10" step="1" value="5">
         <span id="speed-value">5</span>
       </div>
 
       <div id="live-row">
-        <label>Live mode — send as you slide</label>
+        <label data-i18n="common.livemode">Live mode — send as you slide</label>
         <label class="toggle">
           <input type="checkbox" id="live-toggle" checked>
           <span class="toggle-track"></span>
@@ -493,7 +513,7 @@
       </div>
 
       <div id="led-section">
-        <div class="panel-subhead">Eye Colour (LED)</div>
+        <div class="panel-subhead" data-i18n="common.eyecolour">Eye Colour (LED)</div>
         <div class="led-row">
           <span class="led-label r">R</span>
           <input type="range" class="led-slider" id="led-r" min="0" max="10" step="0.5" value="0">
@@ -511,35 +531,39 @@
         </div>
         <div id="led-preview"></div>
         <div class="led-presets">
-          <div class="led-preset" style="background:#000"             title="Off"      onclick="setLedPreset(0,0,0)"></div>
-          <div class="led-preset" style="background:rgb(255,0,0)"     title="Red"      onclick="setLedPreset(10,0,0)"></div>
-          <div class="led-preset" style="background:rgb(0,255,0)"     title="Green"    onclick="setLedPreset(0,10,0)"></div>
-          <div class="led-preset" style="background:rgb(0,0,255)"     title="Blue"     onclick="setLedPreset(0,0,10)"></div>
-          <div class="led-preset" style="background:rgb(255,255,0)"   title="Yellow"   onclick="setLedPreset(10,10,0)"></div>
-          <div class="led-preset" style="background:rgb(0,255,255)"   title="Cyan"     onclick="setLedPreset(0,10,10)"></div>
-          <div class="led-preset" style="background:rgb(255,0,255)"   title="Purple"   onclick="setLedPreset(10,0,10)"></div>
-          <div class="led-preset" style="background:rgb(255,255,255)" title="White"    onclick="setLedPreset(10,10,10)"></div>
+          <div class="led-preset" style="background:#000"             data-i18n-title="led.off" title="Off"      onclick="setLedPreset(0,0,0)"></div>
+          <div class="led-preset" style="background:rgb(255,0,0)"     data-i18n-title="led.red" title="Red"      onclick="setLedPreset(10,0,0)"></div>
+          <div class="led-preset" style="background:rgb(0,255,0)"     data-i18n-title="led.green" title="Green"    onclick="setLedPreset(0,10,0)"></div>
+          <div class="led-preset" style="background:rgb(0,0,255)"     data-i18n-title="led.blue" title="Blue"     onclick="setLedPreset(0,0,10)"></div>
+          <div class="led-preset" style="background:rgb(255,255,0)"   data-i18n-title="led.yellow" title="Yellow"   onclick="setLedPreset(10,10,0)"></div>
+          <div class="led-preset" style="background:rgb(0,255,255)"   data-i18n-title="led.cyan" title="Cyan"     onclick="setLedPreset(0,10,10)"></div>
+          <div class="led-preset" style="background:rgb(255,0,255)"   data-i18n-title="led.purple" title="Purple"   onclick="setLedPreset(10,0,10)"></div>
+          <div class="led-preset" style="background:rgb(255,255,255)" data-i18n-title="led.white" title="White"    onclick="setLedPreset(10,10,10)"></div>
         </div>
       </div>
 
       <div id="speech-section">
-        <div class="panel-subhead">Speech</div>
-        <textarea id="speech-textarea" placeholder="What Ohbot says at this keyframe…"></textarea>
-        <div id="speech-hint">Saved as text with the keyframe — not spoken aloud here (timeline playback doesn't do speech yet).</div>
+        <div class="panel-subhead" data-i18n="tl.speech">Speech</div>
+        <textarea id="speech-textarea" data-i18n-placeholder="tl.speech.ph" placeholder="What Ohbot says at this keyframe…"></textarea>
+        <button class="ctl-btn" id="speech-preview-btn" onclick="previewSpeechTL()"
+                data-i18n="tl.speech.preview"
+                data-i18n-title="tl.speech.preview.tip"
+                title="Hear this line now, in the language selected top-right. Doesn't change the keyframe.">🔊 Hear This Line</button>
+        <div id="speech-hint" data-i18n="tl.speech.hint">Saved as text with the keyframe — not spoken aloud here (timeline playback doesn't do speech yet).</div>
       </div>
 
       <div id="capture-buttons">
-        <button class="ctl-btn" onclick="sendAllMotorsTL()">📡 Send Pose to Robot</button>
-        <button class="ctl-btn" onclick="resetRobotTL()">↩ Reset Pose</button>
-        <button class="ctl-btn primary" onclick="captureKeyframeTL()">📸 Capture Keyframe</button>
+        <button class="ctl-btn" onclick="sendAllMotorsTL()" data-i18n="tl.sendpose">📡 Send Pose to Robot</button>
+        <button class="ctl-btn" onclick="resetRobotTL()" data-i18n="tl.resetpose">↩ Reset Pose</button>
+        <button class="ctl-btn primary" onclick="captureKeyframeTL()" data-i18n="common.capture">📸 Capture Keyframe</button>
       </div>
 
       <div id="seq-save-block">
-        <input type="text" id="seq-name-input" placeholder="Sequence name…">
-        <input type="text" id="seq-desc-input" placeholder="Description (optional)">
+        <input type="text" id="seq-name-input" data-i18n-placeholder="common.seqname.ph" placeholder="Sequence name…">
+        <input type="text" id="seq-desc-input" data-i18n-placeholder="common.seqdesc.ph" placeholder="Description (optional)">
         <div id="seq-save-row">
-          <button class="ctl-btn" onclick="newSequenceTL()">＋ New</button>
-          <button class="ctl-btn primary" onclick="saveSequenceTL()">💾 Save</button>
+          <button class="ctl-btn" onclick="newSequenceTL()" data-i18n="common.new">＋ New</button>
+          <button class="ctl-btn primary" onclick="saveSequenceTL()" data-i18n="common.save">💾 Save</button>
         </div>
       </div>
     </div>
@@ -564,8 +588,8 @@ function fullRangeSeconds(speed) {
   for (let i = 0; i < SPEED_KEYS.length - 1; i++) {
     if (speed >= SPEED_KEYS[i] && speed <= SPEED_KEYS[i + 1]) { lo = SPEED_KEYS[i]; hi = SPEED_KEYS[i + 1]; break; }
   }
-  const t = (speed - lo) / (hi - lo);
-  return SPEED_TABLE[lo] + t * (SPEED_TABLE[hi] - SPEED_TABLE[lo]);
+  const frac = (speed - lo) / (hi - lo);
+  return SPEED_TABLE[lo] + frac * (SPEED_TABLE[hi] - SPEED_TABLE[lo]);
 }
 
 // If we don't yet know where a motor was sitting before this keyframe
@@ -676,7 +700,7 @@ function beginPlayheadAnimation() {
       playbackAnimFrame = null;
       if (isPlaying) {
         setPlayingUI(false);
-        toast('Playback finished');
+        toast(t('tl.toast.playdone'));
       }
     }
   }
@@ -694,13 +718,13 @@ function clipTooltip(kf, estSeconds, overflow) {
   const parts = [];
   const motors = kf.motors || {};
   const motorStr = Object.entries(motors).map(([k, v]) => `${k}=${v}`).join(', ');
-  if (motorStr) parts.push(`Motors: ${motorStr}`);
+  if (motorStr) parts.push(t('tl.tip.motors', {list: motorStr}));
   if (kf.led) parts.push(`LED: R${kf.led.r ?? 0} G${kf.led.g ?? 0} B${kf.led.b ?? 0}`);
-  if (kf.text && kf.text.trim()) parts.push(`Speech: "${kf.text.trim()}"`);
-  parts.push(`Speed: ${kf.speed ?? 5}`);
-  parts.push(`Pre-wait: ${(kf.preWait ?? 0)}s`);
-  parts.push(`Estimated move time: ${estSeconds.toFixed(2)}s (visual estimate only)`);
-  if (overflow) parts.push('⚠ Estimated move may take longer than this pre-wait — consider raising the pre-wait.');
+  if (kf.text && kf.text.trim()) parts.push(t('tl.tip.speech', {text: kf.text.trim()}));
+  parts.push(t('tl.tip.speed',   {n: kf.speed ?? 5}));
+  parts.push(t('tl.tip.prewait', {n: kf.preWait ?? 0}));
+  parts.push(t('tl.tip.est',     {n: estSeconds.toFixed(2)}));
+  if (overflow) parts.push(t('tl.tip.overflow'));
   return parts.join('\n');
 }
 
@@ -709,15 +733,16 @@ function renderTimeline(sequence, resetPlayhead = true) {
   currentSequence = sequence;
   if (resetPlayhead) playheadSeconds = 0;
 
-  document.getElementById('loaded-info').innerHTML =
-    `<b>${escapeHtml(sequence.name || 'Untitled')}</b> — ${keyframes.length} keyframe${keyframes.length === 1 ? '' : 's'}`;
+  setLoadedInfo(sequence.name, keyframes.length, false);
 
   const emptyState = document.getElementById('empty-state');
   const wrap = document.getElementById('timeline-wrap');
 
   if (!keyframes.length) {
     emptyState.style.display = 'flex';
-    emptyState.textContent = 'This sequence has no keyframes yet.';
+    emptyState.removeAttribute('data-i18n-html');
+    emptyState.setAttribute('data-i18n', 'tl.nokf');
+    emptyState.textContent = t('tl.nokf');
     wrap.style.display = 'none';
     currentClips = [];
     currentTotalSeconds = 0;
@@ -770,14 +795,14 @@ function renderTimeline(sequence, resetPlayhead = true) {
     const ledColor = led ? `rgb(${Math.round((led.r ?? 0) / 10 * 255)}, ${Math.round((led.g ?? 0) / 10 * 255)}, ${Math.round((led.b ?? 0) / 10 * 255)})` : null;
 
     div.innerHTML = `
-      <div class="clip-delete" onclick="event.stopPropagation(); deleteClipTL(${c.index})" title="Delete this keyframe">✕</div>
+      <div class="clip-delete" onclick="event.stopPropagation(); deleteClipTL(${c.index})" title="${escAttrTL(t('tl.clip.delete.tip'))}">✕</div>
       <div class="clip-index">#${c.index + 1}</div>
       <div class="clip-label">${escapeHtml(c.kf.label || ('Keyframe ' + (c.index + 1)))}</div>
       <div class="clip-badges">
         ${ledColor ? `<span class="led-dot" style="background:${ledColor}"></span>` : ''}
         <span>⚡${c.kf.speed ?? 5}</span>
         ${c.kf.text ? '<span>🗣</span>' : ''}
-        ${c.overflow ? '<span title="Estimated move may take longer than this keyframe\'s pre-wait">⚠</span>' : ''}
+        ${c.overflow ? `<span title="${escAttrTL(t('tl.clip.overflow.tip'))}">⚠</span>` : ''}
       </div>
     `;
     track.appendChild(div);
@@ -795,7 +820,7 @@ function renderTimeline(sequence, resetPlayhead = true) {
   });
 
   document.getElementById('total-duration').textContent =
-    `Estimated real playback time: ~${totalSeconds.toFixed(1)}s — driven by each keyframe's pre-wait, same as actual playback. Clip-move boxes are shown for reference, capped to fit inside their pre-wait.`;
+    t('tl.totalduration', {secs: totalSeconds.toFixed(1)});
 
   renderPlayhead();
 }
@@ -810,16 +835,59 @@ function escapeHtml(str) {
   return d.innerHTML;
 }
 
+// ── Little language helpers ───────────────────────────────────────────────
+
+// Translated text going into a title="…" has to have its quotes neutered
+// first, or a phrase containing a " would break the tag it sits in.
+function escAttrTL(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
+
+// "3 keyframes" vs "1 keyframe" — Spanish needs its own singular too.
+function seqMeta(count) {
+  return count === 1 ? t('tl.seqmeta.one') : t('tl.seqmeta', { count });
+}
+
+// The "which sequence is loaded" line in the top bar. We stash the pieces on
+// the element so the language switcher can redraw the line with the same
+// name and count.
+function setLoadedInfo(name, count, saved) {
+  const el = document.getElementById('loaded-info');
+  const shown = name || t('tl.untitled');
+  let key = saved ? 'tl.loadedinfo.saved' : 'tl.loadedinfo';
+  if (count === 1) key += '.one';
+  el.removeAttribute('data-i18n');
+  el.removeAttribute('data-i18n-html');
+  el._info = { name, count, saved };
+  el.innerHTML = t(key, { name: escapeHtml(shown), count });
+}
+
+// The plain-text variants of that same line ("New sequence — not saved yet.")
+function setLoadedInfoKey(key) {
+  const el = document.getElementById('loaded-info');
+  el.removeAttribute('data-i18n-html');
+  el.setAttribute('data-i18n', key);
+  el._info = null;
+  el.textContent = t(key);
+}
+
+// Puts a phrase in the top-bar status line and tags it, so switching
+// language re-translates it straight away.
+function setStatusTL(el, key) {
+  el.setAttribute('data-i18n', key);
+  el.textContent = t(key);
+}
+
 // ── Sequence list (left panel) ────────────────────────────────────────────
 async function loadSequenceList() {
   const listEl = document.getElementById('sequence-list');
   try {
     const res = await fetch('/timeline/api/sequences');
     const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Unknown error');
+    if (!data.success) throw new Error(data.error || t('tl.unknownerror'));
 
     if (!data.sequences.length) {
-      listEl.innerHTML = '<div class="empty-msg">No saved sequences found yet. Build one in the Sequence Builder first.</div>';
+      listEl.innerHTML = `<div class="empty-msg">${t('tl.nosaved')}</div>`;
       return;
     }
 
@@ -829,8 +897,8 @@ async function loadSequenceList() {
       item.className = 'seq-item';
       item.innerHTML = `
         <div class="seq-name">${escapeHtml(seq.name)}</div>
-        <div class="seq-meta">${seq.keyframe_count} keyframe${seq.keyframe_count === 1 ? '' : 's'}${seq.description ? ' — ' + escapeHtml(seq.description) : ''}</div>
-        <button class="seq-insert-btn" title="Insert this sequence's keyframes into the timeline you're building, at the playhead — doesn't replace what's already there">⬇ Insert at playhead</button>
+        <div class="seq-meta">${seqMeta(seq.keyframe_count)}${seq.description ? ' — ' + escapeHtml(seq.description) : ''}</div>
+        <button class="seq-insert-btn" title="${escAttrTL(t('tl.insert.tip'))}">${t('tl.insert')}</button>
       `;
       item.addEventListener('click', () => selectSequence(seq.filename, item));
       item.querySelector('.seq-insert-btn').addEventListener('click', (e) => {
@@ -840,7 +908,7 @@ async function loadSequenceList() {
       listEl.appendChild(item);
     });
   } catch (e) {
-    listEl.innerHTML = `<div class="error-msg">Couldn't load sequence list: ${escapeHtml(e.message)}</div>`;
+    listEl.innerHTML = `<div class="error-msg">${escapeHtml(t('tl.listfail', {msg: e.message}))}</div>`;
   }
 }
 
@@ -850,13 +918,13 @@ async function selectSequence(filename, itemEl) {
   try {
     const res = await fetch('/timeline/api/sequence/' + encodeURIComponent(filename));
     const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Unknown error');
+    if (!data.success) throw new Error(data.error || t('tl.unknownerror'));
     renderTimeline(data.sequence);
     activeFilename = filename;
     document.getElementById('seq-name-input').value = data.sequence.name || '';
     document.getElementById('seq-desc-input').value = data.sequence.description || '';
   } catch (e) {
-    document.getElementById('loaded-info').textContent = 'Error loading sequence: ' + e.message;
+    document.getElementById('loaded-info').textContent = t('tl.loadfail', {msg: e.message});
   }
 }
 
@@ -901,7 +969,7 @@ function togglePlayback() {
 
 function startPlaybackFromPlayhead() {
   if (!currentSequence || !currentClips.length) {
-    toast('Pick a sequence first.');
+    toast(t('tl.toast.pickfirst'));
     return;
   }
 
@@ -930,13 +998,13 @@ function startPlaybackFromPlayhead() {
     .then(res => res.json())
     .then(data => {
       if (!data.success) {
-        toast('Couldn\'t start playback: ' + (data.error || 'unknown error'));
+        toast(t('tl.toast.playfail', {msg: data.error || t('tl.toast.unknownerr')}));
         return;
       }
       setPlayingUI(true);
       beginPlayheadAnimation();
     })
-    .catch(e => toast('Couldn\'t reach the timeline server: ' + e.message));
+    .catch(e => toast(t('tl.toast.noserver', {msg: e.message})));
 }
 
 function stopPlayback() {
@@ -988,7 +1056,7 @@ function buildMotorSlidersTL() {
     const row = document.createElement('div');
     row.className = 'motor-row';
     row.innerHTML = `
-      <span class="motor-label">${m.label}</span>
+      <span class="motor-label">${OhbotI18n.motorLabel(m.key, m.label)}</span>
       <input type="range" class="motor-slider" id="motor-${m.key}"
              data-motor="${id}" data-key="${m.key}"
              min="0" max="10" step="0.5" value="${val}">
@@ -1074,7 +1142,7 @@ async function sendAllMotorsTL() {
     } catch (e) { /* silent */ }
   }
   await sendLedTL();
-  toast('Pose sent to robot');
+  toast(t('tl.toast.posesent'));
 }
 
 async function sendLedTL() {
@@ -1085,6 +1153,46 @@ async function sendLedTL() {
       body: JSON.stringify(currentLed),
     });
   } catch (e) { /* silent */ }
+}
+
+/*
+ * "Hear This Line" — speaks whatever is typed in the Speech box right now.
+ *
+ * This is a preview only. It does not save anything, does not touch the
+ * keyframe, and does not move any motor except the lips (which move because
+ * lip-sync comes along with speech). It uses the Sequence Builder's /gui/speak
+ * endpoint — both pages are served by the same program, so there's nothing
+ * extra to start.
+ *
+ * The language comes from the 🌐 dropdown, via langBody(). Type Spanish with
+ * the dropdown on Español and it's pronounced as Spanish; leave the dropdown
+ * on English and the same words get an English accent. That's the quickest
+ * way to check a line before committing it to a keyframe.
+ */
+async function previewSpeechTL() {
+  const box  = document.getElementById('speech-textarea');
+  const btn  = document.getElementById('speech-preview-btn');
+  const text = box.value.trim();
+
+  if (!text) { toast(t('tl.toast.nospeech')); return; }
+
+  // Disable briefly so a double-click doesn't collide with itself — the
+  // server refuses a second line while one is already being spoken.
+  btn.disabled = true;
+  try {
+    const res  = await fetch('/gui/speak', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(langBody({ text })),
+    });
+    const data = await res.json();
+    toast(data.success ? t('tl.toast.speaking')
+                       : (data.error || t('tl.toast.speakfail')));
+  } catch (e) {
+    toast(t('tl.toast.speakfail'));
+  } finally {
+    setTimeout(() => { btn.disabled = false; }, 600);
+  }
 }
 
 async function resetRobotTL() {
@@ -1103,9 +1211,9 @@ async function resetRobotTL() {
       document.getElementById(`led-${ch}-val`).textContent = 0;
     });
     updateLedPreviewTL();
-    toast('Robot reset to neutral pose');
+    toast(t('tl.toast.reset'));
   } catch (e) {
-    toast('Reset failed: ' + e.message);
+    toast(t('tl.toast.resetfail', {msg: e.message}));
   }
 }
 
@@ -1120,7 +1228,7 @@ function findInsertIndexTL() {
 }
 
 function captureKeyframeTL() {
-  if (isPlaying) { toast('Stop playback before editing the timeline.'); return; }
+  if (isPlaying) { toast(t('tl.toast.stopfirst')); return; }
   const speechText = document.getElementById('speech-textarea').value.trim();
   const moveSpeed   = parseInt(document.getElementById('speed-slider').value);
 
@@ -1154,16 +1262,18 @@ function captureKeyframeTL() {
     renderPlayhead();
   }
 
-  const speechNote = speechText ? ' + 🔊 speech' : '';
-  toast(`Keyframe captured (position ${insertIndex + 1} of ${currentSequence.keyframes.length})${speechNote}`);
+  const speechNote = speechText ? t('tl.speechnote') : '';
+  toast(t('tl.toast.captured', {
+    pos: insertIndex + 1, total: currentSequence.keyframes.length, speech: speechNote
+  }));
 }
 
 function deleteClipTL(index) {
-  if (isPlaying) { toast('Stop playback before editing the timeline.'); return; }
+  if (isPlaying) { toast(t('tl.toast.stopfirst')); return; }
   if (!currentSequence.keyframes[index]) return;
   currentSequence.keyframes.splice(index, 1);
   renderTimeline(currentSequence, false);
-  toast('Keyframe deleted');
+  toast(t('tl.toast.deleted'));
 }
 
 // ── Insert a saved sequence's keyframes into the timeline you're currently
@@ -1174,11 +1284,11 @@ function deleteClipTL(index) {
 // saved sequence in the left panel only ever REPLACED the whole timeline,
 // which turned out to be the more painful gap than drag-to-retime.
 async function insertSequenceAtPlayhead(filename, displayName) {
-  if (isPlaying) { toast('Stop playback before editing the timeline.'); return; }
+  if (isPlaying) { toast(t('tl.toast.stopfirst')); return; }
   try {
     const res = await fetch('/timeline/api/sequence/' + encodeURIComponent(filename));
     const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Unknown error');
+    if (!data.success) throw new Error(data.error || t('tl.unknownerror'));
 
     const incoming = (data.sequence.keyframes || []).map((kf, i) => ({
       ...kf,
@@ -1186,7 +1296,7 @@ async function insertSequenceAtPlayhead(filename, displayName) {
     }));
 
     if (!incoming.length) {
-      toast(`"${displayName}" has no keyframes to insert.`);
+      toast(t('tl.toast.nokfinsert', {name: displayName}));
       return;
     }
 
@@ -1205,16 +1315,18 @@ async function insertSequenceAtPlayhead(filename, displayName) {
       renderPlayhead();
     }
 
-    toast(`Inserted ${incoming.length} keyframe${incoming.length === 1 ? '' : 's'} from "${displayName}"`);
+    toast(incoming.length === 1
+      ? t('tl.toast.inserted.one', {name: displayName})
+      : t('tl.toast.inserted', {n: incoming.length, name: displayName}));
   } catch (e) {
-    toast('Insert failed: ' + e.message);
+    toast(t('tl.toast.insertfail', {msg: e.message}));
   }
 }
 
 // ── New / Save — writes back to the same sequences/ folder the Sequence
 // Builder GUI reads from, so anything captured here shows up there too ─────
 function newSequenceTL() {
-  if (isPlaying) { toast('Stop playback before starting a new sequence.'); return; }
+  if (isPlaying) { toast(t('tl.toast.stopfirstnew')); return; }
   currentSequence = { name: '', description: '', keyframes: [] };
   activeFilename  = null;
   playheadSeconds = 0;
@@ -1222,20 +1334,20 @@ function newSequenceTL() {
   document.getElementById('seq-name-input').value = '';
   document.getElementById('seq-desc-input').value = '';
   document.querySelectorAll('.seq-item').forEach(el => el.classList.remove('active'));
-  document.getElementById('loaded-info').textContent = 'New sequence — not saved yet.';
+  setLoadedInfoKey('tl.newseq');
   document.getElementById('empty-state').style.display = 'flex';
   document.getElementById('timeline-wrap').style.display = 'none';
-  toast('Started a new sequence');
+  toast(t('tl.toast.startednew'));
 }
 
 async function saveSequenceTL() {
   const name = document.getElementById('seq-name-input').value.trim();
   if (!name) {
-    toast('Type a sequence name first.');
+    toast(t('tl.toast.needname'));
     return;
   }
   if (!currentSequence.keyframes.length) {
-    toast('Nothing to save yet — capture a keyframe first.');
+    toast(t('tl.toast.nothingsave'));
     return;
   }
   const description = document.getElementById('seq-desc-input').value.trim();
@@ -1247,20 +1359,19 @@ async function saveSequenceTL() {
       body: JSON.stringify({ name, description, keyframes: currentSequence.keyframes }),
     });
     const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Unknown error');
+    if (!data.success) throw new Error(data.error || t('tl.unknownerror'));
 
     currentSequence.name        = name;
     currentSequence.description = description;
     activeFilename = data.filename;
 
     const count = currentSequence.keyframes.length;
-    document.getElementById('loaded-info').innerHTML =
-      `<b>${escapeHtml(name)}</b> — ${count} keyframe${count === 1 ? '' : 's'} (saved)`;
+    setLoadedInfo(name, count, true);
 
-    toast(`Saved as ${data.filename}`);
+    toast(t('tl.toast.saved', {name: data.filename}));
     await loadSequenceList();
   } catch (e) {
-    toast('Save failed: ' + e.message);
+    toast(t('tl.toast.savefail', {msg: e.message}));
   }
 }
 
@@ -1273,10 +1384,10 @@ function pollStatus() {
       const text = document.getElementById('status-text');
       if (data.ohbot_connected) {
         dot.classList.add('connected');
-        text.textContent = 'Robot connected';
+        setStatusTL(text, 'tl.status.connected');
       } else {
         dot.classList.remove('connected');
-        text.textContent = 'Robot not found (preview still works)';
+        setStatusTL(text, 'tl.status.notfound');
       }
       // If playback finished on its own, drop the badge — but only as a
       // fallback for when the traveling-playhead animation isn't running
@@ -1287,11 +1398,11 @@ function pollStatus() {
       // is done, and cutting the badge here would truncate it early.
       if (!data.playing && isPlaying && playbackAnimFrame === null) {
         setPlayingUI(false);
-        toast('Playback finished');
+        toast(t('tl.toast.playdone'));
       }
     })
     .catch(() => {
-      document.getElementById('status-text').textContent = 'Timeline server unreachable';
+      setStatusTL(document.getElementById('status-text'), 'tl.status.unreachable');
     });
 }
 setInterval(pollStatus, 600);
@@ -1306,6 +1417,24 @@ loadSequenceList();
   wireUpLedTL();
   updateLedPreviewTL();
 })();
+
+// ── Language switching ────────────────────────────────────────────────────
+// i18n.js re-translates the fixed text on its own. The motor sliders, the
+// timeline clips and the saved-sequence list are built here in JavaScript,
+// so they have to be rebuilt by hand.
+window.addEventListener('ohbot-lang-change', () => {
+  if (Object.keys(MOTORS).length) {
+    buildMotorSlidersTL();
+    wireUpSlidersTL();
+    updateLedPreviewTL();
+  }
+  loadSequenceList();
+  renderTimeline(currentSequence, false);
+
+  // Redraw the "which sequence is loaded" line with the name it already had.
+  const el = document.getElementById('loaded-info');
+  if (el && el._info) setLoadedInfo(el._info.name, el._info.count, el._info.saved);
+});
 </script>
 </body>
 </html>

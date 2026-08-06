@@ -94,10 +94,21 @@ def run():
     for child in tree.getroot():
         name_by_idx[int(child.get("Motor"))] = child.get("Name")
 
-    print(f"{'Motor':<12}{'Min (deg)':<12}{'Max (deg)':<12}{'RestPosition':<14}{'Reversed'}")
+    # "Center (deg)" is where slider position 5 actually lands. A motor that
+    # has been three-point calibrated shows a centre that is NOT the halfway
+    # point between Min and Max — that is the whole point, and is flagged
+    # with "3pt" in the last column. Motors with no Center in the .omd file
+    # fall back to the midpoint and behave exactly as they always have.
+    print(f"{'Motor':<12}{'Min (deg)':<12}{'Center (deg)':<14}{'Max (deg)':<12}"
+          f"{'RestPosition':<14}{'Reversed':<11}{'Calibration'}")
     for idx in range(8):
         name = name_by_idx.get(idx, f"motor {idx}")
-        print(f"{name:<12}{ohbot.motorMins[idx]:<12}{ohbot.motorMaxs[idx]:<12}{ohbot.restPos[idx]:<14}{ohbot.motorRev[idx]}")
+        centre = ohbot.motorCenters[idx]
+        midpoint = (ohbot.motorMins[idx] + ohbot.motorMaxs[idx]) / 2
+        kind = "3pt" if abs(centre - midpoint) > 0.01 else "midpoint"
+        print(f"{name:<12}{ohbot.motorMins[idx]:<12}{centre:<14.1f}"
+              f"{ohbot.motorMaxs[idx]:<12}{ohbot.restPos[idx]:<14}"
+              f"{str(ohbot.motorRev[idx]):<11}{kind}")
 
     if all(ohbot.motorMins[i] == 0 and ohbot.motorMaxs[i] == 0 for i in range(8)):
         print("\n⚠  Every motor shows Min=0 and Max=0 -- this is the broken")

@@ -65,6 +65,28 @@ except ImportError:
 
 app = Flask(__name__)
 
+# ── English / Spanish ──────────────────────────────────────────────────────
+# Adds two routes: /i18n.js (hands the web pages their wording) and /lang
+# (remembers which language was picked). See ohbot_lang.py.
+from ohbot_lang import register_language_routes, get_language
+register_language_routes(app)
+
+
+def _lang_from(data=None):
+    """Which language should the robot speak right now: 'en' or 'es'.
+
+    The web pages send the language along with each speak/chat/mic request,
+    because that's the language the person is actually looking at on screen
+    at that moment. If a request doesn't include one (an older page, a curl
+    command, a scheduled script), we fall back to whatever was last saved in
+    ohbotData/language.txt, and finally to English.
+    """
+    if isinstance(data, dict):
+        value = str(data.get('lang', '') or '').strip().lower()
+        if value in ('en', 'es'):
+            return value
+    return get_language()
+
 # ── OpenAI (for GUI chat) ──────────────────────────────────────────────────
 _openai_key    = os.environ.get("OPENAI_API_KEY")
 _openai_client = OpenAI(api_key=_openai_key) if _openai_key else None
@@ -106,6 +128,72 @@ _PERSONALITIES = {
 }
 
 _current_personality = 'friendly'
+
+# ── Making the AI answer in Spanish ────────────────────────────────────────
+# Rather than writing five more personalities in Spanish (which would mean
+# editing everything twice forever), we bolt one extra instruction onto the
+# end of whichever personality is selected. The personality descriptions above
+# stay in English and stay the single place to edit character.
+#
+# The Spanish instruction is written in Spanish on purpose — models follow a
+# "answer in language X" instruction far more reliably when the instruction
+# itself is in that language.
+_LANGUAGE_INSTRUCTION = {
+    'en': '',
+    'es': (
+        " IMPORTANTE: Responde SIEMPRE en español, sin importar en qué idioma "
+        "te escriban. Usa un español natural y latinoamericano. Mantén tu "
+        "personalidad tal como se describe arriba, pero exprésala en español. "
+        "No traduzcas ni repitas la respuesta en inglés."
+    ),
+}
+
+
+def _system_prompt(lang):
+    """The personality text, plus the Spanish instruction when in Spanish."""
+    return _PERSONALITIES[_current_personality] + _LANGUAGE_INSTRUCTION.get(lang, '')
+
+
+# ── The lines Ohbot says during the built-in demo ──────────────────────────
+# These are the only sentences the robot speaks that aren't typed by you, so
+# they're the only ones that have to be translated by hand. Everything else —
+# the Speak box, sequence keyframes, chat replies — is either typed by you or
+# generated in the right language already.
+#
+# To reword the demo, edit the text here. Each entry has an English version
+# and a Spanish version; keep both in step. (These live in Python rather than
+# in i18n.js because it's the Pi, not the browser, that decides what to say.)
+_DEMO_LINES = {
+    'intro':   {'en': "Hi there! I am Ohbot, a friendly robot. Let me show you what I can do!",
+                'es': "¡Hola! Soy Ohbot, un robot amistoso. ¡Déjame mostrarte lo que puedo hacer!"},
+    'nod':     {'en': "First, I can nod my head.",
+                'es': "Primero, puedo asentir con la cabeza."},
+    'turn':    {'en': "I can also turn from side to side!",
+                'es': "¡También puedo girar de lado a lado!"},
+    'eyes':    {'en': "My eyes can look around independently!",
+                'es': "¡Mis ojos pueden mirar a los lados por separado!"},
+    'blink':   {'en': "And I can blink!",
+                'es': "¡Y puedo parpadear!"},
+    'colors':  {'en': "Check out my eye colors!",
+                'es': "¡Mira los colores de mis ojos!"},
+    'joke_ask':    {'en': "Want to hear a joke?",
+                    'es': "¿Quieres escuchar un chiste?"},
+    # The Spanish joke is a different joke on purpose — the atoms pun doesn't
+    # survive translation ("make up" has no equivalent double meaning). This
+    # one is a classic Spanish pun on "nada" (nothing / it swims).
+    'joke_setup':  {'en': "Why don't scientists trust atoms?",
+                    'es': "¿Qué le dijo un pez a otro pez?"},
+    'joke_punch':  {'en': "Because they make up everything!",
+                    'es': "¡Nada!"},
+    'outro':   {'en': "Thanks for watching! Feel free to explore the controls, or chat with me below!",
+                'es': "¡Gracias por mirar! Explora los controles, o conversa conmigo aquí abajo."},
+}
+
+
+def _demo_line(key, lang):
+    """One demo line in the chosen language, falling back to English."""
+    entry = _DEMO_LINES.get(key, {})
+    return entry.get(lang) or entry.get('en') or ''
 
 # ── Paths ──────────────────────────────────────────────────────────────────
 BASE_DIR       = os.path.dirname(os.path.abspath(__file__))
@@ -351,12 +439,18 @@ def go_to_frame():
 def speak_now():
     """
     Make Ohbot say something with lip sync.
-    Body: { "text": "Hello there!" }
+    Body: { "text": "Hello there!", "lang": "en" }
+
+    "lang" is optional and is 'en' or 'es'. It doesn't change the voice —
+    Jenny Multilingual speaks both — it changes the accent and pronunciation
+    rules, and therefore the lip shapes too.
+
     Runs in a background thread so the call returns immediately.
     """
     try:
         data = request.get_json()
         text = data.get('text', '').strip()
+        lang = _lang_from(data)
 
         if not text:
             return jsonify({'success': False, 'error': 'No text provided'}), 400
@@ -372,7 +466,7 @@ def speak_now():
             speak_state['last_error'] = None
             try:
                 future = asyncio.run_coroutine_threadsafe(
-                    _azure_controller.say(text), _speech_loop
+                    _azure_controller.say(text, language=lang), _speech_loop
                 )
                 future.result(timeout=30)
             except Exception as e:
@@ -398,8 +492,11 @@ def speak_now():
 def gui_chat():
     """
     Send a message to OpenAI and get Ohbot's response.
-    Body:    { "message": "hello there" }
+    Body:    { "message": "hello there", "lang": "en" }
     Returns: { "success": true, "response": "Hi! How can I help?" }
+
+    When "lang" is 'es' the personality gets an extra instruction telling it
+    to answer in Spanish — see _system_prompt above.
     """
     if not _openai_client:
         return jsonify({'success': False,
@@ -407,11 +504,12 @@ def gui_chat():
     try:
         data    = request.get_json()
         message = data.get('message', '').strip()
+        lang    = _lang_from(data)
 
         if not message:
             return jsonify({'success': False, 'error': 'No message provided'}), 400
 
-        messages = [{"role": "system", "content": _PERSONALITIES[_current_personality]}]
+        messages = [{"role": "system", "content": _system_prompt(lang)}]
         messages.extend(_chat_history)
         messages.append({"role": "user", "content": message})
 
@@ -449,16 +547,26 @@ def gui_chat_reset():
 
 @app.route('/gui/mic/listen', methods=['POST'])
 def mic_listen():
-    """Listen on the Pi's USB mic for one utterance and return the transcript."""
+    """Listen on the Pi's USB mic for one utterance and return the transcript.
+
+    Body: { "lang": "es" } (optional)
+
+    The mic is locked to the language showing on screen rather than
+    auto-detecting. Locking is noticeably more accurate — auto-detect has to
+    hear a second or two before it commits, and it can mishear accented
+    Spanish as English. If you'd rather it detect automatically, delete the
+    `language=lang` argument below and it goes back to listening for both.
+    """
     if _azure_controller is None or _speech_loop is None:
         return jsonify({'success': False, 'error': 'Azure speech not available'}), 503
 
+    lang   = _lang_from(request.get_json(silent=True))
     result = {}
 
     def run_recognition():
         try:
             future = asyncio.run_coroutine_threadsafe(
-                _azure_controller.listen(timeout=10.0),
+                _azure_controller.listen(timeout=10.0, language=lang),
                 _speech_loop
             )
             text = future.result(timeout=15)
@@ -483,7 +591,23 @@ def mic_listen():
 # ============================================================================
 
 # Motor positions and LED colour for each emotion.
-# Both lips always move in the same direction to avoid physical jamming.
+#
+# LIP VALUES — read this before editing any TOPLIP/BOTTOMLIP number here.
+# The lip avoidance rule in yobot_core says the two lip positions must always
+# add up to at least 10 (each lip's floor is 10 minus the other lip's current
+# position). Two consequences:
+#
+#   1. TOPLIP + BOTTOMLIP must be >= 10, or the pose simply cannot happen and
+#      both lips get silently clamped. _check_emotion_lips() below warns at
+#      startup if you write an impossible pair.
+#   2. The ORDER the two lips move in matters. To put one lip below 5 the
+#      other must already be open past 5, so the more-open lip has to move
+#      first. set_emotion() handles this automatically now — it no longer
+#      depends on the order keys happen to appear in these dicts.
+#
+# Since the lips were three-point calibrated, position 5 is "just touching"
+# (mouth closed), above 5 opens the mouth, and below 5 is a short press
+# past the closed point.
 _EMOTIONS = {
     'happy': {
         'motors': {
@@ -496,7 +620,12 @@ _EMOTIONS = {
     'sad': {
         'motors': {
             'HEADNOD': 3, 'HEADTURN': 5, 'EYETURN': 5,
-            'LIDBLINK': 4, 'TOPLIP': 4, 'BOTTOMLIP': 4,
+            # Was TOPLIP 4 / BOTTOMLIP 4 — impossible, they sum to 8 and both
+            # got silently clamped to 5, so sad's mouth never did anything.
+            # 5 / 6 is a slightly parted, slack mouth: reachable, and distinct
+            # from thinking (5/5, closed). Tune by eye in the GUI if you want
+            # it more or less open — just keep the two adding up to 10+.
+            'LIDBLINK': 4, 'TOPLIP': 5, 'BOTTOMLIP': 6,
             'EYETILT': 3, 'HEADROLL': 4,
         },
         'led': {'r': 0, 'g': 0, 'b': 10},   # blue
@@ -528,6 +657,29 @@ _EMOTIONS = {
 }
 
 
+def _check_emotion_lips():
+    """Warn at startup about any emotion whose lips can't physically happen.
+
+    The avoidance rule needs TOPLIP + BOTTOMLIP >= 10. A pair that sums to
+    less than that gets silently clamped, so the pose looks wrong with no
+    error anywhere — which is exactly how 'sad' sat broken for a long time.
+    Better to say so out loud when the server starts.
+    """
+    for name, preset in _EMOTIONS.items():
+        m = preset['motors']
+        if 'TOPLIP' not in m or 'BOTTOMLIP' not in m:
+            continue
+        total = float(m['TOPLIP']) + float(m['BOTTOMLIP'])
+        if total < 10:
+            print(f"⚠️  Emotion '{name}' has TOPLIP {m['TOPLIP']} + BOTTOMLIP "
+                  f"{m['BOTTOMLIP']} = {total:g}, but the lip avoidance rule "
+                  f"needs at least 10. Both lips will be clamped and the "
+                  f"mouth won't match the pose. Raise one of them.")
+
+
+_check_emotion_lips()
+
+
 @app.route('/gui/emotion', methods=['POST'])
 def set_emotion():
     """
@@ -545,11 +697,31 @@ def set_emotion():
 
         preset = _EMOTIONS[emotion]
 
+        # Everything except the lips can move in any order.
         for key, position in preset['motors'].items():
+            if key in ('TOPLIP', 'BOTTOMLIP'):
+                continue
             motor_id = KEY_TO_ID.get(key)
             if motor_id is not None:
                 with OHBOT_SERIAL_LOCK:
                     ohbot.move(motor_id, float(position), 5)
+
+        # The lips have to move in the right order. Opening one lip raises the
+        # floor for the other, so whichever lip is going to the MORE OPEN
+        # (higher) position must move first — otherwise the avoidance rule
+        # clamps the other one and the pose comes out wrong.
+        #
+        # This is what used to break 'happy': TOPLIP 2.5 was listed before
+        # BOTTOMLIP 9, so the top lip moved while the bottom was still closed
+        # at 5, and got clamped straight back up to 5. Sorting by target
+        # position fixes it without depending on dict key order.
+        lips = [(k, float(preset['motors'][k]))
+                for k in ('TOPLIP', 'BOTTOMLIP') if k in preset['motors']]
+        for key, position in sorted(lips, key=lambda kv: kv[1], reverse=True):
+            motor_id = KEY_TO_ID.get(key)
+            if motor_id is not None:
+                with OHBOT_SERIAL_LOCK:
+                    ohbot.move(motor_id, position, 5)
 
         led = preset['led']
         with OHBOT_SERIAL_LOCK:
@@ -593,12 +765,18 @@ def start_demo():
     if play_state['playing']:
         return jsonify({'success': False, 'error': 'A sequence is playing'}), 409
 
-    def _say(text):
+    lang = _lang_from(request.get_json(silent=True))
+
+    def _say(key):
+        """Speak one demo line, looked up by name in _DEMO_LINES above."""
         if demo_state['stop_requested']: return
+        text = _demo_line(key, lang)
+        if not text: return
         if _azure_controller and _speech_loop:
             speak_state['speaking'] = True
             try:
-                future = asyncio.run_coroutine_threadsafe(_azure_controller.say(text), _speech_loop)
+                future = asyncio.run_coroutine_threadsafe(
+                    _azure_controller.say(text, language=lang), _speech_loop)
                 future.result(timeout=30)
             except Exception as e:
                 print(f"Demo speech error: {e}")
@@ -620,17 +798,17 @@ def start_demo():
             with OHBOT_SERIAL_LOCK: ohbot.baseColour(0,0,10)
             _wait(0.6)
             if stopped(): return
-            _say("Hi there! I am Ohbot, a friendly robot. Let me show you what I can do!")
+            _say('intro')
             _wait(0.3)
             if stopped(): return
-            _say("First, I can nod my head.")
+            _say('nod')
             with OHBOT_SERIAL_LOCK: ohbot.move(0,8,3)
             _wait(0.5)
             with OHBOT_SERIAL_LOCK: ohbot.move(0,2,3)
             _wait(0.5)
             with OHBOT_SERIAL_LOCK: ohbot.move(0,5,5)
             if stopped(): return
-            _say("I can also turn from side to side!")
+            _say('turn')
             with OHBOT_SERIAL_LOCK: ohbot.move(1,2,3)
             _wait(0.5)
             with OHBOT_SERIAL_LOCK: ohbot.move(1,8,3)
@@ -638,7 +816,7 @@ def start_demo():
             with OHBOT_SERIAL_LOCK: ohbot.move(1,5,5)
             if stopped(): return
             with OHBOT_SERIAL_LOCK: ohbot.baseColour(0,10,0)
-            _say("My eyes can look around independently!")
+            _say('eyes')
             with OHBOT_SERIAL_LOCK: ohbot.move(2,2,5)
             _wait(0.4)
             with OHBOT_SERIAL_LOCK: ohbot.move(2,8,5)
@@ -646,7 +824,7 @@ def start_demo():
             with OHBOT_SERIAL_LOCK: ohbot.move(2,5,5)
             if stopped(): return
             with OHBOT_SERIAL_LOCK: ohbot.baseColour(0,6,10)
-            _say("And I can blink!")
+            _say('blink')
             with OHBOT_SERIAL_LOCK: ohbot.move(3,0,8)
             _wait(0.25)
             with OHBOT_SERIAL_LOCK: ohbot.move(3,10,8)
@@ -655,7 +833,7 @@ def start_demo():
             _wait(0.25)
             with OHBOT_SERIAL_LOCK: ohbot.move(3,10,8)
             if stopped(): return
-            _say("Check out my eye colors!")
+            _say('colors')
             for r,g,b in [(10,0,0),(10,5,0),(10,10,0),(0,10,0),(0,0,10),(10,0,10),(0,10,10),(10,10,10)]:
                 if stopped(): return
                 with OHBOT_SERIAL_LOCK: ohbot.baseColour(r,g,b)
@@ -663,19 +841,19 @@ def start_demo():
             if stopped(): return
             with OHBOT_SERIAL_LOCK: ohbot.baseColour(10,5,0)
             with OHBOT_SERIAL_LOCK: ohbot.move(0,7,5)
-            _say("Want to hear a joke?")
+            _say('joke_ask')
             _wait(0.4)
             with OHBOT_SERIAL_LOCK: ohbot.move(0,5,5)
-            _say("Why don't scientists trust atoms?")
+            _say('joke_setup')
             _wait(0.5)
-            _say("Because they make up everything!")
+            _say('joke_punch')
             _wait(0.3)
             if stopped(): return
             with OHBOT_SERIAL_LOCK: ohbot.baseColour(0,0,10)
             with OHBOT_SERIAL_LOCK: ohbot.move(0,8,4)
             _wait(0.3)
             with OHBOT_SERIAL_LOCK: ohbot.move(0,5,5)
-            _say("Thanks for watching! Feel free to explore the controls, or chat with me below!")
+            _say('outro')
         finally:
             _wait(0.5)
             with OHBOT_SERIAL_LOCK: ohbot.reset()
@@ -719,6 +897,11 @@ def play_sequence():
     try:
         data      = request.get_json()
         keyframes = data.get('keyframes', [])
+        # Sequence text is typed by you, so whichever language you typed it in
+        # is the language it should be spoken in. The page sends its current
+        # language along; if you type Spanish while the page is set to English,
+        # switch the 🌐 dropdown before playing.
+        lang      = _lang_from(data)
 
         if not keyframes:
             return jsonify({'success': False, 'error': 'No keyframes to play'}), 400
@@ -774,7 +957,7 @@ def play_sequence():
                         def say_it(t):
                             try:
                                 future = asyncio.run_coroutine_threadsafe(
-                                    _azure_controller.say(t), _speech_loop
+                                    _azure_controller.say(t, language=lang), _speech_loop
                                 )
                                 future.result(timeout=30)
                             except Exception as se:
