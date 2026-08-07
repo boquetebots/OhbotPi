@@ -53,10 +53,23 @@ if [ -z "$PIHOST" ]; then PIHOST="$DEFAULT_HOST"; fi
 PI="$PIUSER@$PIHOST"
 PIDIR="/home/$PIUSER/Projects/Ohbot"
 
+# ── Set up one shared SSH connection ────────────────────────────────────────
+# One connection, reused by everything below, so the password is asked for
+# once rather than twice. Do NOT add BatchMode=yes — it blocks the password
+# prompt entirely and makes the script unusable without an SSH key.
+CTL="/tmp/ohbot-ssh-%r@%h:%p"
+SSH_OPTS=(-o ConnectTimeout=10
+          -o ControlMaster=auto
+          -o ControlPath="$CTL"
+          -o ControlPersist=120)
+
 # ── Can we reach it? ────────────────────────────────────────────────────────
 hdr "Connecting"
 
-if ! ssh -o ConnectTimeout=10 "$PI" "echo ok" &>/dev/null; then
+echo "  (type your Pi password if it asks)"
+echo ""
+
+if ! ssh "${SSH_OPTS[@]}" "$PI" "echo ok" >/dev/null; then
     echo ""
     bad "Can't reach $PI"
     echo ""
@@ -77,7 +90,7 @@ ok "Connected to $PI"
 # ── Everything below runs ON THE PI ─────────────────────────────────────────
 # The 'PIDIR=' line is passed in so the remote side knows where to look.
 
-ssh -t "$PI" "PIDIR='$PIDIR' bash -s" <<'REMOTE'
+ssh -t "${SSH_OPTS[@]}" "$PI" "PIDIR='$PIDIR' bash -s" <<'REMOTE'
 set -u
 
 GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'

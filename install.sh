@@ -201,6 +201,11 @@ echo ""
 EXISTING_OPENAI=""
 EXISTING_AZURE_KEY=""
 EXISTING_AZURE_REGION="eastus"
+# Any settings in .env that this installer doesn't ask about. Without this,
+# re-running install.sh silently threw them away — because the file is
+# rewritten from a fixed template further down. AZURE_MIC_DEVICE is the one
+# that matters: lose it and the robot stops hearing anyone, with no clue why.
+EXISTING_EXTRAS=""
 
 if [ -f "$ENV_FILE" ]; then
     warn ".env file already exists — press Enter to keep each existing value"
@@ -208,6 +213,18 @@ if [ -f "$ENV_FILE" ]; then
     EXISTING_OPENAI=$(grep "^OPENAI_API_KEY=" "$ENV_FILE" 2>/dev/null | cut -d= -f2 | xargs)
     EXISTING_AZURE_KEY=$(grep "^AZURE_SPEECH_KEY=" "$ENV_FILE" 2>/dev/null | cut -d= -f2 | xargs)
     EXISTING_AZURE_REGION=$(grep "^AZURE_SPEECH_REGION=" "$ENV_FILE" 2>/dev/null | cut -d= -f2 | xargs)
+
+    # Keep every other real setting exactly as it was (skip blanks, comments,
+    # and the three keys we handle above).
+    EXISTING_EXTRAS=$(grep -v "^\s*#" "$ENV_FILE" 2>/dev/null \
+        | grep -v "^\s*$" \
+        | grep -vE "^(OPENAI_API_KEY|AZURE_SPEECH_KEY|AZURE_SPEECH_REGION)=" \
+        || true)
+
+    if [ -n "$EXISTING_EXTRAS" ]; then
+        ok "Keeping your other settings:"
+        echo "$EXISTING_EXTRAS" | cut -d= -f1 | sed 's/^/       /'
+    fi
 fi
 
 # ── OpenAI Key ───────────────────────────────────────────────
@@ -276,6 +293,16 @@ OPENAI_API_KEY=$INPUT_OPENAI
 AZURE_SPEECH_KEY=$INPUT_AZURE_KEY
 AZURE_SPEECH_REGION=$INPUT_AZURE_REGION
 EOF
+
+# Put back any other settings that were already in the file, such as
+# AZURE_MIC_DEVICE. See the note where EXISTING_EXTRAS is gathered above.
+if [ -n "$EXISTING_EXTRAS" ]; then
+    {
+        echo ""
+        echo "# Other settings, preserved from your previous .env"
+        echo "$EXISTING_EXTRAS"
+    } >> "$ENV_FILE"
+fi
 
 chmod 600 "$ENV_FILE"
 ok ".env file written and secured (private to your user only)"
@@ -397,6 +424,33 @@ WantedBy=default.target
 EOF
 
 ok "ohbot-gui service installed"
+
+# ── ohbot-calibration service (started on demand by launcher) ─
+# This one was missing from the installer until 2026-08-07. On the old Pi it
+# had been created by hand at some point and never written down here, so the
+# gap only showed up on the first genuinely fresh build: the Launcher's
+# Calibration button opened a page that was never being served.
+cat > "$USER_SERVICE_DIR/ohbot-calibration.service" << EOF
+[Unit]
+Description=Ohbot Motor Calibration (port 5003)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=$PROJECT_DIR
+EnvironmentFile=$ENV_FILE
+ExecStart=$VENV_PYTHON $PROJECT_DIR/calibration_server.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
+EOF
+
+ok "ohbot-calibration service installed"
 
 # ── Reload systemd and enable ONLY the launcher at boot ──────
 systemctl --user daemon-reload
