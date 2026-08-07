@@ -16,14 +16,29 @@ azure-cognitiveservices-speech>=1.38.0
 # Loads API keys from the .env file
 python-dotenv>=1.0.0
 
-# Ohbot hardware library
-ohbot>=2.0.6
+# Ohbot hardware library.
+#
+# PINNED ON PURPOSE. This is the exact version the robot has been running on
+# and is known to work — checked on the old Pi 2026-08-07. The line used to
+# say ">=2.0.6", meaning "or anything newer", which would have let a build a
+# year from now silently pick up an ohbot 5.x with different motor behaviour
+# and no clue as to why the head stopped moving.
+#
+# To move to a newer version, change the number here deliberately, then test
+# the motors before deploying. Don't loosen it back to ">=".
+ohbot==4.0.18
+
+# Talks to the Ohbot brain board over the USB serial cable.
+# Imported directly by yobot_core.py and center_servos.py, so it must be
+# listed here in its own right. The 'ohbot' package above happens to pull it
+# in as well, which is why this was never noticed — but relying on someone
+# else's dependency list is how builds break silently later.
+pyserial>=3.5
 
 # Raspberry Pi GPIO (for the wake button — skipped gracefully if not available)
 RPi.GPIO>=0.7.1
 
-# XML parser used by ohbot_pi.py to read motor calibration file
-lxml>=4.9.0
-
-# XML parser used by ohbot_pi.py to read motor calibration file
+# XML parser used by ohbot_pi.py to read motor calibration file.
+# The 'ohbot' package only installs lxml on Windows and Mac, not Linux,
+# so on the Pi it has to come from here.
 lxml>=4.9.0

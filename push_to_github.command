@@ -65,13 +65,57 @@ if [ "$remote_head" != "$base" ]; then
 fi
 ok "GitHub is where we expect it"
 
+# ── Clear a leftover lock file ──────────────────────────────────────────────
+# Git makes a file called .git/index.lock while it works, and deletes it when
+# it's done. If a git command crashes or gets interrupted, that file is left
+# behind — and from then on EVERY git command that writes anything fails.
+#
+# The nasty part: without this check the script would carry on, find nothing
+# staged, and cheerfully report "nothing new to commit" when in fact it had
+# been unable to stage a thing. That happened on 2026-08-07 and wasted a
+# round trip, so now we look for it.
+
+if [ -f .git/index.lock ]; then
+    echo ""
+    warn "Found a leftover git lock file (.git/index.lock)."
+    echo ""
+    echo "     This is normal after a git command was interrupted. While it"
+    echo "     exists, git cannot save anything. It is safe to delete as long"
+    echo "     as no other git program is running right now."
+    echo ""
+    echo -n "  Delete it and carry on? (y/n): "
+    read -r CLEAR_LOCK
+    if [[ "$CLEAR_LOCK" == "y" || "$CLEAR_LOCK" == "Y" ]]; then
+        if rm -f .git/index.lock; then
+            ok "Lock file cleared"
+        else
+            bad "Couldn't delete it. Try in Terminal:"
+            echo "      rm \"$REPO/.git/index.lock\""
+            read -p "  Press Return to close."; exit 1
+        fi
+    else
+        echo "  Stopped. Nothing was changed."
+        read -p "  Press Return to close."; exit 1
+    fi
+fi
+
 # ── Stage everything git is allowed to take ─────────────────────────────────
 hdr "Gathering your work"
 
 # -A means "every change, everywhere" — new files, edits and deletions.
 # Anything listed in .gitignore is still left out, which is how .env and
 # library_knowledge.json stay off the public repo.
-git add -A
+#
+# Checking whether this WORKED, rather than assuming it did, is the whole
+# lesson of the lock-file business above.
+if ! git add -A; then
+    echo ""
+    bad "Git could not stage your changes."
+    echo ""
+    echo "     Nothing has been committed or pushed. The message above says"
+    echo "     why. Show it to Claude if it isn't obvious."
+    read -p "  Press Return to close."; exit 1
+fi
 ok "Staged all changes (except anything in .gitignore)"
 
 # ── Safety check 3: are we about to publish a secret? ───────────────────────
