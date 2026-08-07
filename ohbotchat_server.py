@@ -84,13 +84,45 @@ except ImportError:
     SAFETY_RULES = ""
     print("⚠️  guardrails.py not found — Yobot is running WITHOUT safety rules.")
 
-# What actually gets sent to the AI: character, then location, then the rules.
-FULL_SYSTEM_PROMPT = "\n".join([SYSTEM_PROMPT, VENUE_INFO, SAFETY_RULES])
+# ── The facts about the library and the Clubhouse ───────────────────────────
+# knowledge_base.py reads the three JSON files (knowledge.json,
+# library_knowledge.json, clubhouse_knowledge.json) and does two jobs here:
+#
+#   1. Matches common questions to an instant answer — free, no AI call.
+#   2. Builds a "fact sheet" of everything about the building, which we hand
+#      to the AI below. That's what stops Yobot inventing library hours when
+#      a visitor phrases a question in a way the keywords didn't expect.
+#
+# The try/except is a safety net: if the file goes missing the robot still
+# starts and talks, it just falls back to the AI for everything.
+try:
+    import knowledge_base as kb
+    _kb_ok = True
+except Exception as e:                                   # noqa: BLE001
+    kb = None
+    _kb_ok = False
+    print(f"⚠️  knowledge_base.py could not load ({e}) — instant answers off.")
+
+
+def full_system_prompt(language: str = "en") -> str:
+    """What actually gets sent to the AI.
+
+    Order: character, then where it lives, then the local facts, then the
+    safety rules. The rules come last so they win any disagreement.
+    """
+    parts = [SYSTEM_PROMPT, VENUE_INFO]
+    if _kb_ok:
+        parts.append(kb.fact_sheet(language))
+    parts.append(SAFETY_RULES)
+    return "\n".join(parts)
+
 
 # ── Language detection ─────────────────────────────────────────────────────────
 
 def _detect_language(text: str) -> str:
     """Quick heuristic: if common Spanish words appear, call it Spanish."""
+    if _kb_ok:
+        return kb.detect_language(text)
     spanish_markers = [
         "qué", "que", "dónde", "donde", "está", "estan", "están",
         "hola", "gracias", "puedo", "cómo", "como", "cuando", "cuándo",
@@ -110,109 +142,56 @@ def local_intent_detect(text: str):
     """
     Classify visitor input using keyword matching — zero LLM cost.
 
-    Handles greetings, goodbyes, and robot identity questions instantly.
-    Everything else returns None and falls through to GPT.
+    THERE ARE NO KEYWORD LISTS IN THIS FILE ANY MORE. They used to live here,
+    which meant adding a topic took two edits in two languages in two files.
+    Now every keyword sits in the JSON file right next to the answer it
+    triggers, and knowledge_base.py does the matching. To teach Yobot a new
+    instant answer, edit the JSON — that's the whole job.
 
-    To add your own instant-answer topics:
-      1. Add a keyword block below that returns a topic key
-      2. Add a matching entry in knowledge.json with your answer text
+    Returns a dict, or None if the question should go to GPT instead.
     """
-    t = text.lower().strip()
-    lang = _detect_language(t)
+    if not _kb_ok:
+        return None
 
-    # ── GREETINGS ─────────────────────────────────────────────────────────────
-    greeting_words = [
-        "hello", "hi there", "good morning", "good afternoon",
-        "good evening", "hey there", "hola", "buenos días", "buenos dias",
-        "buenas tardes", "buenas noches", "buenas",
-    ]
-    if len(t.split()) <= 4 and any(g in t for g in greeting_words):
-        return {"intent": "local_knowledge", "topic": "greeting", "language": lang}
-
-    # ── GOODBYES ──────────────────────────────────────────────────────────────
-    goodbye_phrases = [
-        "bye", "goodbye", "good bye", "adios", "adiós",
-        "hasta luego", "chao", "chau", "see you", "see you later",
-        "bye bye", "thanks bye", "thank you bye",
-    ]
-    simple_thanks = ["thanks", "thank you", "gracias", "muchas gracias"]
-    if len(t.split()) <= 6:
-        if any(g in t for g in goodbye_phrases):
-            return {"intent": "local_knowledge", "topic": "goodbye", "language": lang}
-        if t.rstrip("!.,") in simple_thanks:
-            return {"intent": "local_knowledge", "topic": "goodbye", "language": lang}
-
-    # ── ROBOT IDENTITY ────────────────────────────────────────────────────────
-    if any(p in t for p in ["who are you", "what are you", "quién eres", "quien eres",
-                             "qué eres", "que eres"]):
-        return {"intent": "local_knowledge", "topic": "who_are_you", "language": lang}
-
-    if any(p in t for p in ["what can you do", "how can you help", "what do you do",
-                             "qué puedes hacer", "que puedes hacer"]):
-        return {"intent": "local_knowledge", "topic": "what_can_you_do", "language": lang}
-
-    if any(p in t for p in ["what is your name", "what's your name",
-                             "cómo te llamas", "como te llamas", "tu nombre"]):
-        return {"intent": "local_knowledge", "topic": "your_name", "language": lang}
-
-    if any(p in t for p in ["who made you", "who built you", "who created you",
-                             "quién te hizo", "quien te hizo"]):
-        return {"intent": "local_knowledge", "topic": "who_made_you", "language": lang}
-
-    if any(p in t for p in ["are you alive", "do you have feelings", "are you real",
-                             "eres vivo", "tienes sentimientos", "eres real", "are you conscious"]):
-        return {"intent": "local_knowledge", "topic": "are_you_alive", "language": lang}
-
-    if any(p in t for p in ["how do you work", "are you ai", "are you a robot",
-                             "cómo funcionas", "como funcionas", "artificial intelligence"]):
-        return {"intent": "local_knowledge", "topic": "how_do_you_work", "language": lang}
-
-    if any(p in t for p in ["how old are you", "cuántos años tienes", "cuantos años tienes"]):
-        return {"intent": "local_knowledge", "topic": "how_old_are_you", "language": lang}
-
-    if any(p in t for p in ["can you dance", "puedes bailar", "dance for me"]):
-        return {"intent": "local_knowledge", "topic": "can_you_dance", "language": lang}
-
-    if any(p in t for p in ["take you home", "can i buy you", "are you for sale",
-                             "puedo comprarte", "cuánto cuestas"]):
-        return {"intent": "local_knowledge", "topic": "take_me_home", "language": lang}
-
-    # ── ADD YOUR OWN TOPICS HERE ──────────────────────────────────────────────
-    # Example:
-    # if any(w in t for w in ["hours", "open", "close", "horario"]):
-    #     return {"intent": "local_knowledge", "topic": "hours", "language": lang}
-    #
-    # Then add "hours": { "answer_en": "...", "answer_es": "..." } to knowledge.json
-
-    # ── FALL THROUGH TO GPT ───────────────────────────────────────────────────
+    lang = kb.detect_language(text)
+    topic = kb.find_topic(text)
+    if topic:
+        return {"intent": "local_knowledge", "topic": topic, "language": lang}
     return None
 
 
 # ============================================================================
 # INTENT CLASSIFICATION PROMPT (LLM fallback for ambiguous input)
 # ============================================================================
+#
+# When the keywords don't match, we ask the AI to pick a topic. The list of
+# topics it's allowed to choose from is built from the JSON files below, so
+# new topics you add are automatically offered to the classifier too.
+
+_TOPIC_LIST = ", ".join(kb.topic_names()) if _kb_ok else "greeting, goodbye"
 
 INTENT_PROMPT = """You are a classifier for a robot assistant. Given a visitor's statement,
 determine what they want. Respond with ONLY a JSON object, nothing else.
 
 The JSON must have these fields:
-{
+{{
     "intent": "local_knowledge" or "general_chat",
     "topic": "knowledge topic key" or null,
     "language": "en" or "es"
-}
+}}
 
 RULES:
 
-1. "local_knowledge" = a common question that likely has a pre-written answer.
-   Use these topic keys:
-   greeting, goodbye, who_are_you, what_can_you_do, your_name, who_made_you,
-   are_you_alive, how_do_you_work, how_old_are_you, can_you_dance, take_me_home
+1. "local_knowledge" = a common question that has a pre-written answer.
+   Use ONLY these topic keys:
+   {topics}
 
-2. "general_chat" = anything else — set topic to null.
+2. "general_chat" = anything else — set topic to null. If you are not
+   confident the visitor is asking about one of the topics above, choose
+   general_chat.
 
 Set language to "en" or "es" based on the visitor's language.
-"""
+""".format(topics=_TOPIC_LIST)
 
 
 # ============================================================================
@@ -313,7 +292,12 @@ def chat():
 
         print(f"📥 Received: {user_message}")
 
-        messages = [{"role": "system", "content": FULL_SYSTEM_PROMPT}]
+        # Facts are handed over in whichever language the visitor is speaking,
+        # so the AI is quoting Spanish answers to Spanish questions rather than
+        # translating English ones on the fly.
+        lang = _detect_language(user_message)
+
+        messages = [{"role": "system", "content": full_system_prompt(lang)}]
         messages.extend(conversation_history)
         messages.append({"role": "user", "content": user_message})
 
@@ -439,6 +423,11 @@ if __name__ == '__main__':
     print(f"  OpenAI key: {'✅ Set' if api_key else '❌ NOT SET'}")
     print(f"  Model: gpt-4o-mini")
     print(f"  Port: 5002")
+    if _kb_ok:
+        print(f"  Knowledge: ✅ {len(kb.KNOWLEDGE)} topics "
+              f"({', '.join(kb.ALL_FILES)})")
+    else:
+        print("  Knowledge: ❌ not loaded — every question will go to the AI")
     print("=" * 60)
     print()
     app.run(host='0.0.0.0', port=5002, debug=False)

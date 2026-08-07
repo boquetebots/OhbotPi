@@ -29,7 +29,7 @@ BEFORE YOU RUN THIS
 
 3. cd to the project folder and run the script:
 
-       cd /home/michael/Projects/Ohbot
+       cd ~/Projects/Ohbot
        python3 yobot_position_test.py
 
    When you're done, remember to start the services again:

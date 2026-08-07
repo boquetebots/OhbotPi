@@ -29,7 +29,7 @@ BEFORE YOU RUN THIS
 
 2. cd to the project folder and run the script:
 
-       cd /home/michael/Projects/Ohbot
+       cd ~/Projects/Ohbot
        python3 yobot_verify_neutral.py
 
 WHAT THE SCRIPT DOES

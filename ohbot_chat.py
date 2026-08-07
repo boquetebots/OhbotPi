@@ -128,22 +128,33 @@ class AsyncOhbotConversation:
     # ── knowledge base ────────────────────────────────────────────────────────
 
     def _load_knowledge(self) -> dict:
-        kfile = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                             "knowledge.json")
+        """Load every answer Yobot knows.
+
+        This used to read knowledge.json on its own. It now goes through
+        knowledge_base.py, which reads three files and merges them:
+
+            knowledge.json             who Yobot is
+            library_knowledge.json     the library and the park
+            clubhouse_knowledge.json   the Rincón Clubhouse
+
+        Edit those JSON files to change what Yobot says. Restart the Greeter
+        afterwards so it picks up the change.
+        """
         try:
-            with open(kfile, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            data.pop("_instructions", None)
-            print(f"✅ Loaded {len(data)} knowledge topics")
-            return data
-        except FileNotFoundError:
-            print("⚠️  knowledge.json not found — instant answers disabled")
-            return {}
-        except json.JSONDecodeError as e:
-            print(f"⚠️  Error reading knowledge.json: {e}")
+            import knowledge_base as kb
+            self._kb = kb
+            print(f"✅ Loaded {len(kb.KNOWLEDGE)} knowledge topics from "
+                  f"{len(kb.ALL_FILES)} files")
+            return kb.KNOWLEDGE
+        except Exception as e:                            # noqa: BLE001
+            self._kb = None
+            print(f"⚠️  knowledge_base.py not loaded ({e}) — "
+                  "instant answers disabled")
             return {}
 
     def lookup_knowledge(self, topic: str, language: str = "en") -> str:
+        if self._kb:
+            return self._kb.answer(topic, language)
         entry = self.knowledge.get(topic)
         if not entry:
             return ""

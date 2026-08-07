@@ -9,7 +9,7 @@ already sitting where you left it (660), this won't disturb it. Only
 TopLip moves, and only when you type a number for it.
 
 Run it the same way as the others:
-    cd /home/michael/Projects/Ohbot
+    cd ~/Projects/Ohbot
     python3 yobot_jog_toplip.py
 
 Type a number 0-1000 + Enter to move TopLip there. Blank Enter or 'q'

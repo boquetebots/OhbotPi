@@ -111,6 +111,22 @@ except ImportError:
     SAFETY_RULES = ""
     print("⚠️  guardrails.py not found — Yobot is running WITHOUT safety rules.")
 
+# ── The local facts, shared with the Greeter ───────────────────────────────
+# knowledge_base.py reads library_knowledge.json and clubhouse_knowledge.json
+# and boils them down into a short fact sheet. Handing that to the AI is what
+# lets the chat panel answer "what time do you close?" correctly instead of
+# cheerfully inventing an answer. Same files the Greeter uses, so the two
+# never disagree.
+try:
+    import knowledge_base as kb
+    _kb_ok = True
+    print(f"✅ Loaded {len(kb.KNOWLEDGE)} knowledge topics for the chat panel")
+except Exception as e:                                   # noqa: BLE001
+    kb = None
+    _kb_ok = False
+    print(f"⚠️  knowledge_base.py not loaded ({e}) — "
+          "the chat panel won't know about the library.")
+
 _PERSONALITIES = {
     'friendly': (
         "You are Yobot, a friendly robot assistant. "
@@ -169,17 +185,21 @@ _LANGUAGE_INSTRUCTION = {
 
 
 def _system_prompt(lang):
-    """Personality, then where it lives, then the rules, then the language.
+    """Personality, where it lives, the local facts, the rules, the language.
 
     Order matters: the safety rules sit after the personality so they win if
-    the two ever disagree.
+    the two ever disagree. The facts go in before the rules and in whichever
+    language is selected, so Spanish questions get the Spanish wording.
     """
-    return "\n".join([
+    parts = [
         _PERSONALITIES[_current_personality],
         VENUE_INFO,
-        SAFETY_RULES,
-        _LANGUAGE_INSTRUCTION.get(lang, ''),
-    ])
+    ]
+    if _kb_ok:
+        parts.append(kb.fact_sheet(lang))
+    parts.append(SAFETY_RULES)
+    parts.append(_LANGUAGE_INSTRUCTION.get(lang, ''))
+    return "\n".join(parts)
 
 
 # ── The lines Ohbot says during the built-in demo ──────────────────────────

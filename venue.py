@@ -18,6 +18,17 @@ remember to change it in two places.
 
 TO EDIT: change the text between the triple quotes. That is all. Save the
 file and restart whichever server you are running.
+
+KEEP IT SHORT. This is a one-paragraph sense of place, not a fact sheet.
+The detailed facts — opening hours, where the bathrooms are, the wifi
+password, the Clubhouse — live in the JSON files and are loaded separately
+by knowledge_base.py:
+
+    library_knowledge.json      the Biblioteca de Boquete and the park
+    clubhouse_knowledge.json    the Rincón Clubhouse
+
+Put facts there, not here, so the robot can also answer them instantly
+without paying for an AI call.
 """
 
 VENUE_INFO = """You live in the Rincon Clubhouse at the Biblioteca de Boquete, in Panama.
