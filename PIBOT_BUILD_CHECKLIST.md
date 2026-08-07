@@ -86,11 +86,21 @@ Use **Raspberry Pi Imager** on the Mac.
 | Setting | Value |
 |---|---|
 | Device | Raspberry Pi 4 |
-| Operating System | Raspberry Pi OS (64-bit) — the **full** version, not Lite |
+| Operating System | Raspberry Pi OS **Lite** (64-bit) |
 | Storage | your new SD card |
 
-Use the full version, not Lite. Lite has no audio stack configured and you will
-spend an evening fixing that for no reason.
+**Lite is the right choice, and it's what Pibot was built on (7 Aug 2026).**
+The robot is headless — nobody ever looks at a desktop on it — so the full
+image just adds hundreds of packages that need updating and can break.
+
+Lite leaves out four things the robot needs. They're listed in
+[Part 3.3](#33-install-the-four-missing-pieces) and take about three minutes
+to add. That's the whole cost, and in exchange you get a leaner machine.
+
+There's an unexpected bonus. The old Pi had a long-standing audio fault —
+`aplay` failing with "error 524" — which forced everything through PipeWire.
+On Lite there's no sound server grabbing the device, so plain ALSA works and
+**PipeWire isn't needed at all**. Fewer moving parts than the old build.
 
 **Use a good card.** A 32GB A2-rated card from SanDisk or Samsung. Cheap cards
 are the single most common cause of a Pi that works for two weeks and then
@@ -169,14 +179,62 @@ Ten to twenty minutes. Then reboot and log back in:
 sudo reboot
 ```
 
-### 3.3 Install git
+### 3.3 Install the four missing pieces
 
-The full PiOS image normally includes git. Check, and install it if it's
-missing:
+Lite leaves these out. All four are needed:
 
 ```
-git --version || sudo apt install git -y
+sudo apt install -y git espeak-ng python3-venv python3-dev
 ```
+
+| Package | Why |
+|---|---|
+| `git` | To clone the project at all |
+| `espeak-ng` | The offline voice that reads the IP address aloud |
+| `python3-venv` | `install.sh` builds a virtual environment |
+| `python3-dev` | `RPi.GPIO` is compiled from source and needs Python's headers. Without it `install.sh` dies with *"failed building wheel for RPi.GPIO"* — that's the wake button |
+
+Then **check it worked**, because apt is silent on success:
+
+```
+which git espeak-ng
+```
+
+Two lines back means you're good. Nothing back means the install didn't run —
+usually because the command was pasted before the SSH session was listening.
+Run it again on its own and watch it finish.
+
+### 3.4 Check the sound
+
+Two separate devices, and they are not the same thing:
+
+- **Speaker** — a powered speaker in the Pi's green 3.5mm jack. This is
+  `card 0`, the built-in headphone output.
+- **Microphone** — a USB mic. This is capture-only, so it will **not** appear
+  in `aplay -l`. Use `arecord -l` to see it.
+
+```
+aplay -l      # should list card 0 Headphones, plus the two HDMI outputs
+arecord -l    # should list your USB mic — note its card number
+```
+
+Test the speaker, first on the jack directly and then on the default route
+that the robot's code actually uses:
+
+```
+speaker-test -D plughw:0,0 -t wav -c 2 -l 1
+```
+
+```
+speaker-test -D plug:default -t wav -c 2 -l 1
+```
+
+You want to hear "front left, front right" both times. The second one matters
+most — `plug:default` is what `yobot_core.py` falls back to when `pw-play`
+isn't installed. If it works, you need no audio changes anywhere.
+
+If the second one is silent, `default` is pointed at HDMI. Fix by creating
+`/etc/asound.conf` with `defaults.pcm.card 0` and `defaults.ctl.card 0`.
 
 ---
 
@@ -235,9 +293,14 @@ the robot read out an address.
 
 ### 4.5 Fix the microphone
 
-**This one will definitely bite you.** The old Pi's USB mic was on card 3, and
-that number is baked in as a default. A fresh build will almost certainly put
-it somewhere else.
+**Redo this any time you change the USB mic.** Swapping mics can change the
+card number, and if `.env` points at the wrong one the robot simply stops
+hearing anyone — with no error to tell you why.
+
+> **Outstanding as of 7 Aug 2026:** the build was tested with a stand-in mic
+> (an Anthem ARC-1) which happened to land on card 3, the same as the old Pi.
+> Yobot's real mic is at the Library. When it's fitted, run `arecord -l`
+> again and update `AZURE_MIC_DEVICE` to match.
 
 Find out where it actually is:
 
@@ -623,6 +686,25 @@ Fixed on 7 August 2026 while writing this:
 - **Four calibration scripts** had `/home/michael/Projects/Ohbot` in their help
   text. Now `~/Projects/Ohbot`, which is correct for any username.
 
+Found and fixed during the actual build, same day:
+
+- **`install.sh` never created the `ohbot-calibration` service.** It made four
+  of the five the project needs. On the old Pi that service had been created
+  by hand years ago and never written down, so this only surfaced on the first
+  genuinely fresh build — the Launcher's Calibration button opened a page that
+  nothing was serving. Now installed with the rest.
+
+- **`install.sh` wiped `AZURE_MIC_DEVICE` on every re-run.** It rewrites
+  `.env` from a fixed template containing only the three API keys, so any
+  other setting vanished. Since re-running the installer is the normal way to
+  pick up changes, this was a trap waiting to spring: the robot would go deaf
+  and nothing would say why. It now preserves any settings it doesn't manage.
+
+- **`deploy_local_files.command` could never connect.** It used
+  `BatchMode=yes`, which means "never ask for a password" — so with no SSH key
+  set up it failed every time regardless of the address. Both it and
+  `sync_pi_from_github.command` now share one connection and ask once.
+
 Still worth cleaning up some day, not urgent:
 
 - `install.sh` finishes by telling you to open `ohbot.local:5000`. It's
@@ -638,25 +720,37 @@ at all.
 
 ## The very short version
 
+This is the route that actually worked on 7 August 2026. Run the Pi commands
+**one at a time** — pasting a block means the first few are swallowed before
+the SSH session is listening, which cost us two false diagnoses.
+
 ```
 # On the Mac
-cd /Users/michael/Projects/OhbotPi2 && git add -A && git commit -m "Clubhouse deploy" && git push
+double-click push_to_github.command
 
-# Flash card: PiOS 64-bit full, hostname pibot, user yobot, home WiFi, SSH on
+# Flash card: PiOS Lite 64-bit, hostname pibot, user yobot, home WiFi, SSH on
 
 # On the Pi
 ssh yobot@pibot.local
 sudo apt update && sudo apt full-upgrade -y && sudo reboot
+sudo apt install -y git espeak-ng python3-venv python3-dev
+which git espeak-ng                     # confirm — apt is silent on success
+aplay -l ; arecord -l                   # speaker on card 0, USB mic elsewhere
+speaker-test -D plug:default -t wav -c 2 -l 1
 mkdir -p ~/Projects && cd ~/Projects
 git clone https://github.com/boquetebots/OhbotPi.git Ohbot
-cd Ohbot && bash install.sh
+ls /dev/ttyACM*                         # brain board present?
+cd Ohbot && bash install.sh             # skip keys, say NO to overlay
 bash install_ip_announcer.sh
-arecord -l                              # note the card number
-nano .env                               # add AZURE_MIC_DEVICE=plughw:N,0
 sudo nmcli device wifi connect "YOUR-PHONE-HOTSPOT" password "..."
 
 # On the Mac
 double-click deploy_local_files.command
+ssh-copy-id yobot@pibot.local           # optional: no more passwords
+
+# On the Pi, only when the real mic is fitted
+arecord -l                              # note the card number
+nano ~/Projects/Ohbot/.env              # set AZURE_MIC_DEVICE=plughw:N,0
 
 # Then test everything in Part 7 before you go anywhere.
 ```

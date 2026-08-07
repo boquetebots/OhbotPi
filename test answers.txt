@@ -1,0 +1,221 @@
+you › what time do you close?
+
+  language  en  (auto-detected)
+  matched   hours   from library_knowledge.json
+  keyword   "what time do you close"
+  canned    The library is open Monday through Friday from 9 in the morning to 5 in the
+            afternoon, and Saturdays from 9 to 4. We are closed on Sundays and public
+            holidays.
+  ai would  The library is open Monday to Friday from 9 in the morning to 5 in the
+            afternoon, and Saturdays from 9 to 4. We're closed on Sundays and public
+            holidays!
+
+you › where are you from?
+
+  language  en  (auto-detected)
+  matched   who_made_you   from knowledge.json
+  keyword   "where are you from"
+  canned    I was 3D printed and put together right here in Boquete, based on the Ohbot
+            robot kit from England, and taught to talk using Python. The software is
+            open source, so anyone can look at how I work — which is exactly the sort of
+            thing they do up at the Clubhouse.
+  warning   this topic lives in knowledge.json, which is NOT in the AI's fact sheet — so
+            the AI is guessing below, not quoting
+  ai would  I'm from right here in the Rincon Clubhouse at the Biblioteca de Boquete! I
+            love helping young people explore science and technology.
+
+you › how where you made?
+
+  language  en  (auto-detected)
+  keyword   — nothing caught it. The robot now asks the classifier which topic this is.
+  classifier said general_chat — this reaches the real AI, which has the fact sheet and
+            the conversation so far
+  ai        I was created by really smart people who love technology! They designed me
+            to help and have fun conversations with you all.
+
+you › are you 3D printed?
+
+  language  en  (auto-detected)
+  keyword   — nothing caught it. The robot now asks the classifier which topic this is.
+  classifier said general_chat — this reaches the real AI, which has the fact sheet and
+            the conversation so far
+  ai        Not exactly! I’m more of a digital creation, but 3D printing is one of the
+            cool things you can do in the Clubhouse. You could even make your own robot
+            one day!
+
+you › what things can we learn here?
+
+  language  en  (auto-detected)
+  keyword   — nothing caught it. The robot now asks the classifier which topic this is.
+  classifier said general_chat — this reaches the real AI, which has the fact sheet and
+            the conversation so far
+  ai        You can learn all about science, technology, engineering, and creativity! In
+            the Clubhouse, you'll get to build things like robots, create digital
+            designs, and even try 3D printing. It's all about exploring what you're
+            curious about!
+
+you › how about audio-visual stuff?
+
+  language  en  (auto-detected)
+  keyword   — nothing caught it. The robot now asks the classifier which topic this is.
+  classifier said general_chat — this reaches the real AI, which has the fact sheet and
+            the conversation so far
+  ai        Yes! Very soon, we'll have audio-visual media production in the Clubhouse.
+            You’ll get to learn how to create videos and other cool projects!
+
+you › can anyone use the clubhouse?
+
+  language  en  (auto-detected)
+  matched   clubhouse   from clubhouse_knowledge.json
+  keyword   "clubhouse"
+  canned    A Rincón Clubhouse is a free after-school space where young people get to
+            build things with technology — whatever they're curious about. There are
+            Rincones all over Panama, and the newest one is right here, on the top floor
+            of this library. It opens on Monday, August tenth, 2026.
+  ai would  The Clubhouse is for young people aged 11 to 18. But if you're outside that
+            age range, you can still enjoy the rest of the library!
+
+you › are there computers here?
+
+  language  en  (auto-detected)
+  keyword   — nothing caught it. The robot now asks the classifier which topic this is.
+  classifier said general_chat — this reaches the real AI, which has the fact sheet and
+            the conversation so far
+  ai        Yes, there are computers in the library! You can use them to explore,
+            research, or even check out the Alexandria catalog to find books.
+
+you › tell me about the Clubhouse project.  WHere did it start, is it from Panama?
+
+  language  en  (auto-detected)
+  matched   clubhouse   from clubhouse_knowledge.json
+  keyword   "tell me about the clubhouse"
+  canned    A Rincón Clubhouse is a free after-school space where young people get to
+            build things with technology — whatever they're curious about. There are
+            Rincones all over Panama, and the newest one is right here, on the top floor
+            of this library. It opens on Monday, August tenth, 2026.
+  ai would  The very first Clubhouse started in Boston, USA, back in 1993! Panama joined
+            the Clubhouse network in 2004, and now we have Rincones Clubhouse all across
+            the country, including this one right here in Boquete!
+
+you › who funds the rincon clubhouse?
+
+  language  en  (auto-detected)
+  matched   clubhouse   from clubhouse_knowledge.json
+  keyword   "rincon clubhouse"
+  canned    A Rincón Clubhouse is a free after-school space where young people get to
+            build things with technology — whatever they're curious about. There are
+            Rincones all over Panama, and the newest one is right here, on the top floor
+            of this library. It opens on Monday, August tenth, 2026.
+  ai would  The Rincones Clubhouse is funded and run by SENACYT, which is Panama's
+            national secretariat for science, technology, and innovation. They work with
+            partners to help make this amazing space for young people!
+
+you › can I build a robot?
+
+  language  en  (auto-detected)
+  keyword   — nothing caught it. The robot now asks the classifier which topic this is.
+  classifier said general_chat — this reaches the real AI, which has the fact sheet and
+            the conversation so far
+  ai        Absolutely! In the Clubhouse, you can work on all sorts of hands-on
+            projects, including building robots. It’s a great way to learn and have fun!
+
+you › can I take you home?
+
+  language  en  (auto-detected)
+  matched   take_me_home   from knowledge.json
+  keyword   "can i take you home"
+  canned    I'm afraid I'm not available for checkout — even though this is a library!
+            I'm quite happy here anyway. But you could build your own up at the
+            Clubhouse. That's exactly the sort of thing they do.
+  warning   this topic lives in knowledge.json, which is NOT in the AI's fact sheet — so
+            the AI is guessing below, not quoting
+  ai would  Oh, I appreciate the thought! But I'm a robot designed to help here at the
+            Clubhouse. How about we explore some fun projects together instead?
+
+you › who is in charge of the clubhouse?
+
+  language  en  (auto-detected)
+  matched   clubhouse_staff   from clubhouse_knowledge.json
+  keyword   "who is in charge of the clubhouse"
+  canned    The Clubhouse has mentors who help everyone with their projects. I don't
+            know their names yet — ask at the front desk and they'll introduce you.
+  ai would  The Clubhouse has mentors who help with projects, but I don't know their
+            names yet. You can ask at the front desk, and they'll introduce you to the
+            right person!
+
+you › what can we learn here?
+
+  language  en  (auto-detected)
+  keyword   — nothing caught it. The robot now asks the classifier which topic this is.
+  classifier said general_chat — this reaches the real AI, which has the fact sheet and
+            the conversation so far
+  ai        You can learn all about science, technology, and engineering! From 3D
+            printing to programming and building robots, there are so many fun projects
+            to explore!
+
+you › are robots fun?
+
+  language  en  (auto-detected)
+  keyword   — nothing caught it. The robot now asks the classifier which topic this is.
+  classifier said general_chat — this reaches the real AI, which has the fact sheet and
+            the conversation so far
+  ai        Absolutely, robots are a blast! They can help with all kinds of cool
+            projects and teach us about technology while we have fun creating. What do
+            you think would be the most fun thing to build?
+
+you › I think it would be fun to build a yobot
+
+  language  en  (auto-detected)
+  keyword   — nothing caught it. The robot now asks the classifier which topic this is.
+  classifier said general_chat — this reaches the real AI, which has the fact sheet and
+            the conversation so far
+  ai        That sounds like an amazing idea! You could make a friendly robot like me
+            that helps others, just with your own special twist. I’d love to see what
+            you create!
+
+you › where is the park?
+
+  language  en  (auto-detected)
+  matched   park   from library_knowledge.json
+  keyword   "where is the park"
+  canned    The Library Park is about 200 meters from here, toward the river. Go out the
+            front door, turn right, cross the street, and head straight ahead to the
+            park entrance. You should be able to see it once you cross the street.
+  ai would  The Library Park is just 200 meters from here! Go out the front door, turn
+            right, cross the street, and head straight ahead to find the park entrance.
+            You can't miss it!
+
+you › how many rincon clubhouse are in Panama?
+
+  language  en  (auto-detected)
+  matched   clubhouse   from clubhouse_knowledge.json
+  keyword   "rincon clubhouse"
+  canned    A Rincón Clubhouse is a free after-school space where young people get to
+            build things with technology — whatever they're curious about. There are
+            Rincones all over Panama, and the newest one is right here, on the top floor
+            of this library. It opens on Monday, August tenth, 2026.
+  ai would  There are several Rincon Clubhouses across Panama! There were eight a few
+            years ago, and more have opened since, including this new one right here in
+            Boquete!
+
+you › do you know where the others are?
+
+  language  en  (auto-detected)
+  keyword   — nothing caught it. The robot now asks the classifier which topic this is.
+  classifier said general_chat — this reaches the real AI, which has the fact sheet and
+            the conversation so far
+  ai        I'm not sure exactly where all the other Rincon Clubhouses are located. I
+            recommend asking a staff member at the front desk, and they can help you out
+            with that!
+
+you › thank you, goodbye
+
+  language  en  (auto-detected)
+  matched   goodbye   from library_knowledge.json
+  keyword   "thank you"
+  canned    Goodbye! Thanks for visiting the library. Have a wonderful day!
+  ai would  You're welcome! Goodbye, and have a fantastic day!
+
+you › 
+  Bye.
+

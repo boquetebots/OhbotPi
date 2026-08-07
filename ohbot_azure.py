@@ -14,6 +14,7 @@ Speaker: playback goes through yobot_core's cross-platform player
 
 import asyncio
 import os
+import re
 import sys
 import tempfile
 import threading
@@ -249,11 +250,65 @@ class AzureSpeechManager:
             return language            # kept as typed — Azure wants es-MX, not es-mx
         return cls.LANG_LOCALE[cls.DEFAULT_LANG]
 
-    # Words that need IPA correction in English synthesis
-    # Add entries here if Azure mispronounces a word specific to your location or use case.
-    # Example: "Ohbot": '<phoneme alphabet="ipa" ph="oʊbɒt">Ohbot</phoneme>'
+    # ------------------------------------------------------------------
+    # Pronunciation fixes for the ENGLISH voice
+    # ------------------------------------------------------------------
+    # Azure's English voice reads Spanish place names with English spelling
+    # rules, so "Boquete" comes out as "bo-KEET" and "Rincon" as "RIN-kun".
+    # This table tells Azure exactly which sounds to make instead.
+    #
+    # Format is simply:   "the word as it is spelled": "the IPA sounds"
+    #
+    # The IPA must come from Azure's ENGLISH (en-US) sound list. If you use a
+    # symbol that isn't on that list, Azure quietly ignores the whole fix and
+    # you hear no change. The full list, plus how to add a new word, is in
+    # HANDOFF_pronunciation_guide.md in this folder.
+    #
+    # Matching is whole-word and ignores capitals, so "Rincon" does NOT
+    # break "Rincones" — Azure already says that one correctly.
     PHONEME_FIXES = {
+        # bo-KEH-tay  (the way it's said in English around town)
+        "Boquete": "boʊˈkɛteɪ",
+        # reen-KOHN
+        "Rincón":  "ɹɪnˈkoʊn",
+        "Rincon":  "ɹɪnˈkoʊn",
     }
+
+    # Built once, on first use: one regex that finds any of the words above.
+    # Longest words first so a longer entry always wins over a shorter one.
+    _phoneme_pattern = None
+
+    @classmethod
+    def _get_phoneme_pattern(cls):
+        if cls._phoneme_pattern is None and cls.PHONEME_FIXES:
+            words = sorted(cls.PHONEME_FIXES, key=len, reverse=True)
+            cls._phoneme_pattern = re.compile(
+                r'\b(' + '|'.join(re.escape(w) for w in words) + r')\b',
+                re.IGNORECASE,
+            )
+        return cls._phoneme_pattern
+
+    @classmethod
+    def apply_phoneme_fixes(cls, text: str) -> str:
+        """Wrap any word in PHONEME_FIXES with an SSML <phoneme> tag.
+
+        Done in a single pass, so a word we've already tagged can never be
+        matched again by a later entry in the table.
+        """
+        pattern = cls._get_phoneme_pattern()
+        if not pattern:
+            return text
+
+        # Look the word up ignoring capitals, but keep the original spelling
+        # inside the tag so the text still reads correctly.
+        lookup = {w.lower(): ipa for w, ipa in cls.PHONEME_FIXES.items()}
+
+        def _tag(match):
+            word = match.group(0)
+            ipa  = lookup[word.lower()]
+            return f'<phoneme alphabet="ipa" ph="{ipa}">{word}</phoneme>'
+
+        return pattern.sub(_tag, text)
 
     def _make_ssml(self, text: str, language: str = None) -> str:
         """Wrap text in SSML with per-voice pitch and phoneme corrections.
@@ -271,8 +326,7 @@ class AzureSpeechManager:
         # mangle it.
         ssml_text = text
         if locale.startswith("en-"):
-            for word, replacement in self.PHONEME_FIXES.items():
-                ssml_text = ssml_text.replace(word, replacement)
+            ssml_text = self.apply_phoneme_fixes(ssml_text)
 
         return (
             '<speak version="1.0" '

@@ -229,14 +229,42 @@ _FACT_SHEET_HEADER = {
     ),
 }
 
+# ── The robot's own story ──────────────────────────────────────────────────
+# This used to be missing, and it showed. The fact sheet was built from the
+# two VENUE files only, so the AI knew the library's opening hours but had
+# never heard of the Ohbot kit, the 3D printing, or Boquete. Asked "are you
+# 3D printed?" it replied "Not exactly, I'm more of a digital creation" —
+# which is simply wrong, and a bad thing to say in a room full of 3D printers.
+#
+# So knowledge.json goes in too now, under its own heading. Keyword matching
+# still answers these questions first when it recognises them; this is for
+# when someone phrases it in a way the keywords miss.
+IDENTITY_KNOWLEDGE = load_knowledge([IDENTITY_FILE])
+
+_IDENTITY_HEADER = {
+    "en": (
+        "FACTS ABOUT YOURSELF. This is your own story — it is true, so use it "
+        "rather than improvising. Say it in your own words and keep your "
+        "personality. If someone asks something about you these facts do not "
+        "cover, you may answer playfully, but never contradict anything here."
+    ),
+    "es": (
+        "DATOS SOBRE TI MISMO. Esta es tu propia historia — es verdadera, así "
+        "que úsala en vez de improvisar. Dila con tus propias palabras y "
+        "mantén tu personalidad. Si te preguntan algo sobre ti que estos datos "
+        "no cubren, puedes responder con humor, pero nunca contradigas nada "
+        "de lo que está aquí."
+    ),
+}
+
 # Not worth spending prompt space on — the personality already handles these.
 _SKIP_IN_FACT_SHEET = {"greeting", "goodbye"}
 
 
-def fact_sheet(language: str = "en") -> str:
-    """A compact list of venue facts, for pasting into the AI system prompt."""
-    lines = [_FACT_SHEET_HEADER.get(language, _FACT_SHEET_HEADER["en"]), ""]
-    for topic, entry in VENUE_KNOWLEDGE.items():
+def _fact_lines(knowledge: dict, language: str) -> list:
+    """Turn a set of topics into '- topic: answer' lines."""
+    lines = []
+    for topic, entry in knowledge.items():
         if topic in _SKIP_IN_FACT_SHEET:
             continue
         text = entry.get(f"answer_{language}") or entry.get("answer_en", "")
@@ -244,6 +272,24 @@ def fact_sheet(language: str = "en") -> str:
             continue
         label = topic.replace("_", " ")
         lines.append(f"- {label}: {_apply_tense(text)}")
+    return lines
+
+
+def fact_sheet(language: str = "en") -> str:
+    """The facts pasted into the AI system prompt.
+
+    Two sections: where the robot is (the library and the Clubhouse), and who
+    the robot is. Both matter — without the second one the AI invents Yobot's
+    origin story, and gets it wrong.
+    """
+    lines = [_FACT_SHEET_HEADER.get(language, _FACT_SHEET_HEADER["en"]), ""]
+    lines += _fact_lines(VENUE_KNOWLEDGE, language)
+
+    identity = _fact_lines(IDENTITY_KNOWLEDGE, language)
+    if identity:
+        lines += ["", _IDENTITY_HEADER.get(language, _IDENTITY_HEADER["en"]), ""]
+        lines += identity
+
     return "\n".join(lines)
 
 

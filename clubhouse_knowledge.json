@@ -6,7 +6,8 @@
   "_opening_date_note": "The words {opens} and {abre} in the answers below are filled in automatically: before August 10th 2026 the robot says 'opens', after that it says 'opened'. Nothing to do — it changes itself. The date lives in knowledge_base.py if it ever needs moving.",
 
   "clubhouse": {
-    "keywords": ["clubhouse", "club house", "rincón clubhouse", "rincon clubhouse", "el rincón", "el rincon", "what is the clubhouse", "what is a clubhouse", "tell me about the clubhouse", "qué es el clubhouse", "que es el clubhouse", "qué es el rincón", "que es el rincon"],
+    "_keyword_note": "The bare word 'clubhouse' used to be a keyword here. It was catching EVERY Clubhouse question, however specific — 'who can use the clubhouse', 'where did the clubhouse begin', 'how do I join the rincon clubhouse' — and answering all of them with this general blurb, even though the right answer was sitting further down this same file. Only explicit 'what is...' phrasings now. Anything else falls through to the AI, which has every fact in this file in its fact sheet. Do not add a bare topic word back here.",
+    "keywords": ["what is the clubhouse", "what is a clubhouse", "what is the rincon clubhouse", "what is a rincon clubhouse", "what's the clubhouse", "whats the clubhouse", "tell me about the clubhouse", "tell me about the rincon clubhouse", "what is el rincon", "explain the clubhouse", "qué es el clubhouse", "que es el clubhouse", "qué es un clubhouse", "que es un clubhouse", "qué es el rincón", "que es el rincon", "qué es el rincón clubhouse", "que es el rincon clubhouse", "cuéntame del clubhouse", "cuentame del clubhouse"],
     "answer_en": "A Rincón Clubhouse is a free after-school space where young people get to build things with technology — whatever they're curious about. There are Rincones all over Panama, and the newest one is right here, on the top floor of this library. It {opens} on Monday, August tenth, 2026.",
     "answer_es": "Un Rincón Clubhouse es un espacio gratuito, fuera del horario escolar, donde los jóvenes crean cosas con tecnología, según lo que les interese. Hay Rincones por todo Panamá, y el más nuevo está justo aquí, en el piso superior de esta biblioteca. {Abre} el lunes 10 de agosto de 2026."
   },
@@ -25,52 +26,49 @@
   },
 
   "clubhouse_activities": {
-    "keywords": ["what do you do at the clubhouse", "what happens at the clubhouse", "clubhouse activities", "what can i learn", "what can i do there", "3d printing", "impresión 3d", "impresion 3d", "robot programming", "programación de robots", "programacion de robots", "coding", "programar", "stem", "steam", "technology workshop", "taller de tecnología", "taller de tecnologia", "qué se hace en el clubhouse", "que se hace en el clubhouse", "qué puedo aprender", "que puedo aprender"],
+    "keywords": ["what do you do at the clubhouse", "what happens at the clubhouse", "clubhouse activities", "what can i learn", "can i learn", "what will i learn", "what fun things", "what sort of things", "what kind of things", "what can i do there", "what do kids do there", "things to do at the clubhouse", "3d printing", "impresión 3d", "impresion 3d", "robot programming", "programación de robots", "programacion de robots", "technology workshop", "taller de tecnología", "taller de tecnologia", "qué se hace en el clubhouse", "que se hace en el clubhouse", "qué puedo aprender", "que puedo aprender", "qué voy a aprender", "que voy a aprender", "qué cosas puedo hacer", "que cosas puedo hacer"],
     "answer_en": "All sorts of hands-on projects — artificial intelligence, 3D printing, die transfer printing for tee-shirts and coffee mugs, programming and building robots, digital design. It's science, technology and engineering. Very soon we will have audio-visual media production, too. But you learn it by building things you actually care about. And robots like me are exactly the kind of thing you'd make up there.",
     "answer_es": "Toda clase de proyectos prácticos: inteligencia artificial, impresión 3D, estampado por transferencia para camisetas y tazas, programación y construcción de robots, diseño digital. Es ciencia, tecnología e ingeniería. Muy pronto también tendremos producción audiovisual. Pero se aprende construyendo cosas que de verdad te importan. Y robots como yo son justo el tipo de cosa que harías allá arriba."
   },
 
   "clubhouse_ages": {
-    "keywords": ["how old do you have to be", "what age is the clubhouse for", "age limit", "can adults go", "is it for kids", "am i too old", "qué edad", "que edad", "para qué edades", "para que edades", "es para niños", "es para jóvenes", "es para jovenes", "puedo ir si soy adulto"],
-    "answer_en": "The Clubhouse here is for young people aged 11 to 18. If you're outside that, the rest of the library is still very much yours.",
-    "answer_es": "El Clubhouse de aquí es para jóvenes de 11 a 18 años. Si no estás en ese rango, el resto de la biblioteca sigue siendo todo tuyo."
+    "keywords": ["how old do you have to be", "what age is the clubhouse for", "age limit", "who can use the clubhouse", "who can use it", "who is the clubhouse for", "who is it for", "who can go", "who can join", "can anyone go", "can i use the clubhouse", "am i old enough", "what ages", "qué edad", "que edad", "para qué edades", "para que edades", "es para jóvenes", "es para jovenes", "quién puede usar el clubhouse", "quien puede usar el clubhouse", "para quién es el clubhouse", "para quien es el clubhouse", "quién puede entrar", "quien puede entrar"],
+    "answer_en": "The Clubhouse is for children and young people aged 11 to 18. It's built for you to explore what interests you, work on your own projects, and learn through technology and creativity — all the STEAM subjects.",
+    "answer_es": "El Rincón Clubhouse está dirigido a niños y jóvenes de 11 a 18 años. Está diseñado para que explores tus intereses, desarrolles proyectos y aprendas mediante la tecnología, la creatividad y las diferentes áreas STEAM."
   },
 
   "clubhouse_cost": {
-    "keywords": ["how much does the clubhouse cost", "is the clubhouse free", "clubhouse price", "do i have to pay", "cuánto cuesta el clubhouse", "cuanto cuesta el clubhouse", "es gratis el clubhouse", "hay que pagar"],
-    "answer_en": "It's completely free. That's part of the whole idea — the Rincones Clubhouse are free for every young person who wants to use them.",
-    "answer_es": "Es completamente gratis. Esa es parte de la idea — los Rincones Clubhouse son gratuitos para cualquier joven que quiera usarlos."
+    "keywords": ["how much does the clubhouse cost", "is the clubhouse free", "clubhouse price", "do i have to pay", "is there a fee", "do i pay to join", "cuánto cuesta el clubhouse", "cuanto cuesta el clubhouse", "es gratis el clubhouse", "hay que pagar", "tiene costo", "cuánto vale"],
+    "answer_en": "It's completely free. There's nothing to pay to take part, and nothing to pay to be a member. That's part of the whole idea.",
+    "answer_es": "Es completamente gratuito. No se requiere ningún pago para participar ni para formar parte del Clubhouse. Esa es parte de la idea."
   },
 
   "clubhouse_join": {
-    "_todo": "PLACEHOLDER — replace with the real sign-up process for the Boquete Clubhouse when you have it (walk in? register? forms? parent permission?).",
-    "keywords": ["how do i join the clubhouse", "how do i sign up for the clubhouse", "can i join the clubhouse", "do i need to register", "clubhouse sign up", "cómo me inscribo en el clubhouse", "como me inscribo en el clubhouse", "cómo entro al clubhouse", "como entro al clubhouse", "hay que registrarse", "puedo unirme al clubhouse"],
-    "answer_en": "The Clubhouse {opens} on Monday, August tenth, up on the top floor. Ask at the front desk here in the library and they'll point you to the right person to get you started.",
-    "answer_es": "El Clubhouse {abre} el lunes 10 de agosto, en el piso superior. Pregunta en la recepción aquí en la biblioteca y te dirigirán a la persona indicada para empezar."
+    "keywords": ["how do i join the clubhouse", "how do i join the rincon clubhouse", "how do i join the rincón clubhouse", "how do i join", "how do i sign up for the clubhouse", "how do i sign up", "how do i register", "how do i get in", "can i join the clubhouse", "can i join", "do i need to register", "do i need to sign up", "clubhouse sign up", "where do i sign up", "cómo me inscribo en el clubhouse", "como me inscribo en el clubhouse", "cómo me inscribo", "como me inscribo", "cómo entro al clubhouse", "como entro al clubhouse", "hay que registrarse", "puedo unirme al clubhouse", "dónde me inscribo", "donde me inscribo", "cómo me registro", "como me registro"],
+    "answer_en": "You sign up at the Fundación Biblioteca de Boquete — right here in this building. Ask at the front desk and they'll walk you through it.",
+    "answer_es": "Te inscribes en la Fundación Biblioteca de Boquete, aquí mismo en este edificio. Pregunta en la recepción y te explican todo el proceso."
   },
 
   "clubhouse_hours": {
-    "_todo": "PLACEHOLDER — replace with the real Clubhouse opening hours and days when you have them.",
-    "keywords": ["clubhouse hours", "when is the clubhouse open", "what time is the clubhouse open", "what days is the clubhouse open", "horario del clubhouse", "horario del rincón", "horario del rincon", "cuándo está abierto el clubhouse", "cuando esta abierto el clubhouse", "qué días abre el clubhouse", "que dias abre el clubhouse"],
-    "answer_en": "I don't have the Clubhouse schedule yet, I'm afraid — it {opens} on Monday, August tenth. Ask at the front desk and they'll have the days and times.",
-    "answer_es": "Todavía no tengo el horario del Clubhouse, lo siento — {abre} el lunes 10 de agosto. Pregunta en la recepción y te darán los días y las horas."
+    "keywords": ["clubhouse hours", "when is the clubhouse open", "what time is the clubhouse open", "what time does the clubhouse open", "what time does the clubhouse close", "what days is the clubhouse open", "is the clubhouse open now", "horario del clubhouse", "horario del rincón", "horario del rincon", "cuándo está abierto el clubhouse", "cuando esta abierto el clubhouse", "a qué hora abre el clubhouse", "a que hora abre el clubhouse", "a qué hora cierra el clubhouse", "a que hora cierra el clubhouse", "qué días abre el clubhouse", "que dias abre el clubhouse"],
+    "answer_en": "The Clubhouse is open from 10 in the morning until 4 in the afternoon. Which days depends on the calendar of activities and workshops, so check at the front desk for what's on this week.",
+    "answer_es": "El Clubhouse está abierto de 10 de la mañana a 4 de la tarde. Los días dependen del calendario de actividades y talleres, así que pregunta en la recepción qué hay esta semana."
   },
 
   "clubhouse_staff": {
-    "_todo": "PLACEHOLDER — replace with the names or roles of the people running the Boquete Clubhouse when you have them.",
-    "keywords": ["who runs the clubhouse", "who works at the clubhouse", "who is in charge of the clubhouse", "clubhouse teacher", "clubhouse mentor", "quién dirige el clubhouse", "quien dirige el clubhouse", "quién trabaja en el clubhouse", "quien trabaja en el clubhouse", "quién está a cargo", "quien esta a cargo"],
-    "answer_en": "The Clubhouse has mentors who help everyone with their projects. I don't know their names yet — ask at the front desk and they'll introduce you.",
-    "answer_es": "El Clubhouse tiene mentores que ayudan a todos con sus proyectos. Todavía no sé sus nombres — pregunta en la recepción y te los presentarán."
+    "keywords": ["who runs the clubhouse", "who works at the clubhouse", "who is in charge of the clubhouse", "who is the coordinator", "who is the director", "who's the director", "whos the director", "clubhouse director", "director of the clubhouse", "who is the manager", "who is the boss", "who leads the clubhouse", "who is guillermo", "guillermo", "gonzález", "gonzalez", "clubhouse teacher", "clubhouse mentor", "clubhouse mentors", "who can help me at the clubhouse", "quién dirige el clubhouse", "quien dirige el clubhouse", "quién es el director", "quien es el director", "el director del clubhouse", "director del rincón", "director del rincon", "quién coordina el clubhouse", "quien coordina el clubhouse", "quién está a cargo", "quien esta a cargo", "el coordinador", "quién es guillermo", "quien es guillermo", "mentores del clubhouse", "quién trabaja en el clubhouse", "quien trabaja en el clubhouse"],
+    "answer_en": "The person who runs the Clubhouse — the director and coordinator — is Guillermo González. He works with mentors, volunteers and specialist collaborators, and the whole thing is coordinated by the Fundación Biblioteca de Boquete. Ask at the front desk and they'll introduce you.",
+    "answer_es": "La persona que dirige el Rincón Clubhouse — el director y coordinador — es Guillermo González. Trabaja junto con mentores, voluntarios y colaboradores especializados, y todo es coordinado por la Fundación Biblioteca de Boquete. Pregunta en la recepción y te lo presentan."
   },
 
   "clubhouse_history": {
-    "keywords": ["history of the clubhouse", "who started the clubhouse", "where did the clubhouse come from", "when did the clubhouse start", "clubhouse origin", "mit", "media lab", "scratch", "mitchel resnick", "historia del clubhouse", "quién creó el clubhouse", "quien creo el clubhouse", "cómo empezó el clubhouse", "como empezo el clubhouse"],
+    "keywords": ["history of the clubhouse", "who started the clubhouse", "where did the clubhouse come from", "when did the clubhouse start", "where did the clubhouse begin", "where did it begin", "where did it start", "how did the clubhouse start", "who invented the clubhouse", "who created the clubhouse", "the first clubhouse", "clubhouse origin", "media lab", "mitchel resnick", "historia del clubhouse", "quién creó el clubhouse", "quien creo el clubhouse", "cómo empezó el clubhouse", "como empezo el clubhouse", "dónde empezó el clubhouse", "donde empezo el clubhouse", "el primer clubhouse"],
     "answer_en": "The very first Computer Clubhouse opened in 1993 at the Computer Museum in Boston, in the United States. It was created together with the MIT Media Lab — by Mitchel Resnick, the same person behind the Scratch programming language, and the educator Natalie Rusk. From that one room in Boston it grew into a network all over the world.",
     "answer_es": "El primer Computer Clubhouse abrió en 1993 en el Computer Museum de Boston, en Estados Unidos. Se creó junto con el MIT Media Lab — por Mitchel Resnick, la misma persona detrás del lenguaje de programación Scratch, y la educadora Natalie Rusk. De esa única sala en Boston creció una red por todo el mundo."
   },
 
   "clubhouse_panama": {
-    "keywords": ["clubhouse in panama", "rincones in panama", "how did it come to panama", "when did panama join", "clubhouse panamá", "clubhouse panama", "rincones en panamá", "rincones en panama", "cómo llegó a panamá", "como llego a panama", "cuándo llegó a panamá", "cuando llego a panama"],
+    "keywords": ["clubhouse in panama", "rincones in panama", "how did it come to panama", "when did panama join", "is the clubhouse panamanian", "is it panamanian", "is it american", "is it from panama", "panamanian project", "panamanian or american", "american or panamanian", "panameno o americano", "is this a panama thing", "clubhouse panamá", "clubhouse panama", "rincones en panamá", "rincones en panama", "cómo llegó a panamá", "como llego a panama", "cuándo llegó a panamá", "cuando llego a panama", "es panameño", "es panameno", "es un proyecto panameño", "es un proyecto panameño"],
     "answer_en": "Panama joined the Clubhouse network in 2004, with two centres in Panama City — Parroquia de Fátima in El Chorrillo, and Fe y Alegría in El Ingenio. Later SENACYT relaunched the idea as the Rincones Clubhouse, starting with a pilot in 2017, and it's been growing across the country ever since.",
     "answer_es": "Panamá se unió a la red Clubhouse en 2004, con dos centros en la capital: la Parroquia de Fátima en El Chorrillo y Fe y Alegría en El Ingenio. Después SENACYT relanzó la idea como los Rincones Clubhouse, empezando con un piloto en 2017, y desde entonces ha ido creciendo por todo el país."
   },
@@ -82,9 +80,10 @@
   },
 
   "clubhouse_senacyt": {
-    "keywords": ["who pays for the clubhouse", "who funds the clubhouse", "senacyt", "who runs the rincones", "government", "quién paga el clubhouse", "quien paga el clubhouse", "quién financia", "quien financia", "quién organiza los rincones", "quien organiza los rincones"],
-    "answer_en": "The Rincones Clubhouse are run and funded by SENACYT — that's Panama's national secretariat for science, technology and innovation — through its learning innovation team, working with partners like The Clubhouse Network and the Museum of Science in Boston.",
-    "answer_es": "Los Rincones Clubhouse son dirigidos y financiados por SENACYT — la Secretaría Nacional de Ciencia, Tecnología e Innovación de Panamá — a través de su equipo de innovación en el aprendizaje, junto con aliados como The Clubhouse Network y el Museo de Ciencias de Boston.",
+    "keywords": ["who pays for the clubhouse", "who funds the clubhouse", "senacyt", "who runs the rincones", "who pays for it", "who funds it", "quién paga el clubhouse", "quien paga el clubhouse", "quién financia", "quien financia", "quién organiza los rincones", "quien organiza los rincones"],
+    "_check_with_director": "The national/local split here is my best reading of two sources, not something the director stated. He said this Clubhouse is 'coordinado por la Fundación Biblioteca de Boquete'; the existing text said the Rincones are 'run and funded by SENACYT'. Written below so both are true — SENACYT funds the network, the Fundación runs this one. CONFIRM WITH GUILLERMO before relying on it, and delete this line once confirmed.",
+    "answer_en": "The Rincón Clubhouse network is funded by SENACYT — Panama's national secretariat for science, technology and innovation — working with partners like The Clubhouse Network and the Museum of Science in Boston. This one here in Boquete is coordinated by the Fundación Biblioteca de Boquete.",
+    "answer_es": "La red de Rincones Clubhouse es financiada por SENACYT — la Secretaría Nacional de Ciencia, Tecnología e Innovación de Panamá — junto con aliados como The Clubhouse Network y el Museo de Ciencias de Boston. Este de Boquete es coordinado por la Fundación Biblioteca de Boquete.",
     "_note": "In Spanish SENACYT is said as one word, 'senacyt'."
   },
 
@@ -92,5 +91,17 @@
     "keywords": ["why does the clubhouse exist", "what is the clubhouse for", "purpose of the clubhouse", "why a clubhouse", "para qué sirve el clubhouse", "para que sirve el clubhouse", "por qué existe el clubhouse", "por que existe el clubhouse", "cuál es el propósito", "cual es el proposito"],
     "answer_en": "The idea is simple — give young people a free place, good tools, and someone to help, then let them build whatever they're actually interested in. You learn by making things rather than by being lectured at. It's about creativity and confidence as much as technology.",
     "answer_es": "La idea es sencilla: darle a los jóvenes un lugar gratuito, buenas herramientas y alguien que les ayude, y dejarlos crear lo que de verdad les interesa. Se aprende haciendo cosas, no escuchando una clase. Se trata tanto de creatividad y confianza como de tecnología."
+  },
+
+  "clubhouse_younger_kids": {
+    "keywords": ["is it for kids", "is it for children", "is it for little kids", "can young children go", "can my little brother go", "can my little sister go", "my child is younger", "is my child too young", "too young", "under 11", "younger than 11", "es para niños", "es para ninos", "es para niños pequeños", "mi hijo es menor", "es muy pequeño", "menores de 11", "son muy chicos"],
+    "answer_en": "Yes — from 11 years old and up you can be part of the Clubhouse and join in everything. Younger than 11 can't join just yet, but there will be special activities for them in the future.",
+    "answer_es": "Sí. Los niños de 11 años en adelante pueden formar parte del Rincón Clubhouse y participar en sus actividades. Los menores de 11 todavía no pueden formar parte, pero tendremos actividades especiales para ellos en el futuro."
+  },
+
+  "clubhouse_adults": {
+    "keywords": ["can adults go", "can adults join", "am i too old", "is it for adults", "can i go if i am an adult", "what about adults", "can grown ups join", "puedo ir si soy adulto", "es para adultos", "los adultos pueden", "soy adulto", "puedo participar si soy adulto", "hay algo para adultos"],
+    "answer_en": "Right now the Clubhouse is for young people aged 11 to 18, so adults can't take part as regular members. But there will be workshops and activities aimed at adults in the future — worth asking at the front desk.",
+    "answer_es": "Por ahora el Rincón Clubhouse está dirigido a niños y jóvenes de 11 a 18 años, así que los adultos no pueden formar parte como participantes regulares. Pero tendremos talleres y actividades especialmente para adultos en el futuro — vale la pena preguntar en la recepción."
   }
 }
