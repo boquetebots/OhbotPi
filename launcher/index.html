@@ -152,6 +152,57 @@
   #shutdown-screen p     { color: var(--muted); }
   #countdown             { font-size: 3rem; font-weight: 700; color: var(--danger); margin: 24px 0; }
 
+  /* ── In-page dialog ──────────────────────────────────────────────────────
+     Replaces the browser's own confirm / prompt / alert boxes. See the
+     matching comment in the script below for why those can't be trusted. */
+  #dialog-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  #dialog-backdrop.visible { display: flex; }
+
+  #dialog-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 26px 26px 20px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  }
+  #dialog-title   { font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; }
+  #dialog-message { font-size: 0.92rem; line-height: 1.55; white-space: pre-wrap; }
+
+  #dialog-input {
+    display: none;
+    width: 100%;
+    margin-top: 16px;
+    padding: 10px 12px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+  }
+  #dialog-input:focus { outline: none; border-color: var(--accent2); }
+
+  #dialog-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 22px;
+    flex-wrap: wrap;
+  }
+  .btn-dialog-ok     { background: var(--accent2); color: #fff; }
+  .btn-dialog-danger { background: var(--danger);  color: #fff; }
+  .btn-dialog-cancel { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+
   /* ── Spinner ── */
   .spinner {
     display: none;
@@ -340,6 +391,13 @@
             data-i18n="launcher.opengui">
       Open GUI ↗
     </button>
+    <!-- Shown while calibration is running. A tab opened straight from a
+         button click is never blocked, which the calibration link itself
+         can't guarantee — it has to start the program first. -->
+    <button class="btn btn-open" id="btn-open-calib" onclick="openCalibration()" style="display:none"
+            data-i18n="launcher.opencalib">
+      Open Motor Calibration ↗
+    </button>
     <!-- Only shown while the Greeter is running. Wakes Yobot if he has
          nodded off, so you don't need a GPIO button wired up. -->
     <button class="btn btn-wake" id="btn-wake" onclick="wakeGreeter()" style="display:none"
@@ -405,11 +463,127 @@
   <p id="shutdown-msg" data-i18n="launcher.power.shutdown.msg">You can safely unplug the power after the light goes out.</p>
 </div>
 
+<!-- In-page dialog. Filled in and shown by askConfirm/askPrompt/showNotice. -->
+<div id="dialog-backdrop">
+  <div id="dialog-box" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+    <div id="dialog-title"></div>
+    <div id="dialog-message"></div>
+    <input id="dialog-input" type="text" autocomplete="off" spellcheck="false">
+    <div id="dialog-buttons">
+      <button class="btn btn-dialog-cancel" id="dialog-cancel"></button>
+      <button class="btn btn-dialog-ok"     id="dialog-ok"></button>
+    </div>
+  </div>
+</div>
+
 <div class="footer"><span data-i18n="launcher.footer">Ohbot Web Launcher — </span><a href="https://github.com/ohbot" style="color:var(--muted)">ohbot.co.uk</a></div>
 
 <script>
   let currentStatus = 'idle';
   let pollTimer     = null;
+
+  // ── In-page dialog ────────────────────────────────────────────────────────
+  // These three replace the browser's built-in confirm(), prompt() and
+  // alert() boxes.
+  //
+  // WHY THIS EXISTS
+  // ---------------
+  // A browser is allowed to switch its own pop-ups off. Chrome and Firefox
+  // both offer a "don't let this page prompt me again" tick box after a few
+  // of them, and once that is set the box never appears again — confirm()
+  // just instantly answers "no" without showing anything. The code then
+  // politely stops, so the button looks completely dead even though the
+  // page and the Pi are both working perfectly.
+  //
+  // That is exactly what happened on 2026-08-08: Stop Current Service,
+  // Restart Pi and Shut Down Pi all went silent, and the launcher's own log
+  // showed the browser never sent a single request. Those were the only
+  // three buttons that asked "are you sure?" first.
+  //
+  // The panel below is part of the page, so nothing outside can suppress it.
+  // It also behaves properly on a phone, where pop-ups are worse still.
+  //
+  // All three return a Promise, so every caller must use `await`.
+
+  function openDialog({ title, message, okLabel, cancelLabel, danger, input }) {
+    const back   = document.getElementById('dialog-backdrop');
+    const okBtn  = document.getElementById('dialog-ok');
+    const canBtn = document.getElementById('dialog-cancel');
+    const field  = document.getElementById('dialog-input');
+    const wantsText = (input !== undefined);
+
+    document.getElementById('dialog-title').textContent   = title;
+    document.getElementById('dialog-message').textContent = message;
+
+    okBtn.textContent = okLabel;
+    okBtn.className   = 'btn ' + (danger ? 'btn-dialog-danger' : 'btn-dialog-ok');
+
+    // No cancel label means "this is just a notice" — one button, nothing
+    // to decide.
+    canBtn.textContent   = cancelLabel || '';
+    canBtn.style.display = cancelLabel ? 'inline-block' : 'none';
+
+    field.style.display = wantsText ? 'block' : 'none';
+    field.value = input || '';
+
+    back.classList.add('visible');
+    setTimeout(() => (wantsText ? field : okBtn).focus(), 50);
+
+    return new Promise(resolve => {
+      const finish = (value) => {
+        back.classList.remove('visible');
+        okBtn.onclick    = null;
+        canBtn.onclick   = null;
+        back.onmousedown = null;
+        document.removeEventListener('keydown', onKey);
+        resolve(value);
+      };
+
+      const onKey = (e) => {
+        if (e.key === 'Escape') finish(null);
+        if (e.key === 'Enter')  finish(wantsText ? field.value : true);
+      };
+
+      okBtn.onclick  = () => finish(wantsText ? field.value : true);
+      canBtn.onclick = () => finish(null);
+      // Clicking the dark area behind the panel means "cancel".
+      back.onmousedown = (e) => { if (e.target === back) finish(null); };
+      document.addEventListener('keydown', onKey);
+    });
+  }
+
+  /** Ask a yes/no question. True only if they actually agreed. */
+  async function askConfirm(message, opts = {}) {
+    const answer = await openDialog({
+      title:       opts.title   || t('common.confirm.title'),
+      message:     message,
+      okLabel:     opts.okLabel || t('common.ok'),
+      cancelLabel: t('common.cancel'),
+      danger:      !!opts.danger,
+    });
+    return answer === true;
+  }
+
+  /** Ask for a line of text. Null if they cancelled. */
+  async function askPrompt(message, preset = '') {
+    const answer = await openDialog({
+      title:       t('common.prompt.title'),
+      message:     message,
+      okLabel:     t('common.ok'),
+      cancelLabel: t('common.cancel'),
+      input:       preset,
+    });
+    return (answer === null) ? null : String(answer);
+  }
+
+  /** Tell them something. One button, nothing to decide. */
+  async function showNotice(message, title) {
+    await openDialog({
+      title:   title || t('common.notice.title'),
+      message: message,
+      okLabel: t('common.ok'),
+    });
+  }
 
   // ── Poll status every 2 seconds ──────────────────────────────────────────
   async function pollStatus() {
@@ -462,6 +636,7 @@
     const barText  = document.getElementById('status-text');
     const btnStop  = document.getElementById('btn-stop');
     const btnOpen  = document.getElementById('btn-open');
+    const btnCalib = document.getElementById('btn-open-calib');
     const btnWake  = document.getElementById('btn-wake');
     const cardG    = document.getElementById('card-greeter');
     const cardGUI  = document.getElementById('card-gui');
@@ -472,7 +647,8 @@
     cardGUI.classList.remove('active', 'disabled');
     calibLink.classList.remove('active', 'disabled');
 
-    btnWake.style.display = 'none';   // only the Greeter can be woken
+    btnWake.style.display  = 'none';   // only the Greeter can be woken
+    btnCalib.style.display = 'none';   // only calibration can be opened
 
     if (status === 'idle') {
       bar.classList.remove('visible');
@@ -504,8 +680,9 @@
       cardG.classList.add('disabled');
       cardGUI.classList.add('disabled');
       calibLink.classList.add('active');
-      btnStop.style.display = 'inline-block';
-      btnOpen.style.display = 'none';
+      btnStop.style.display  = 'inline-block';
+      btnOpen.style.display  = 'none';
+      btnCalib.style.display = 'inline-block';
     }
   }
 
@@ -558,7 +735,7 @@
     if (currentStatus !== 'idle') {
       const other  = t(currentStatus === 'greeter' ? 'launcher.greeter.name' : 'launcher.gui.name');
       const target = t(which === 'greeter' ? 'launcher.greeter.name' : 'launcher.gui.name');
-      if (!confirm(t('launcher.switch.confirm', { other, target }))) return;
+      if (!await askConfirm(t('launcher.switch.confirm', { other, target }))) return;
     }
 
     const card = which === 'greeter'
@@ -577,21 +754,82 @@
 
   // ── Stop current service ──────────────────────────────────────────────────
   async function stopService() {
-    if (!confirm(t('launcher.stop.confirm'))) return;
+    if (!await askConfirm(t('launcher.stop.confirm'), { danger: true })) return;
     await fetch('/launcher/stop', { method: 'POST' });
     await pollStatus();
   }
 
+  // ── Opening another program's page in a new tab ───────────────────────────
+  // A browser only lets a page open a new tab at the instant you click. If we
+  // ask the Pi to start something first and THEN try to open the tab, the
+  // click is considered stale and the tab is blocked — usually with no
+  // warning beyond a tiny icon in the address bar. That is what silently
+  // broke the Motor Calibration link on 2026-08-08.
+  //
+  // So: open the tab immediately while the click is still fresh, park a
+  // "starting…" holding page in it, and point it at the real address once
+  // the program is up.
+
+  /** Put a simple holding message in a tab we just opened. */
+  function holdingPage(tab, message) {
+    try {
+      tab.document.write(
+        '<!doctype html><meta charset="utf-8"><title>Ohbot</title>' +
+        '<body style="background:#1a1a2e;color:#eaeaea;margin:0;height:100vh;' +
+        'display:flex;align-items:center;justify-content:center;' +
+        "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif\">" +
+        '<div style="text-align:center"><div style="font-size:3rem">⚙️</div>' +
+        '<p style="margin-top:14px">' + message + '</p></div>');
+      tab.document.close();
+    } catch (e) { /* not allowed in every browser — harmless if it fails */ }
+  }
+
+  /**
+   * Wait until a web page on another port is actually answering.
+   *
+   * A browser won't let us READ anything from a different port, but it will
+   * still tell us whether the connection succeeded — and that's all we need
+   * to know. Without this the new tab often lands on "connection refused",
+   * because systemd reports the service started a second or two before it
+   * has finished opening its port.
+   */
+  async function waitForPage(url, seconds = 15) {
+    const until = Date.now() + seconds * 1000;
+    while (Date.now() < until) {
+      try {
+        await fetch(url, { mode: 'no-cors', cache: 'no-store' });
+        return true;
+      } catch (e) {
+        await new Promise(r => setTimeout(r, 400));
+      }
+    }
+    return false;
+  }
+
   // ── Open GUI in new tab ───────────────────────────────────────────────────
+  // Called straight from a button click with nothing awaited first, so the
+  // simple form is safe here.
   function openGui() {
     window.open(`http://${location.hostname}:5001/gui`, '_blank');
   }
 
+  // ── Open Motor Calibration in a new tab ───────────────────────────────────
+  // Also called straight from a button click, so it is never blocked. If a
+  // browser somehow still refuses, we go there in this tab instead of leaving
+  // you staring at a button that does nothing — the back button brings you
+  // straight back to the launcher.
+  function openCalibration() {
+    const url = `http://${location.hostname}:5003/calibration`;
+    if (!window.open(url, '_blank')) location.href = url;
+  }
+
   // ── Motor Calibration link ─────────────────────────────────────────────────
   async function handleCalibClick() {
+    const url = `http://${location.hostname}:5003/calibration`;
+
     if (currentStatus === 'calibration') {
-      // Already running — just open it.
-      window.open(`http://${location.hostname}:5003/calibration`, '_blank');
+      // Already running — just open it. Nothing awaited, so this is safe.
+      openCalibration();
       return;
     }
     if (currentStatus !== 'idle') {
@@ -599,28 +837,47 @@
       return;
     }
 
+    // Claim the tab NOW, before we await anything.
+    const tab = window.open('', '_blank');
+    if (tab) holdingPage(tab, t('launcher.calib.starting'));
+
     const link = document.getElementById('calib-link');
     link.style.opacity = '0.6';
     try {
       const r = await fetch('/launcher/start/calibration', { method: 'POST' });
       const d = await r.json();
-      if (d.success) {
-        await pollStatus();
-        window.open(`http://${location.hostname}:5003/calibration`, '_blank');
-      } else {
-        alert(d.error || t('launcher.calib.failed'));
+
+      if (!d.success) {
+        if (tab && !tab.closed) tab.close();
+        await showNotice(d.error || t('launcher.calib.failed'));
+        return;
       }
+
+      await pollStatus();
+
+      if (tab && !tab.closed) {
+        await waitForPage(url);
+        tab.location.href = url;
+      } else {
+        // The browser refused us a tab. Calibration IS running, so point at
+        // the button that can open it — a tab opened straight from a button
+        // click is allowed even when this one wasn't.
+        await showNotice(t('launcher.calib.blocked'));
+      }
+    } catch (e) {
+      if (tab && !tab.closed) tab.close();
+      await showNotice(t('common.noserver.detail', { msg: e.message }));
     } finally {
       link.style.opacity = '';
     }
   }
 
   // ── Shutdown / Restart ────────────────────────────────────────────────────
-  function confirmAction(action) {
+  async function confirmAction(action) {
     const key = action === 'shutdown'
       ? 'launcher.power.shutdown.confirm'
       : 'launcher.power.restart.confirm';
-    if (!confirm(t(key))) return;
+    if (!await askConfirm(t(key), { danger: true })) return;
     doAction(action);
   }
 
@@ -783,7 +1040,7 @@
   async function saveCurrentRobot() {
     const btn = document.getElementById('btn-save-robot');
 
-    const typed = prompt(t('launcher.save.prompt'), '');
+    const typed = await askPrompt(t('launcher.save.prompt'));
     if (typed === null) return;
 
     const name = typed.trim();
@@ -809,7 +1066,7 @@
       let d = await r.json();
 
       if (!d.success && r.status === 409) {
-        if (confirm(t('launcher.save.exists', { name }))) {
+        if (await askConfirm(t('launcher.save.exists', { name }), { danger: true })) {
           r = await post(true);
           d = await r.json();
         } else {
@@ -846,7 +1103,7 @@
       ? t('launcher.load.note2pt')
       : '';
 
-    if (!confirm(t('launcher.load.confirm', { name, note }))) return;
+    if (!await askConfirm(t('launcher.load.confirm', { name, note }))) return;
 
     btn.disabled = true;
     const original = btn.textContent;

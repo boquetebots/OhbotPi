@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🎬 Ohbot Timeline (Preview)</title>
 <script src="/i18n.js"></script>
+<!-- Small-screen / tablet support, shared with the Sequence Builder.
+     Puts the classes compact / touch / short / narrow on <body>; the
+     stylesheet below decides what they look like. -->
+<script src="/compact.js"></script>
 <style>
   /* Same color palette as gui/index.html so this feels like the same toolset */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -455,6 +459,150 @@
     cursor: pointer; line-height: 1;
   }
   .clip:hover .clip-delete { display: flex; }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     COMPACT / TABLET LAYOUT
+     ══════════════════════════════════════════════════════════════════════
+
+     compact.js puts the classes compact / touch / short / narrow on <body>
+     and this section decides what they look like. Everything here hangs off
+     one of those classes, so the desktop layout is completely untouched.
+     The long "why" is at the top of compact.js.
+
+     THE PROBLEM ON THIS PAGE
+     ------------------------
+     Three columns: saved sequences (300px), the timeline, and the pose panel
+     (320px). The tablet gives the page 1024 wide, so the timeline — the thing
+     you're actually editing — was left with about 400px. And at 455 tall the
+     pose panel was chopped off at the bottom, same as the Builder was.
+
+     THE FIX
+     -------
+     The saved-sequence list slides away into a drawer behind the 📂 button.
+     It's a list you consult now and then, not something you stare at, so it
+     doesn't deserve a permanent third of the width. That hands the timeline
+     ~700px instead of ~400. The pose panel scrolls, with Capture Keyframe
+     pinned to the bottom where you can always reach it.
+     ══════════════════════════════════════════════════════════════════════ */
+
+  #drawer-btn, #fullscreen-btn { display: none; }
+  #drawer-backdrop { display: none; }
+
+  body.compact { height: 100dvh; }
+
+  /* ── Top bar ─────────────────────────────────────────────────────── */
+  body.compact #topbar { padding: 6px 10px; gap: 8px; }
+  body.compact #topbar h1 { font-size: 0.95rem; white-space: nowrap; }
+  body.compact #phase-badge,
+  body.compact #status-text { display: none; }
+  body.compact #loaded-info {
+    font-size: 0.74rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  body.compact #drawer-btn,
+  body.compact #fullscreen-btn {
+    display: block;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1;
+    padding: 5px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  body.compact #drawer-btn.on,
+  body.compact #fullscreen-btn.on { border-color: var(--accent2); color: var(--accent2); }
+
+  /* ── Saved sequences become a slide-out drawer ───────────────────── */
+  body.compact #main { position: relative; }
+  body.compact #left-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 40;
+    width: 300px;
+    max-width: 80%;
+    transform: translateX(-102%);      /* parked just off the left edge */
+    transition: transform 0.22s ease;
+    box-shadow: 4px 0 18px rgba(0,0,0,0.5);
+  }
+  body.compact #left-panel.open { transform: translateX(0); }
+  body.compact #drawer-backdrop {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 39;
+    background: rgba(0,0,0,0.5);
+    opacity: 0;
+    pointer-events: none;             /* invisible AND untouchable when shut */
+    transition: opacity 0.22s ease;
+  }
+  body.compact #drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+
+  /* ── Pose panel scrolls, Capture stays put ───────────────────────── */
+  body.compact #capture-panel {
+    width: 300px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  body.compact #capture-panel .panel-title {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--panel);
+    box-shadow: 0 1px 0 var(--border);
+  }
+  body.compact #motors-scroll { flex: none; overflow: visible; max-height: none; }
+  body.compact #capture-buttons {
+    position: sticky;
+    bottom: 0;
+    z-index: 6;
+    background: var(--panel);
+    box-shadow: 0 -6px 14px rgba(0,0,0,0.4);
+  }
+
+  /* ── Finger-sized controls ───────────────────────────────────────── */
+  body.touch .motor-slider::-webkit-slider-thumb { width: 26px; height: 26px; }
+  body.touch .led-slider::-webkit-slider-thumb   { width: 22px; height: 22px; }
+  body.touch #speed-slider::-webkit-slider-thumb { width: 22px; height: 22px; }
+  body.touch .led-preset { width: 30px; height: 30px; }
+  body.touch .ctl-btn    { padding: 10px 12px; }
+  body.touch .seq-item   { padding: 13px 12px; }
+  body.touch #motors-scroll { row-gap: 16px; }
+
+  /* ── Very short (tablet in landscape, not full screen: 1024x455) ─── */
+  body.short #topbar { padding: 4px 8px; gap: 6px; }
+  body.short #topbar h1 { font-size: 0.85rem; }
+  body.short #loaded-info { display: none; }
+  /* The hint bar is a whole paragraph of instructions. Welcome on a laptop,
+     but here it's ~40px of a 455px screen, so it stands down. It comes back
+     the moment you go full screen. */
+  body.short #hint-bar { display: none; }
+  body.short #left-panel-hint { display: none; }
+  body.short #speech-hint { display: none; }
+  body.short #timeline-wrap { padding: 12px; }
+  body.short #speech-textarea { height: 40px; }
+  body.short #capture-buttons,
+  body.short #seq-save-block,
+  body.short #led-section,
+  body.short #speech-section { padding: 7px 12px; }
+
+  /* ── Portrait: the pose panel goes under the timeline ────────────── */
+  body.narrow #main { flex-direction: column; }
+  body.narrow #capture-panel {
+    width: 100%;
+    max-height: 50vh;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+  body.narrow #timeline-area { min-height: 0; }
 </style>
 </head>
 <body data-i18n-pagetitle="tl.pagetitle">
@@ -467,10 +615,18 @@
     <span id="playing-badge" data-i18n="tl.badge.playing">▶ PLAYING</span>
     <div id="loaded-info" data-i18n="tl.pickone">Pick a sequence on the left to preview it.</div>
     <div class="topbar-spacer"></div>
+    <!-- Both of these only appear on a small screen — see the stylesheet.
+         The ⛶ button is wired up by compact.js, so it has no onclick. -->
+    <button id="drawer-btn" onclick="toggleDrawer()" title="Saved sequences">📂</button>
+    <button id="fullscreen-btn" title="Full screen">⛶</button>
     <a href="/gui" id="home-btn" data-i18n="tl.link.builder">← Sequence Builder</a>
   </div>
 
   <div id="main">
+    <!-- Dims the timeline while the saved-sequence drawer is open, and closes
+         it again when tapped. Invisible unless the drawer is out. -->
+    <div id="drawer-backdrop" onclick="toggleDrawer()"></div>
+
     <div id="left-panel">
       <h2 data-i18n="tl.saved">Saved Sequences</h2>
       <div id="left-panel-hint" data-i18n-html="tl.leftHint">Click a sequence to open it (replaces what's on the timeline now). Use <b>Insert at playhead</b> to splice its keyframes into what you're currently building instead.</div>
@@ -912,9 +1068,29 @@ async function loadSequenceList() {
   }
 }
 
+// ============================================================================
+// The saved-sequence drawer (small screens only)
+// ============================================================================
+// On the tablet the saved-sequence list slides in over the timeline instead of
+// permanently occupying 300px of a 1024px-wide screen. The 📂 button in the
+// top bar opens it; tapping the dimmed area, or picking a sequence, shuts it.
+// On a desktop the list is always on show and none of this runs.
+function toggleDrawer(force) {
+  const panel = document.getElementById('left-panel');
+  const back  = document.getElementById('drawer-backdrop');
+  const btn   = document.getElementById('drawer-btn');
+  if (!panel) return;
+  const open = (force === undefined) ? !panel.classList.contains('open') : !!force;
+  panel.classList.toggle('open', open);
+  if (back) back.classList.toggle('open', open);
+  if (btn)  btn.classList.toggle('on', open);
+}
+
 async function selectSequence(filename, itemEl) {
   document.querySelectorAll('.seq-item').forEach(el => el.classList.remove('active'));
   itemEl.classList.add('active');
+  // Picked one — get the drawer out of the way so you can see the timeline.
+  if (document.body.classList.contains('compact')) toggleDrawer(false);
   try {
     const res = await fetch('/timeline/api/sequence/' + encodeURIComponent(filename));
     const data = await res.json();

@@ -46,6 +46,11 @@ ohbotData/archive/
 # If one of these ever turns out to be a robot you want to share, don't delete
 # the line — copy the file into ohbotData/robots/ instead, which is tracked.
 
+# --- Log files (runtime output, per-machine — see ohbot_logging.py) ---
+# Each program writes logs/<name>-<date>.log. They're this machine's record of
+# what happened, not shared code, and they'd be noisy in the repo.
+logs/
+
 # --- Large binary / archive files ---
 *.zip
 *.docx

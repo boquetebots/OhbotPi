@@ -21,6 +21,13 @@ from collections import deque
 # Load API keys from the .env file next to this script (works on any
 # platform, with or without systemd)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Save everything this program prints into logs/greeter-api-<date>.log
+try:
+    from ohbot_logging import setup_logging
+    setup_logging("greeter-api")
+except Exception as _log_err:                                # noqa: BLE001
+    print(f"⚠️  Log file not started ({_log_err}) — carrying on without one")
 try:
     from yobot_core import load_env
     load_env()
@@ -260,17 +267,22 @@ def detect_intent():
             'intent':       result.get('intent', 'general_chat'),
             'search_terms': None,
             'topic':        result.get('topic'),
-            'language':     result.get('language', 'en'),
+            'language':     result.get('language'),
         })
 
+    # On the two failure paths below, language is deliberately null rather
+    # than 'en'. Saying "en" here is a guess, and the Greeter would take it
+    # as a real answer and switch a Spanish conversation into English purely
+    # because something went wrong. Null means "no opinion — carry on in
+    # whatever language you were already speaking."
     except json.JSONDecodeError:
         print("⚠️  Could not parse intent JSON — defaulting to general_chat")
         return jsonify({'success': True, 'intent': 'general_chat',
-                        'search_terms': None, 'topic': None, 'language': 'en'})
+                        'search_terms': None, 'topic': None, 'language': None})
     except Exception as e:
         print(f"❌ Intent detection error: {e}")
         return jsonify({'success': True, 'intent': 'general_chat',
-                        'search_terms': None, 'topic': None, 'language': 'en'})
+                        'search_terms': None, 'topic': None, 'language': None})
 
 
 @app.route('/chat', methods=['POST'])

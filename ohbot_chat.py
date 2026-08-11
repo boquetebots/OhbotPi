@@ -32,6 +32,16 @@ from typing import Optional
 # ── path ─────────────────────────────────────────────────────────────────────
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# ── logging ──────────────────────────────────────────────────────────────────
+# Copies everything printed below into logs/greeter-<date>.log, so that when
+# something goes wrong at a venue there is a record of it. Set up first, before
+# anything else can print. See ohbot_logging.py.
+try:
+    from ohbot_logging import setup_logging
+    setup_logging("greeter")
+except Exception as _log_err:                                # noqa: BLE001
+    print(f"⚠️  Log file not started ({_log_err}) — carrying on without one")
+
 # ── core imports ──────────────────────────────────────────────────────────────
 try:
     from ohbot_azure import AsyncOhbotController, AzureSpeechManager
@@ -119,8 +129,10 @@ class AsyncOhbotConversation:
         # Set voice once — Jenny Multilingual handles both languages
         self._init_voice()
 
-        # Per-session state
-        self.session_language = "en"   # detected from first visitor utterance
+        # Per-session state.
+        # Starts from the 🌐 dropdown, then follows whichever language the
+        # visitor actually speaks.
+        self.session_language = self._starting_language()
         self.missed_turns = 0          # consecutive empty listens
         self._last_topic  = None       # topic from last local knowledge lookup
         self.is_sleeping = False
@@ -176,6 +188,31 @@ class AsyncOhbotConversation:
         """Set the TTS voice — Jenny Multilingual handles English and Spanish."""
         self.azure.set_voice(VOICE)
 
+    def _starting_language(self) -> str:
+        """
+        Which language a new conversation should OPEN in.
+
+        This is the 🌐 dropdown on the web pages, which saves your choice to
+        ohbotData/language.txt. It is only a starting point — if a visitor
+        speaks the other language, Yobot follows them (see the auto-switch in
+        handle_visitor_input below).
+
+        Read fresh every session rather than once at startup, so changing the
+        dropdown takes effect on the next visitor instead of needing the
+        Greeter restarted.
+
+        The import is done here rather than at the top of the file on purpose:
+        ohbot_lang pulls in Flask, and the Greeter has no web page of its own.
+        If Flask were ever missing, this must not stop the robot talking.
+        """
+        try:
+            from ohbot_lang import get_language
+            return get_language()
+        except Exception as e:
+            # A language preference is never worth crashing a robot over.
+            print(f"⚠️  Could not read the language setting ({e}) — using English")
+            return "en"
+
     # ── Flask server helpers ──────────────────────────────────────────────────
 
     async def check_server(self) -> bool:
@@ -198,11 +235,15 @@ class AsyncOhbotConversation:
                 return {
                     "intent":   data.get("intent", "general_chat"),
                     "topic":    data.get("topic"),
-                    "language": data.get("language", "en"),
+                    "language": data.get("language"),
                 }
         except Exception as e:
             print(f"⚠️  Intent detection failed: {e}")
-        return {"intent": "general_chat", "topic": None, "language": "en"}
+        # language=None means "we don't know" — see handle_visitor_input,
+        # which then leaves the session's language alone. Guessing "en" here
+        # would drop a Spanish conversation into English every time the
+        # server hiccuped.
+        return {"intent": "general_chat", "topic": None, "language": None}
 
     async def send_to_openai(self, message: str) -> tuple:
         try:
@@ -244,7 +285,11 @@ class AsyncOhbotConversation:
         if intent == "local_knowledge" and topic:
             print(f"📖 Local knowledge: topic='{topic}', lang='{language}'")
             self._last_topic = topic
-            answer = self.lookup_knowledge(topic, language)
+            # session_language, not `language` — the line above may have just
+            # updated it, and `language` can be None when the server had no
+            # opinion. This way the answer always comes back in whatever
+            # language the conversation is actually in.
+            answer = self.lookup_knowledge(topic, self.session_language)
             if answer:
                 return answer, True
             # Topic not in knowledge.json — fall through to GPT
@@ -419,10 +464,15 @@ class AsyncOhbotConversation:
 
         return True
 
-    async def speak_phrase_or_synthesise(self, key: str, fallback_text: str):
+    async def speak_phrase_or_synthesise(self, key: str, fallback_text: str,
+                                         language: str = None):
         """
         Try to play a pre-recorded phrase. If not found, synthesise live.
         Speaking animations (blinks, head, eyes) run in both cases.
+
+        `language` is 'en' or 'es'. It only matters for the live-synthesis
+        path — a pre-recorded WAV is already in whatever language it was
+        recorded in. Left out, it follows the current session's language.
         """
         wav, _ = self._phrase_paths(key)
 
@@ -438,7 +488,9 @@ class AsyncOhbotConversation:
             await self.play_phrase(key)
         else:
             print(f"⚠️  Phrase '{key}' not found — synthesising live")
-            await self.controller.say(fallback_text)
+            await self.controller.say(
+                fallback_text,
+                language=language or self.session_language)
 
         stop.set()
         await asyncio.gather(*anim_tasks, return_exceptions=True)
@@ -521,8 +573,14 @@ class AsyncOhbotConversation:
             await self.controller.move(ohbot.EYETURN, 5, 5)
             await self.controller.move(ohbot.EYETILT, 5, 5)
 
-    async def speak_with_animation(self, text: str):
-        """Speak with lip sync and concurrent lifelike animations."""
+    async def speak_with_animation(self, text: str, language: str = None):
+        """Speak with lip sync and concurrent lifelike animations.
+
+        `language` is 'en' or 'es' and decides how Azure PRONOUNCES the words.
+        The voice itself doesn't change — Jenny Multilingual speaks both, so
+        Yobot sounds like the same robot either way. Left out, it follows the
+        current session's language.
+        """
         stop = asyncio.Event()
 
         tasks = [
@@ -530,7 +588,8 @@ class AsyncOhbotConversation:
             asyncio.create_task(self._speak_headturn(stop)),
             asyncio.create_task(self._speak_headnod(stop)),
             asyncio.create_task(self._speak_eyes(stop)),
-            asyncio.create_task(self.controller.say(text)),
+            asyncio.create_task(self.controller.say(
+                text, language=language or self.session_language)),
         ]
 
         await tasks[-1]  # wait for speech to finish
@@ -542,20 +601,29 @@ class AsyncOhbotConversation:
     async def greet(self):
         """
         Greeting spoken at the start of each new session.
-        Uses a pre-recorded WAV if available (phrases/en_greeting.wav),
-        otherwise synthesises live via Azure TTS.
+        Uses a pre-recorded WAV if available (phrases/en_greeting.wav or
+        phrases/es_greeting.wav), otherwise synthesises live via Azure TTS.
+
+        Which language he opens in comes from the 🌐 dropdown. If the visitor
+        then speaks the other language, he follows them from the next reply on.
 
         To customize: edit the fallback text below, or record a WAV file
         as phrases/en_greeting.wav for instant zero-latency playback.
         """
-        self.session_language = "en"
+        self.session_language = self._starting_language()
         await self.set_color(COLOR_GREEN)
         await asyncio.sleep(0.25)  # prevents first syllable clipping
 
-        await self.speak_phrase_or_synthesise(
-            "en_greeting",
-            "Hi there! I'm Yobot. How can I help you today?"
-        )
+        if self.session_language == "es":
+            await self.speak_phrase_or_synthesise(
+                "es_greeting",
+                "¡Hola! Soy Yobot. ¿En qué te puedo ayudar?"
+            )
+        else:
+            await self.speak_phrase_or_synthesise(
+                "en_greeting",
+                "Hi there! I'm Yobot. How can I help you today?"
+            )
 
     # ── session loop ──────────────────────────────────────────────────────────
 
@@ -570,12 +638,16 @@ class AsyncOhbotConversation:
         exchange = 0
 
         if wake_text:
-            self.session_language = "en"
+            self.session_language = self._starting_language()
             await self.set_color(COLOR_GREEN)
 
             if self._is_pure_wake_command(wake_text):
-                await self.speak_phrase_or_synthesise(
-                    "en_wake", "I'm awake and ready to help!")
+                if self.session_language == "es":
+                    await self.speak_phrase_or_synthesise(
+                        "es_wake", "¡Estoy despierto y listo para ayudar!")
+                else:
+                    await self.speak_phrase_or_synthesise(
+                        "en_wake", "I'm awake and ready to help!")
                 first_input = None
             else:
                 first_input = wake_text
@@ -605,6 +677,21 @@ class AsyncOhbotConversation:
             if not user_text or not user_text.strip():
                 self.missed_turns += 1
                 print(f"  (no speech — missed turn {self.missed_turns}/{MISSED_TURNS_SLEEP})")
+
+                # Silence because nobody spoke is normal. Silence because the
+                # microphone died is not — and the two look identical from
+                # here. If the speech code flagged a mic fault, say it out
+                # loud, once, so the problem is audible in the room.
+                if not getattr(self.azure, "_mic_ok", True) \
+                        and not getattr(self.azure, "mic_warning_spoken", False):
+                    self.azure.mic_warning_spoken = True
+                    print("  ⚠️  Microphone fault flagged — announcing it out loud")
+                    await self.set_color(COLOR_RED)
+                    await self.speak_with_animation(
+                        "Tengo un problema con mi micrófono y no puedo oír."
+                        if self.session_language == "es" else
+                        "I'm having a problem with my microphone and I can't hear anything."
+                    )
 
                 if self.missed_turns >= MISSED_TURNS_SLEEP:
                     await self.set_color(COLOR_PURPLE)
@@ -654,11 +741,16 @@ class AsyncOhbotConversation:
                 else:
                     await self.speak_with_animation(response_text)
             else:
+                spanish = (self.session_language == "es")
                 if "Network issues" in response_text:
                     await self.speak_with_animation(
+                        "Tengo problemas con mi conexión. Inténtalo de nuevo, por favor."
+                        if spanish else
                         "I'm having trouble with my connection. Please try again.")
                 else:
                     await self.speak_with_animation(
+                        "Algo salió mal por mi parte. Vamos a intentarlo otra vez."
+                        if spanish else
                         "Something went wrong on my end. Let's try again.")
 
             topic = getattr(self, '_last_topic', None)
@@ -872,6 +964,32 @@ async def main():
     await controller.start()
 
     conversation = AsyncOhbotConversation(controller, azure)
+
+    # ── Can he actually hear? ────────────────────────────────────────────────
+    # Checked up front, out loud. On 2026-08-10 the mic was on a different
+    # ALSA card than the config expected, so Yobot greeted visitors and then
+    # stood there in silence for hours with nothing in any log. Never again:
+    # if the mic is missing he now SAYS so, in the room, where you'll hear it.
+    print("\nChecking the microphone...")
+    mic_device, mic_ok, mic_reason = azure.resolve_microphone()
+    if not mic_ok:
+        print("=" * 60)
+        print("  ❌ NO MICROPHONE FOUND")
+        print(f"     {mic_reason}")
+        print("     Yobot will start anyway, but he will not hear anyone.")
+        print("     Plug the USB mic in, then: systemctl --user restart ohbot-conversation")
+        print("     To see what the Pi can find:  python3 ohbot_mic.py")
+        print("=" * 60)
+        try:
+            await conversation.set_color(COLOR_RED)
+            await controller.say(
+                "Warning. I cannot find my microphone, so I will not be able "
+                "to hear anyone. Please check the U S B microphone is plugged in."
+            )
+        except Exception as e:                               # noqa: BLE001
+            print(f"  (couldn't announce the mic problem out loud: {e})")
+    else:
+        print(f"✅ Microphone ready: {mic_device}  ({mic_reason})")
 
     print("\nChecking Flask server...")
     if not await conversation.check_server():

@@ -35,6 +35,13 @@ import threading
 from collections import deque
 from openai import OpenAI
 
+# Save everything this program prints into logs/gui-<date>.log
+try:
+    from ohbot_logging import setup_logging
+    setup_logging("gui")
+except Exception as _log_err:                                # noqa: BLE001
+    print(f"⚠️  Log file not started ({_log_err}) — carrying on without one")
+
 # Load .env file manually (no python-dotenv needed)
 _env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
 if os.path.exists(_env_path):
@@ -344,10 +351,83 @@ def root_redirect():
     from flask import redirect
     return redirect('/gui')
 
+def _no_cache(response):
+    """Tell the browser to always check with us before reusing a page.
+
+    Flask's default is to let the browser keep a copy for TWELVE HOURS without
+    checking back. Fine for a finished page, maddening for one being worked on
+    — you edit it, refresh, and Chrome shows you yesterday's version without
+    ever asking. This costs nothing on a home network and removes a whole
+    category of "I changed it and nothing happened"."""
+    response.headers['Cache-Control'] = 'no-cache, max-age=0, must-revalidate'
+    return response
+
+
 @app.route('/gui')
 @app.route('/gui/')
 def serve_gui():
-    return send_from_directory(GUI_DIR, 'index.html')
+    return _no_cache(send_from_directory(GUI_DIR, 'index.html'))
+
+
+@app.route('/compact.js')
+def serve_compact_js():
+    """Hands out compact.js — the shared small-screen support, the same way
+    /i18n.js hands out the shared wording. One file, every page. See the long
+    explanation at the top of compact.js itself.
+
+    max-age=0 so that editing the file and refreshing the browser actually
+    shows the change, instead of Chrome quietly serving yesterday's copy."""
+    response = send_from_directory(
+        BASE_DIR, 'compact.js', mimetype='application/javascript')
+    response.headers['Cache-Control'] = 'no-cache, max-age=0'
+    return response
+
+
+@app.route('/manifest.json')
+def serve_manifest():
+    """Tells Chrome this page can be installed as an app.
+
+    WHY THIS EXISTS
+    ---------------
+    On the 8.8" tablet, Chrome's address bar, its tab strip and Android's
+    task bar were together eating about a third of the screen — roughly
+    150 of the 455 pixels the page had to work with. No amount of tidying
+    the page recovers that space, because it isn't the page's space.
+
+    With this file in place you can do Chrome menu -> "Add to Home screen",
+    and the shortcut that lands on the tablet's home screen opens the
+    Sequence Builder with NO address bar and NO tabs — just the page.
+    That's the "display": "standalone" line below doing the work.
+    """
+    from flask import jsonify
+    return jsonify({
+        "name":             "Ohbot Sequence Builder",
+        "short_name":       "Ohbot",
+        "start_url":        "/gui",
+        "scope":            "/",
+        "display":          "standalone",   # <- the bit that hides Chrome's bars
+        "orientation":      "landscape",
+        "background_color": "#0d1526",
+        "theme_color":      "#0d1526",
+        "icons": [
+            {"src": "/gui/icon-192.png", "sizes": "192x192", "type": "image/png"},
+            {"src": "/gui/icon-512.png", "sizes": "512x512", "type": "image/png",
+             "purpose": "any maskable"},
+        ],
+    })
+
+
+@app.route('/gui/icon-192.png')
+def serve_icon_192():
+    return send_from_directory(GUI_DIR, 'icon-192.png')
+
+
+@app.route('/gui/icon-512.png')
+def serve_icon_512():
+    """Named one by one rather than a catch-all /gui/<anything> route, so
+    there's no chance of accidentally shadowing /gui/motor, /gui/speak and
+    the rest of the API below."""
+    return send_from_directory(GUI_DIR, 'icon-512.png')
 
 
 @app.route('/timeline')
@@ -357,7 +437,7 @@ def serve_timeline():
     2026-07-13 so both tools run as one program, sharing one connection
     to the robot instead of two separate programs fighting over the USB
     cable. See HANDOFF_timeline_merge_plan.md."""
-    return send_from_directory(GUI_DIR, 'timeline.html')
+    return _no_cache(send_from_directory(GUI_DIR, 'timeline.html'))
 
 
 # ============================================================================

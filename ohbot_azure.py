@@ -6,8 +6,10 @@ Platforms: Raspberry Pi / Linux, macOS (Windows pending)
 Features: Azure STT/TTS, Viseme-based lip sync, Async motor control
 
 Microphone: on Mac/Windows the system default microphone is used.
-On Linux/Pi the device comes from AZURE_MIC_DEVICE in the .env file
-(default plughw:3,0 — this Pi's USB mic).
+On Linux/Pi the mic is found BY NAME at startup (see ohbot_mic.py), because
+ALSA card numbers change between boots. AZURE_MIC_DEVICE in .env still
+overrides, but it is checked against `arecord -l` first — if it points at a
+card that isn't there, we say so and auto-detect instead of going silent.
 Speaker: playback goes through yobot_core's cross-platform player
 (pw-play/aplay on Linux, afplay on Mac → default output device).
 """
@@ -51,6 +53,16 @@ except ImportError:
         print("❌ ohbot_pi module not found")
         print("Make sure ohbot_pi.py is in the same directory")
         sys.exit(1)
+
+# Finds the microphone by name instead of by ALSA card number. Card numbers
+# change between boots; on 2026-08-10 that silently deafened the greeter at
+# the Clubhouse. If this file is somehow missing we fall back to the old
+# behaviour rather than refusing to start.
+try:
+    import ohbot_mic
+except ImportError:                                          # pragma: no cover
+    ohbot_mic = None
+    print("⚠️  ohbot_mic.py not found — falling back to AZURE_MIC_DEVICE only")
 
 
 # ============================================================================
@@ -204,6 +216,14 @@ class AzureSpeechManager:
             speechsdk.PropertyId.Speech_SegmentationSilenceTimeoutMs, "500"
         )
 
+        # Which microphone to use. Worked out on first use by
+        # resolve_microphone(), then remembered. See ohbot_mic.py.
+        self._mic_device = None
+        self._mic_ok = True
+        self._mic_reason = "not yet checked"
+        # Set once we've moaned about a broken mic, so we only say it aloud once.
+        self.mic_warning_spoken = False
+
         print(f"✅ Azure Speech initialized (region: {self.region}, silence timeout: 500 ms)")
 
     def set_voice(self, voice_name: str):
@@ -340,19 +360,58 @@ class AzureSpeechManager:
             '</speak>'
         )
 
+    def resolve_microphone(self, force=False):
+        """
+        Work out which microphone to record from, and remember the answer.
+
+        On the Pi this asks `arecord -l` what is actually plugged in and
+        matches by NAME (see ohbot_mic.py). Card numbers move around between
+        boots; names don't. AZURE_MIC_DEVICE in .env still wins if it is set
+        AND points at a card that really exists.
+
+        Returns (device_string_or_None, ok, reason). `ok` is False when no
+        microphone could be found — callers should complain out loud rather
+        than sitting there in silence, which is the bug this replaced.
+        """
+        if self._mic_device is not None and not force:
+            return self._mic_device, self._mic_ok, self._mic_reason
+
+        if not ohbot.IS_LINUX:
+            self._mic_device = None          # None = "use the system default"
+            self._mic_ok = True
+            self._mic_reason = "system default microphone (Mac/Windows)"
+            return self._mic_device, self._mic_ok, self._mic_reason
+
+        if ohbot_mic is None:
+            # ohbot_mic.py missing — old behaviour, better than not starting.
+            self._mic_device = os.environ.get("AZURE_MIC_DEVICE", "plughw:3,0")
+            self._mic_ok = True
+            self._mic_reason = "ohbot_mic.py missing, using AZURE_MIC_DEVICE"
+            return self._mic_device, self._mic_ok, self._mic_reason
+
+        device, ok, reason = ohbot_mic.find_microphone_or_fallback(verbose=True)
+        self._mic_device = device
+        self._mic_ok = ok
+        self._mic_reason = reason
+        if ok:
+            print(f"✅ Microphone: {device}  ({reason})")
+        else:
+            print("❌ Microphone: NONE FOUND — Yobot can speak but not hear.")
+            print(f"   ({reason}; will still try {device} in case detection is wrong)")
+        return device, ok, reason
+
     async def recognize_once(self, timeout: float = 10.0, language: str = None) -> str:
         """Recognize speech from microphone (single utterance).
 
         Microphone selection is platform-aware:
           - Mac/Windows: the system default microphone (whatever is selected
             in Sound settings).
-          - Linux/Pi: the ALSA device named in AZURE_MIC_DEVICE in .env
-            (defaults to plughw:3,0, this Pi's USB mic). If the mic ever
-            stops being found, check `arecord -l` for the card number and
-            update AZURE_MIC_DEVICE.
+          - Linux/Pi: found by name via ohbot_mic.py, so a changed ALSA card
+            number can no longer silence the robot. AZURE_MIC_DEVICE in .env
+            still overrides, but is validated against `arecord -l` first.
         """
         if ohbot.IS_LINUX:
-            mic_device = os.environ.get("AZURE_MIC_DEVICE", "plughw:3,0")
+            mic_device, _ok, _reason = self.resolve_microphone()
             audio_config = speechsdk.audio.AudioConfig(device_name=mic_device)
         else:
             audio_config = speechsdk.audio.AudioConfig(use_default_microphone=True)
@@ -391,7 +450,20 @@ class AzureSpeechManager:
         recognizer.recognizing.connect(on_recognizing)
 
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(None, recognizer.recognize_once)
+        try:
+            result = await loop.run_in_executor(None, recognizer.recognize_once)
+        except Exception as e:                               # noqa: BLE001
+            # Don't let a microphone fault disappear without trace. Before
+            # 2026-08-10 an unreachable mic left the conversation loop frozen
+            # with nothing printed at all.
+            print(f"❌ Listening failed: {type(e).__name__}: {e}")
+            print(f"   Microphone in use: {self._mic_device or 'system default'}")
+            print("   Check the mic with:  python3 ohbot_mic.py")
+            self._mic_ok = False
+            # Look again next time — the mic may have been replugged onto a
+            # different card, which is exactly what caused the original fault.
+            self._mic_device = None
+            return ""
 
         t_end = time.perf_counter()
         total_ms = (t_end - t_start) * 1000
@@ -419,6 +491,21 @@ class AzureSpeechManager:
             return ""
         else:
             print(f"❌ Recognition failed: {result.reason}")
+            # Azure hides the useful part in here — the actual error code and
+            # message. Without it "Recognition failed" tells you nothing.
+            try:
+                details = result.cancellation_details
+                if details:
+                    print(f"   reason:  {details.reason}")
+                    print(f"   details: {details.error_details}")
+                    blob = f"{details.reason} {details.error_details}".lower()
+                    if "microphone" in blob or "audio" in blob or "device" in blob:
+                        print(f"   Microphone in use: {self._mic_device or 'system default'}")
+                        print("   Check the mic with:  python3 ohbot_mic.py")
+                        self._mic_ok = False
+                        self._mic_device = None
+            except Exception:                                # noqa: BLE001
+                pass
             return ""
 
     def synthesize_to_file_with_visemes(self, text: str, output_file: str,

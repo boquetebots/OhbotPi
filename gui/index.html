@@ -4,7 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🤖 Ohbot Sequence Builder</title>
+<!-- Lets Chrome offer "Add to Home screen". The shortcut it creates opens
+     this page with no address bar and no tabs — see gui_server.py. -->
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d1526">
+<link rel="apple-touch-icon" href="/gui/icon-192.png">
 <script src="/i18n.js"></script>
+<!-- Small-screen / tablet support, shared with the Timeline page.
+     Puts the classes compact / touch / short / narrow on <body>; the
+     stylesheet below decides what they look like. -->
+<script src="/compact.js"></script>
 <style>
   /* ── Reset & Base ──────────────────────────────────────────────────── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -713,6 +723,196 @@
     max-width: 140px;
   }
   #personality-select:focus { outline: none; border-color: var(--accent2); }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     COMPACT / TABLET LAYOUT
+     ══════════════════════════════════════════════════════════════════════
+
+     WHAT WAS WRONG
+     --------------
+     The page is one screen tall and never scrolls (body is height:100vh
+     with overflow:hidden). The left column stacks eight fixed-height
+     blocks — motors, speed, live mode, LED, emotions, speech, buttons.
+     On a tall desktop screen they all fit. On the tablet they don't, and
+     because the column is set to overflow:hidden, whatever doesn't fit is
+     simply chopped off with no way to scroll to it. That is why things
+     look "missing" — they're there, just cut off below the edge.
+
+     THE FIX
+     -------
+     A "compact" mode, switched on by JavaScript when the screen is small
+     or the browser reports a touch screen. It adds the class "compact" to
+     the page, and everything below hangs off that class. Nothing below
+     applies on a normal desktop screen, so the desktop layout is
+     untouched.
+
+     In compact mode:
+       • the left column scrolls instead of chopping
+       • each section folds up — tap its heading to open it, and whatever
+         was open closes (one at a time, so it always fits)
+       • Send / Reset / Capture Keyframe stick to the bottom, always there
+       • sliders and buttons get bigger so fingers can hit them
+       • the chat panel starts folded away
+
+     To force it on or off for testing, add ?compact=1 or ?compact=0 to
+     the end of the address.
+     ══════════════════════════════════════════════════════════════════════ */
+
+  /* On a desktop the motor wrapper is invisible to the layout engine. */
+  #motor-group,
+  #motor-group-body { display: contents; }
+
+  /* Full-screen button — hidden on desktop, where you have plenty of room
+     and a perfectly good window. Only the small-screen layout shows it. */
+  #fullscreen-btn { display: none; }
+  body.compact #fullscreen-btn {
+    display: block;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1;
+    padding: 5px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  body.compact #fullscreen-btn.on { border-color: var(--accent2); color: var(--accent2); }
+
+  /* dvh = the height actually left over after the browser's own toolbars.
+     Plain vh lies about this on tablets and phones. */
+  body.compact { height: 100dvh; }
+
+  /* ── Top bar ─────────────────────────────────────────────────────── */
+  body.compact #topbar { padding: 6px 10px; gap: 8px; flex-wrap: wrap; }
+  body.compact #topbar h1 { font-size: 0.95rem; }
+  body.compact #status-text { display: none; }
+  body.compact #demo-btn { font-size: 0.78rem; padding: 7px 12px; }
+
+  /* ── Left column scrolls instead of chopping ─────────────────────── */
+  body.compact #left-panel {
+    width: 380px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  body.compact #motor-group,
+  body.compact #motor-group-body { display: block; }
+  body.compact #motors-scroll {
+    flex: none;
+    overflow: visible;
+    max-height: none;
+    padding: 18px 14px;
+    row-gap: 16px;
+  }
+
+  /* ── Section headings stay put while you scroll ──────────────────── */
+  /* Nothing folds up any more — the column is just one long scroll. But
+     each heading pins itself to the top of the column while that section
+     is passing, so you always know what you're looking at. */
+  body.compact #left-panel .lp-head {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--panel);
+    box-shadow: 0 1px 0 var(--border);
+  }
+  /* The LED / Emotion / Speech headings sit inside a padded box, so left
+     to themselves the pinned bar would have see-through gaps at its edges
+     with content sliding past underneath. The negative margins pull it out
+     to the full width of the column and the padding puts the text back. */
+  body.compact #led-section     > .lp-head,
+  body.compact #emotion-section > .lp-head,
+  body.compact #speech-section  > .lp-head {
+    margin: -8px -14px 6px;
+    padding: 8px 14px;
+  }
+
+  /* ── The three main buttons never scroll away ────────────────────── */
+  body.compact #left-buttons {
+    position: sticky;
+    bottom: 0;
+    z-index: 6;
+    background: var(--panel);
+    box-shadow: 0 -6px 14px rgba(0,0,0,0.4);
+    padding: 10px 14px;
+  }
+  body.compact #left-buttons .btn { flex: 1; }
+
+  /* ── Finger-sized controls ───────────────────────────────────────── */
+  /* These hang off "touch", not "compact", on purpose. Shrinking the
+     window on the Mac should re-flow the layout, but it shouldn't blow the
+     sliders up to thumb size — there's a mouse on that machine. Only a real
+     touch screen gets the bigger targets. */
+  body.touch .motor-slider { height: 10px; }
+  body.touch .motor-slider::-webkit-slider-thumb { width: 28px; height: 28px; }
+  body.touch .led-slider::-webkit-slider-thumb   { width: 24px; height: 24px; }
+  body.touch #speed-slider::-webkit-slider-thumb { width: 24px; height: 24px; }
+  body.touch .led-slider, body.touch #speed-slider { height: 8px; }
+  body.touch .led-preset { width: 32px; height: 32px; }
+  body.touch .btn        { padding: 9px 14px; font-size: 0.84rem; }
+  body.touch .btn-sm     { padding: 7px 10px; font-size: 0.76rem; }
+  body.touch .btn-emotion { padding: 11px 6px; }
+  body.touch #speed-row, body.touch #live-row { padding: 10px 14px; }
+  body.touch #motors-scroll { padding: 18px 14px; row-gap: 18px; }
+
+  /* ── Right column ────────────────────────────────────────────────── */
+  body.compact #seq-header { padding: 8px 10px; gap: 8px; }
+  body.compact #seq-name   { width: 150px; }
+  body.compact #seq-footer { padding: 8px 10px; gap: 6px; }
+  body.compact #timeline   { padding: 10px 10px; }
+  body.compact #chat-panel { max-height: 42vh; }
+  body.compact #chat-header { padding: 10px 14px; }
+
+  /* ── Very short screens ──────────────────────────────────────────── */
+  /* Measured on the Lenovo Legion Tab 8.8" (2026-08-11): in landscape the
+     page only gets 1024 x 455 to work with. The panel is really 2560x1600,
+     but Android draws everything at 2.5x, and then Chrome's address bar and
+     Android's nav bar take a further bite out of the height. 455px is less
+     than half a laptop screen, so every bar and border earns its keep here. */
+  body.short #topbar {
+    padding: 4px 8px;
+    gap: 6px;
+    flex-wrap: nowrap;   /* a second row of topbar is height we can't spare */
+  }
+  body.short #topbar h1 {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;   /* shrink the title, never the buttons */
+    min-width: 0;
+  }
+  body.short #demo-btn { font-size: 0.72rem; padding: 5px 10px; }
+  body.short #timeline-link,
+  body.short #home-btn { font-size: 0.72rem; padding: 3px 8px; }
+  body.short #seq-header   { padding: 5px 10px; }
+  body.short #seq-footer   { padding: 5px 10px; }
+  body.short #left-buttons { padding: 7px 10px; }
+  body.short #motors-scroll { row-gap: 13px; padding: 14px 12px; }
+  body.short #led-preview     { height: 20px; }
+  body.short #speech-textarea { height: 42px; }
+  body.short #led-section,
+  body.short #emotion-section,
+  body.short #speech-section { padding: 6px 12px; }
+  /* the pinned headings bleed to the edges, so they have to match the
+     tighter padding above or they'd sit slightly inset */
+  body.short #led-section     > .lp-head,
+  body.short #emotion-section > .lp-head,
+  body.short #speech-section  > .lp-head {
+    margin: -6px -12px 5px;
+    padding: 6px 12px;
+  }
+
+  /* ── Portrait / very narrow: stack the two columns ───────────────── */
+  body.compact.narrow #main { flex-direction: column; }
+  body.compact.narrow #left-panel {
+    width: 100%;
+    max-height: 52vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  body.compact.narrow #right-panel { flex: 1; min-height: 0; }
+  body.compact.narrow #chat-panel { max-height: 34vh; }
 </style>
 </head>
 
@@ -728,6 +928,10 @@
   <span id="playing-badge" data-i18n="gui.badge.playing">▶ PLAYING</span>
   <button id="demo-stop-btn" class="btn btn-danger btn-sm" onclick="stopDemo()" data-i18n="gui.demo.stop">⏹ Stop Demo</button>
   <button id="demo-btn" class="btn btn-demo" onclick="startDemo()" data-i18n="gui.demo.start">✨ Show me what you can do!</button>
+  <!-- Only appears on a small screen. compact.js finds this by its id and
+       wires it up — deliberately NO onclick here, or it would fire twice
+       and cancel itself out. -->
+  <button id="fullscreen-btn" title="Full screen">⛶</button>
   <a id="timeline-link" href="/timeline" data-i18n="gui.link.timeline">🎬 Timeline</a>
   <a id="home-btn" href="http://localhost:5000" onclick="goHome(event)" data-i18n="gui.link.launcher">⬅ Launcher</a>
 </div>
@@ -738,31 +942,40 @@
   <!-- ── Left panel: motor & LED controls ────────────────────────────── -->
   <div id="left-panel">
 
-    <div class="section-title" data-i18n="gui.motorcontrols">Motor Controls</div>
+    <!-- The motor block is wrapped so that on a small screen it can fold up
+         as one unit. On a normal screen the wrapper is display:contents,
+         which means the browser ignores it completely — the layout is
+         byte-for-byte what it always was. -->
+    <div id="motor-group" class="lp-group">
+      <div class="section-title lp-head" data-i18n="gui.motorcontrols">Motor Controls</div>
+      <div id="motor-group-body">
 
-    <div id="motors-scroll">
-      <!-- Motor sliders are inserted here by JavaScript -->
-    </div>
+        <div id="motors-scroll">
+          <!-- Motor sliders are inserted here by JavaScript -->
+        </div>
 
-    <!-- Speed control -->
-    <div id="speed-row">
-      <label data-i18n="common.speed">Move Speed</label>
-      <input type="range" id="speed-slider" min="1" max="10" step="1" value="5">
-      <span id="speed-value">5</span>
-    </div>
+        <!-- Speed control -->
+        <div id="speed-row">
+          <label data-i18n="common.speed">Move Speed</label>
+          <input type="range" id="speed-slider" min="1" max="10" step="1" value="5">
+          <span id="speed-value">5</span>
+        </div>
 
-    <!-- Live mode toggle -->
-    <div id="live-row">
-      <label data-i18n="common.livemode">Live mode — send as you slide</label>
-      <label class="toggle">
-        <input type="checkbox" id="live-toggle" checked>
-        <span class="toggle-track"></span>
-      </label>
+        <!-- Live mode toggle -->
+        <div id="live-row">
+          <label data-i18n="common.livemode">Live mode — send as you slide</label>
+          <label class="toggle">
+            <input type="checkbox" id="live-toggle" checked>
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+
+      </div>
     </div>
 
     <!-- LED section -->
-    <div id="led-section">
-      <div class="section-title" data-i18n="common.eyecolour">Eye Colour (LED)</div>
+    <div id="led-section" class="lp-group">
+      <div class="section-title lp-head" data-i18n="common.eyecolour">Eye Colour (LED)</div>
       <div class="led-row">
         <span class="led-label r">R</span>
         <input type="range" class="led-slider" id="led-r" min="0" max="10" step="0.5" value="0">
@@ -793,8 +1006,8 @@
     </div>
 
     <!-- Emotion presets -->
-    <div id="emotion-section">
-      <div class="section-title" data-i18n="gui.emotions">🎭 Emotion Presets</div>
+    <div id="emotion-section" class="lp-group">
+      <div class="section-title lp-head" data-i18n="gui.emotions">🎭 Emotion Presets</div>
       <div class="emotion-buttons">
         <button class="btn-emotion happy"     onclick="setEmotion('happy')"     data-i18n="gui.emotion.happy">😊 Happy</button>
         <button class="btn-emotion sad"       onclick="setEmotion('sad')"       data-i18n="gui.emotion.sad">😢 Sad</button>
@@ -805,8 +1018,8 @@
     </div>
 
     <!-- Speech section -->
-    <div id="speech-section">
-      <div class="section-title" data-i18n="gui.speech.title">🔊 Speech (with lip sync)</div>
+    <div id="speech-section" class="lp-group">
+      <div class="section-title lp-head" data-i18n="gui.speech.title">🔊 Speech (with lip sync)</div>
       <textarea id="speech-textarea"
                 data-i18n-placeholder="gui.speech.ph"
                 placeholder="Type what Ohbot should say…"></textarea>
@@ -1850,6 +2063,10 @@ window.addEventListener('ohbot-lang-change', () => {
   renderTimeline();
   refreshSequenceList();
 });
+
+// The small-screen / tablet support used to live here. It now lives in
+// compact.js, shared with the Timeline page and served at /compact.js —
+// see the <script> tag in the <head> and the notes at the top of that file.
 </script>
 </body>
 </html>

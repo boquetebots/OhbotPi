@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🔧 Ohbot Motor Calibration</title>
 <script src="/i18n.js"></script>
+<!-- Small-screen / tablet support, shared with the other pages. Puts the
+     classes compact / touch / short / narrow on <body> and wires up the ⛶
+     button below. See the notes at the top of compact.js. -->
+<script src="/compact.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -31,6 +35,58 @@
   }
 
   .wrap { max-width: 820px; margin: 0 auto; }
+
+  /* ── Full-screen button ────────────────────────────────────────────────
+     This page is a plain scrolling page, so it never had the chopped-off
+     problem the Builder and Timeline had — it just loses a third of its
+     height to Chrome's bars and Android's task bar. The ⛶ button takes that
+     back. It floats in the top-right corner because this page has no top bar
+     to put it in.
+
+     Three deliberate differences from the other pages:
+
+       1. It sits TOP-LEFT, not top-right. The 🌐 language switcher that
+          i18n.js drops onto every page is fixed to the top-right corner at
+          z-index 99999. A button in that corner is invisible — completely
+          covered — no matter what it looks like. Anything fixed and floating
+          has to stay out of the top-right on these pages.
+
+       2. It is ALWAYS shown, not just on a small screen. It's a tiny corner
+          icon and it does no harm on a desktop — and hiding it behind a
+          screen-size check just meant it was mysteriously absent.
+
+       3. Its id is "fs-btn", NOT "fullscreen-btn". compact.js looks for
+          "fullscreen-btn" and attaches its own click handler; this page runs
+          its own few lines at the bottom instead, so the button still works
+          even if compact.js fails to load for any reason. Renaming it keeps
+          the two from both firing and cancelling each other out. */
+  #fs-btn {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 100;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 8px 11px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  #fs-btn:hover { border-color: var(--accent2); color: var(--text); }
+  #fs-btn.on { border-color: var(--accent2); color: var(--accent2); opacity: 1; }
+
+  /* Claw back some of the page's own margins while we're on a small screen. */
+  body.compact { padding: 10px; }
+  body.compact .header { margin-bottom: 14px; }
+  body.compact .header .robot { font-size: 2rem; margin-bottom: 4px; }
+  body.compact .header h1 { font-size: 1.2rem; }
+  body.short   .header p  { display: none; }
+
+  /* Finger-sized controls — a touch screen only, never a shrunken window. */
+  body.touch .btn { padding: 11px 14px; }
+  body.touch input[type=range]::-webkit-slider-thumb { width: 26px; height: 26px; }
 
   .header {
     text-align: center;
@@ -154,6 +210,10 @@
 </style>
 </head>
 <body data-i18n-pagetitle="cal.pagetitle">
+
+<!-- Full screen. Always visible; wired up by the script at the very bottom of
+     this file, not by compact.js — see the note in the stylesheet above. -->
+<button id="fs-btn" title="Full screen" onclick="toggleCalFullscreen()">⛶</button>
 
 <div class="wrap">
 
@@ -541,6 +601,31 @@ window.addEventListener('ohbot-lang-change', () => {
 });
 
 init();
+
+// ============================================================================
+// Full screen (the ⛶ button in the top-right corner)
+// ============================================================================
+// Self-contained on purpose. compact.js has the same ability, but this page
+// doesn't depend on it — if that file ever fails to load, the button here
+// still works. Browsers only allow full screen in response to a real tap or
+// click, which is why this can't just happen when the page opens.
+function toggleCalFullscreen() {
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+    return;
+  }
+  const el = document.documentElement;
+  const go = el.requestFullscreen
+          || el.webkitRequestFullscreen
+          || el.mozRequestFullScreen;
+  if (go) go.call(el);
+}
+
+// Light the button up while full screen is on.
+document.addEventListener('fullscreenchange', () => {
+  const b = document.getElementById('fs-btn');
+  if (b) b.classList.toggle('on', !!document.fullscreenElement);
+});
 </script>
 </body>
 </html>

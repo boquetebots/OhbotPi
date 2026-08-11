@@ -38,6 +38,13 @@ import threading
 import time
 import urllib.request   # used by the Wake button to talk to the Greeter
 
+# Save everything this program prints into logs/launcher-<date>.log
+try:
+    from ohbot_logging import setup_logging
+    setup_logging("launcher")
+except Exception as _log_err:                                # noqa: BLE001
+    print(f"⚠️  Log file not started ({_log_err}) — carrying on without one")
+
 # Saved per-robot calibrations (ohbotData/robots/). See robot_profiles.py.
 import robot_profiles
 

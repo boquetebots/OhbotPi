@@ -33,6 +33,13 @@ import threading
 import time
 from lxml import etree
 
+# Save everything this program prints into logs/calibration-<date>.log
+try:
+    from ohbot_logging import setup_logging
+    setup_logging("calibration")
+except Exception as _log_err:                                # noqa: BLE001
+    print(f"⚠️  Log file not started ({_log_err}) — carrying on without one")
+
 # Import the Ohbot hardware library — we reuse its serial connection and
 # low-level attach/write helpers, but NOT its move()/_move() functions
 # (those apply Min/Max/Reverse, which is exactly what we're trying to find).
@@ -238,7 +245,35 @@ def _next_backup_name():
 @app.route('/calibration')
 @app.route('/calibration/')
 def serve_page():
-    return send_from_directory(CALIB_DIR, 'index.html')
+    """Serve the calibration page.
+
+    The no-cache header matters. Flask's default is to tell the browser it may
+    keep a copy of this file for TWELVE HOURS without checking back. That is
+    fine for a page nobody edits, and maddening for one we're actively working
+    on — you edit the page, refresh, and Chrome confidently shows you
+    yesterday's version without ever asking the server. This says "always
+    check with me first", which costs nothing on a home network."""
+    response = send_from_directory(CALIB_DIR, 'index.html')
+    response.headers['Cache-Control'] = 'no-cache, max-age=0, must-revalidate'
+    return response
+
+
+@app.route('/compact.js')
+def serve_compact_js():
+    """Hands out compact.js — the shared small-screen support, the same way
+    /i18n.js hands out the shared wording.
+
+    This is a copy of the route in gui_server.py, because this is a separate
+    program on its own port (5003) with its own Flask app. It can't borrow the
+    other one's routes. The FILE is still shared — there's only ever one
+    compact.js, up in the project folder.
+
+    max-age=0 so editing the file and refreshing the browser shows the change
+    instead of Chrome quietly serving yesterday's copy."""
+    response = send_from_directory(
+        BASE_DIR, 'compact.js', mimetype='application/javascript')
+    response.headers['Cache-Control'] = 'no-cache, max-age=0'
+    return response
 
 
 @app.route('/calibration/status')
