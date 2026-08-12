@@ -83,9 +83,17 @@ of which motor(s) do this and mention it afterwards — it's a one-line fix.
 import os
 import sys
 import time
-import tty
-import termios
 from lxml import etree
+
+# Reading single keypresses works completely differently on Windows than on
+# Mac/Linux, so we import whichever one this computer has. Importing tty or
+# termios on Windows would crash the program before it even starts.
+IS_WINDOWS = os.name == 'nt'
+if IS_WINDOWS:
+    import msvcrt
+else:
+    import tty
+    import termios
 
 import ohbot_pi as ohbot
 
@@ -120,7 +128,22 @@ DEFAULT_STEP_INDEX = 1  # starts at step = 5
 # ============================================================================
 
 def getch():
-    """Read one keypress from the terminal without needing Enter."""
+    """Read one keypress from the terminal without needing Enter.
+
+    Same behaviour on Windows and Mac/Linux — one character comes back,
+    and Ctrl+C still quits.
+    """
+    if IS_WINDOWS:
+        ch = msvcrt.getwch()
+        # Arrow keys and function keys arrive as two characters. Swallow the
+        # second one and hand back a harmless character the menu ignores.
+        if ch in ("\x00", "\xe0"):
+            msvcrt.getwch()
+            return "\x00"
+        if ch == "\x03":       # Ctrl+C
+            raise KeyboardInterrupt
+        return ch
+
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
     try:

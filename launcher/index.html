@@ -755,7 +755,21 @@
   // ── Stop current service ──────────────────────────────────────────────────
   async function stopService() {
     if (!await askConfirm(t('launcher.stop.confirm'), { danger: true })) return;
-    await fetch('/launcher/stop', { method: 'POST' });
+
+    // Check whether it actually stopped. This used to be fire-and-forget,
+    // so a program that refused to die looked exactly like one that had
+    // stopped politely — the button lied (fixed 2026-08-12).
+    try {
+      const r = await fetch('/launcher/stop', { method: 'POST' });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        alert('Could not stop it.\n\n' +
+              (body.error || 'The program is still running.'));
+      }
+    } catch (e) {
+      alert('Could not reach the Launcher to stop the service: ' + e);
+    }
+
     await pollStatus();
   }
 

@@ -1,0 +1,59 @@
+# ============================================================================
+#  .gitattributes  —  keeps line endings sane across Windows, Mac and the Pi
+#
+#  WHY THIS FILE EXISTS (plain English):
+#
+#  Windows ends every line of a text file with two invisible characters (CR+LF).
+#  Mac and Linux/Pi use only one (LF). Git will happily convert between them,
+#  and usually that's fine — but it BREAKS shell scripts.
+#
+#  If a file like install.sh or push_to_github.command gets committed from
+#  Windows with Windows line endings, then on the Pi you get:
+#
+#       bash: ./install.sh: /bin/bash^M: bad interpreter: No such file
+#
+#  ...which is baffling and has cost people entire afternoons.
+#
+#  This file tells git: no matter what machine commits it, store text files
+#  with LF, and hand out LF to Mac/Pi and (where it matters) CRLF to Windows.
+#  You never have to think about it again.
+#
+#  Added 2026-08-12 when the Windows machine joined the project.
+# ============================================================================
+
+# Default: treat everything as text, normalise to LF inside the repo.
+* text=auto eol=lf
+
+# ── MUST be LF or they break on the Pi and the Mac ──────────────────────────
+*.sh        text eol=lf
+*.command   text eol=lf
+*.py        text eol=lf
+*.service   text eol=lf
+*.json      text eol=lf
+*.js        text eol=lf
+*.html      text eol=lf
+*.css       text eol=lf
+*.md        text eol=lf
+*.txt       text eol=lf
+*.omd       text eol=lf
+*.owd       text eol=lf
+*.obe       text eol=lf
+
+# ── MUST be CRLF or they misbehave in Windows Command Prompt ───────────────
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# ── Binary: never touch these, never try to merge them ─────────────────────
+*.wav       binary
+*.mp3       binary
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.zip       binary
+*.docx      binary
+*.pdf       binary
+*.onnx      binary
+*.rtf       binary

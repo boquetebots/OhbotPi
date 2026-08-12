@@ -277,10 +277,21 @@ class AsyncOhbotConversation:
         topic    = intent_result["topic"]
         language = intent_result["language"]
 
-        # Update session language from first real utterance
+        # The visitor's own choice decides the language — the 🌐 dropdown or
+        # the kiosk buttons — so nothing here is allowed to override it.
+        #
+        # This used to reassign session_language whenever the intent server
+        # thought it saw the other language. That made sense when Azure was
+        # auto-detecting speech. Now that we listen in one fixed language,
+        # the other one arrives mis-transcribed, and the detector would be
+        # reading noise: on 2026-08-12 a single stray "Gracias" in an English
+        # sentence flipped Yobot into Spanish and gave the wrong answer.
+        #
+        # We still log what it thought, because a run of these is a good hint
+        # that a visitor picked the wrong language button.
         if language and language != self.session_language:
-            print(f"🌐 Language detected: {language}")
-            self.session_language = language
+            print(f"🌐 (heard something that looked like '{language}' — "
+                  f"staying in '{self.session_language}')")
 
         if intent == "local_knowledge" and topic:
             print(f"📖 Local knowledge: topic='{topic}', lang='{language}'")
@@ -670,7 +681,14 @@ class AsyncOhbotConversation:
                 await self.set_color(COLOR_ORANGE)
                 idle_stop = asyncio.Event()
                 idle_task = asyncio.create_task(self.idle_animation(idle_stop))
-                user_text = await self.controller.listen(timeout=SILENCE_TIMEOUT)
+
+                # Listen in the language the visitor chose — the 🌐 dropdown
+                # or the kiosk buttons. Automatic detection was removed on
+                # 2026-08-12: it cost a fixed ~3 extra seconds on every
+                # single turn. See the note in ohbot_azure.recognize_once().
+                user_text = await self.controller.listen(
+                    timeout=SILENCE_TIMEOUT, language=self.session_language)
+
                 idle_stop.set()
                 await idle_task
 
@@ -1086,7 +1104,8 @@ async def main():
                     nonlocal pending_wake_text
                     while not wake_event.is_set():
                         speech = await conversation.controller.listen(
-                            timeout=SLEEP_LISTEN_SECS)
+                            timeout=SLEEP_LISTEN_SECS,
+                            language=conversation.session_language)
                         if speech and speech.strip():
                             if AsyncOhbotConversation._is_wake_phrase(speech):
                                 print(f"  [wake] Voice wake: '{speech}'")

@@ -149,7 +149,7 @@ def _build_index(knowledge: dict) -> list:
             if not clean:
                 continue
             pattern = re.compile(r"\b" + re.escape(clean) + r"\b")
-            index.append((len(clean), topic, pattern))
+            index.append((len(clean), topic, pattern, clean))
     index.sort(key=lambda row: row[0], reverse=True)
     return index
 
@@ -161,18 +161,56 @@ _INDEX = _build_index(KNOWLEDGE)
 _SHORT_ONLY = {"greeting", "goodbye"}
 _SHORT_ONLY_MAX_WORDS = 6
 
+# Politeness is not a farewell.
+#
+# "Gracias" on its own does end a conversation. "Gracias, ¿dónde está el
+# parque?" is a question with manners on the front, and "Gracias a Dios" is
+# an exclamation. On 2026-08-12 all three were being treated as goodbye, so
+# Yobot said farewell and went to sleep on visitors who were still talking.
+#
+# These words therefore only count as a goodbye when they are practically
+# the whole sentence.
+_POLITE = {
+    _normalise(w) for w in (
+        "thanks", "thank you", "thank you very much", "many thanks",
+        "gracias", "muchas gracias", "mil gracias",
+    )
+}
+_POLITE_MAX_WORDS = 2
+
 
 def find_topic(text: str):
-    """Which topic is this visitor asking about? Returns a name, or None."""
+    """Which topic is this visitor asking about? Returns a name, or None.
+
+    Real topics get first refusal, ahead of greeting and goodbye. Without
+    that, keyword length decided it — "gracias" is seven letters and
+    "parque" is six, so "Gracias buscando el parque" was answered as a
+    goodbye instead of as a question about the park.
+    """
     clean = _normalise(text)
     if not clean:
         return None
     word_count = len(clean.split())
-    for _, topic, pattern in _INDEX:
-        if topic in _SHORT_ONLY and word_count > _SHORT_ONLY_MAX_WORDS:
+
+    # Pass 1 — anything that isn't a greeting or a goodbye. A question is
+    # still a question however politely it starts.
+    for _, topic, pattern, _keyword in _INDEX:
+        if topic in _SHORT_ONLY:
             continue
         if pattern.search(clean):
             return topic
+
+    # Pass 2 — hellos and farewells, only once nothing else has claimed it.
+    for _, topic, pattern, keyword in _INDEX:
+        if topic not in _SHORT_ONLY:
+            continue
+        if word_count > _SHORT_ONLY_MAX_WORDS:
+            continue
+        if keyword in _POLITE and word_count > _POLITE_MAX_WORDS:
+            continue
+        if pattern.search(clean):
+            return topic
+
     return None
 
 

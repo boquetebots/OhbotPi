@@ -1,7 +1,22 @@
 #!/usr/bin/env python3
 """
 Ohbot/Yobot Launcher Server
-Version: 2.0.0 — cross-platform (Raspberry Pi + macOS)
+Version: 2.2.0 — cross-platform (Raspberry Pi + macOS + Windows)
+
+Changes in 2.2.0 (2026-08-12, from testing on the PC):
+  - Starting and stopping went from ~10s to ~1.5s on Windows. Three causes:
+    the process hunt ran for all four programs (now only the conversation
+    bot, since the other three answer on a port); fixed 2-second sleeps
+    after starting a server (now waits for the port and returns as soon as
+    it answers); and the process scan read every process's command line
+    (now only python ones).
+  - The Stop button used to report success even when the program refused
+    to die. It now checks, and says what to do about it.
+  - Background servers no longer share the Launcher's console window, so
+    Ctrl-C in that window stops the Launcher instead of being swallowed.
+  - Each start/stop prints how long it took (the ⏱ lines), so slowness can
+    be measured rather than guessed at. Harmless to leave on; they go to
+    the console and the log file.
 
 Runs on port 5000 and lets you choose what to do from a web page:
   - Start the Greeter/Conversation Bot (voice conversation mode)
@@ -17,15 +32,21 @@ Raspberry Pi (systemd available and the services are installed):
     Starts and stops the systemd services, exactly as before. Also offers
     Shut Down / Restart buttons for the Pi itself.
 
-Mac (or a Pi running this by hand, without the services installed):
+Mac and Windows (or a Pi running this by hand, without the services
+installed):
     There is no systemd, so the launcher starts and stops the Python
-    programs directly. The conversation bot is opened in its own Terminal
-    window so you can see it talk and press Enter to wake it. The
-    Shut Down / Restart buttons are hidden — a web page has no business
-    turning off your Mac.
+    programs directly. The conversation bot is opened in its own window
+    (Terminal on the Mac, Command Prompt on Windows) so you can see it
+    talk and press Enter to wake it. The Shut Down / Restart buttons are
+    hidden — a web page has no business turning off your computer.
 
 Which mode is in use is decided automatically at startup and shown in the
 console when the launcher starts.
+
+OPTIONAL: install psutil (`pip install psutil`). It isn't required, but it
+makes finding and stopping programs faster and identical on all three
+operating systems. On Windows without it the launcher falls back to
+PowerShell, which works but takes about a second per check.
 """
 
 from flask import Flask, jsonify, request, send_from_directory
@@ -80,11 +101,21 @@ PYTHON = sys.executable          # the same python running this launcher
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
-def _run(cmd):
-    """Run a shell command. Returns (success, output)."""
+def _run(cmd, want_stderr=False):
+    """Run a shell command. Returns (success, output).
+
+    `want_stderr` folds the error output in with the normal output. Off by
+    default because callers like `systemctl is-active` compare the output
+    exactly. Needed for taskkill, which reports "Access is denied" on
+    stderr — so without this its failures looked like silence (2026-08-12).
+    """
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-        return result.returncode == 0, result.stdout.strip()
+        out = result.stdout.strip()
+        if want_stderr:
+            err = result.stderr.strip()
+            out = f"{out}\n{err}".strip() if err else out
+        return result.returncode == 0, out
     except Exception as e:
         return False, str(e)
 
@@ -107,12 +138,26 @@ def _service_active(name):
     return out == 'active'
 
 
-# ── Backend B: plain processes (Mac, or Pi without services) ───────────────
+# ── Backend B: plain processes (Mac, Windows, or Pi without services) ──────
 # Processes are found by searching for their script name, so the launcher
-# can see and stop programs even if they were started from a Terminal
-# window by hand (or if the launcher itself was restarted).
+# can see and stop programs even if they were started from a Terminal or
+# Command Prompt window by hand (or if the launcher itself was restarted).
+#
+# Three ways to look for a running program, best first:
+#   1. psutil        — one clean way that works identically on all three OSes.
+#                      Install with:  pip install psutil
+#   2. pgrep/pkill   — built into Mac and Linux.
+#   3. PowerShell    — the Windows stand-in when psutil isn't installed.
+#                      Slower (PowerShell takes about a second to start), so
+#                      the answer is cached for a couple of seconds.
 
-_tracked = {}      # script name → Popen object (Windows fallback only)
+try:
+    import psutil
+    HAVE_PSUTIL = True
+except ImportError:
+    HAVE_PSUTIL = False
+
+_tracked = {}      # script name → Popen object, for things we started ourselves
 
 # Which port each web server listens on — checking the port is the most
 # reliable "is it running?" test for those.
@@ -131,35 +176,112 @@ def _port_in_use(port):
         return s.connect_ex(('127.0.0.1', port)) == 0
 
 
+def _wait_for_port(port, seconds=8.0):
+    """Wait until a server answers on this port, up to `seconds`.
+
+    Better than a fixed sleep: it returns the moment the server is ready
+    instead of always waiting for the worst case. The old flat 2-second
+    sleeps were a large part of why starting things felt slow on Windows.
+    """
+    deadline = time.time() + seconds
+    while time.time() < deadline:
+        if _port_in_use(port):
+            return True
+        time.sleep(0.15)
+    return False
+
+
+_pid_cache = {}          # script name → (timestamp, [pids])
+_PID_CACHE_SECONDS = 2.0
+
+
+def _own_pids():
+    """Our own process and the shell that started us — never count these."""
+    try:
+        return {os.getpid(), os.getppid()}
+    except (AttributeError, OSError):        # getppid is Unix-ish
+        return {os.getpid()}
+
+
+def _find_pids(script):
+    """Every python process currently running this script, by PID.
+
+    Requiring "python" in the command avoids matching an editor or a
+    command prompt that merely has the filename on screen.
+    """
+    now = time.time()
+    cached = _pid_cache.get(script)
+    if cached and (now - cached[0]) < _PID_CACHE_SECONDS:
+        return cached[1]
+
+    pids = []
+
+    if HAVE_PSUTIL:
+        # Ask for the name only, then read the command line for the handful
+        # of python processes. Reading a command line means opening the
+        # process, which is slow on Windows — doing it for every process on
+        # the PC made the Launcher page feel sluggish (fixed 2026-08-12).
+        for proc in psutil.process_iter(['pid', 'name']):
+            try:
+                name = (proc.info.get('name') or '').lower()
+                if 'python' not in name:
+                    continue
+                if script in ' '.join(proc.cmdline() or []):
+                    pids.append(proc.info['pid'])
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+
+    elif IS_WINDOWS:
+        # No psutil — ask PowerShell for the same information.
+        query = (
+            "Get-CimInstance Win32_Process | Where-Object "
+            f"{{ $_.Name -like 'python*' -and $_.CommandLine -like '*{script}*' }}"
+            " | ForEach-Object { $_.ProcessId }"
+        )
+        ok, out = _run(['powershell', '-NoProfile', '-NonInteractive',
+                        '-Command', query])
+        if ok:
+            pids = [int(line) for line in out.split() if line.strip().isdigit()]
+
+    else:
+        import re
+        pattern = rf'python.*{re.escape(script)}'
+        ok, out = _run(['pgrep', '-f', pattern])
+        if ok:
+            pids = [int(p) for p in out.split() if p.strip().isdigit()]
+
+    pids = [p for p in pids if p not in _own_pids()]
+
+    # Anything we started ourselves counts too, even if the search missed it
+    # (a locked-down PC can refuse to list other processes).
+    proc = _tracked.get(script)
+    if proc is not None and proc.poll() is None and proc.pid not in pids:
+        pids.append(proc.pid)
+
+    _pid_cache[script] = (now, pids)
+    return pids
+
+
 def _proc_running(script):
     """Is a python program with this script name currently running?"""
-    # Web servers: just ask whether their port is answering
+    # Web servers: just ask whether their port is answering — fastest and
+    # most reliable test, and it works the same on every platform.
     port = SCRIPT_PORTS.get(script)
     if port and _port_in_use(port):
         return True
 
-    if IS_WINDOWS:
-        proc = _tracked.get(script)
-        return proc is not None and proc.poll() is None
-
-    # No port (the conversation bot): look for a python process running it.
-    # Requiring "python" in the command line avoids matching editors or
-    # shell commands that merely mention the filename, and we ignore our
-    # own process and the shell that started us.
-    import re
-    pattern = rf'python.*{re.escape(script)}'
-    ok, out = _run(['pgrep', '-f', pattern])
-    if not ok or not out.strip():
-        return False
-
-    mine = {os.getpid(), os.getppid()}
-    pids = {int(p) for p in out.split() if p.strip().isdigit()}
-    return bool(pids - mine)
+    return bool(_find_pids(script))
 
 
 def _proc_start(script, new_terminal=False):
-    """Start a python program from the project folder."""
+    """Start a python program from the project folder.
+
+    `new_terminal` means "give this program its own window with a working
+    keyboard" — the conversation bot needs it so you can press Enter to
+    wake Yobot from sleep.
+    """
     path = os.path.join(BASE_DIR, script)
+    _pid_cache.pop(script, None)
 
     if new_terminal and IS_MAC:
         # Open in its own Terminal window so the conversation bot has a
@@ -173,25 +295,104 @@ def _proc_start(script, new_terminal=False):
                        capture_output=True, timeout=10)
         return
 
-    proc = subprocess.Popen(
-        [PYTHON, path],
-        cwd=BASE_DIR,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    kwargs = dict(cwd=BASE_DIR,
+                  stdout=subprocess.DEVNULL,
+                  stderr=subprocess.DEVNULL)
+
+    if IS_WINDOWS:
+        if new_terminal:
+            # Its own Command Prompt window, so it has a keyboard and you
+            # can watch it talk. Output goes to the window, not DEVNULL.
+            #
+            # Deliberately NOT CREATE_NEW_PROCESS_GROUP: that flag disables
+            # Ctrl-C for the new process, so the bot's own window would
+            # ignore Ctrl-C. It buys nothing either — a process with its own
+            # console can't be sent console signals from here anyway.
+            kwargs['creationflags'] = subprocess.CREATE_NEW_CONSOLE
+            kwargs.pop('stdout')
+            kwargs.pop('stderr')
+        else:
+            # Background web servers: no window at all. Without CREATE_NO_WINDOW
+            # they inherit the Launcher's console, and then Ctrl-C in the
+            # Launcher's window goes to them instead of stopping the Launcher —
+            # which looked exactly like "Ctrl-C does nothing" (Aug 12 2026).
+            kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+
+    proc = subprocess.Popen([PYTHON, path], **kwargs)
     _tracked[script] = proc
 
 
 def _proc_stop(script):
-    """Stop a python program by script name."""
-    if IS_WINDOWS:
-        proc = _tracked.pop(script, None)
-        if proc and proc.poll() is None:
-            proc.terminate()
-        return
+    """Stop a python program by script name.
 
-    _run(['pkill', '-f', script])
+    Mac and Linux get a polite SIGTERM, which lets the program run its
+    cleanup and put the robot back to rest.
+
+    Windows has no equivalent polite signal that reaches these programs:
+    console control events only travel to processes sharing our console,
+    and neither the windowed bot nor the no-window servers do. So it's
+    taskkill. That's less tidy, but Windows still closes the serial port
+    handle when the process dies, so the next program can pick the robot
+    up — the motors simply stay where they were instead of resetting.
+
+    Returns (stopped_ok, message). The message is only meaningful when
+    something went wrong — it gets shown to the user, so it says what to
+    do rather than just what failed.
+    """
+    # Fast path for the web servers: if nothing is listening on their port
+    # and we aren't holding a live process for them, there is nothing to
+    # stop — so skip the process hunt entirely. That hunt is the expensive
+    # part on Windows (a PowerShell call when psutil isn't installed), and
+    # stopping ran it for all four programs, which is why Stop took ~10
+    # seconds. Checking a port is instant. (2026-08-12)
+    port = SCRIPT_PORTS.get(script)
+    if port and not _port_in_use(port):
+        held = _tracked.get(script)
+        if held is None or held.poll() is not None:
+            _tracked.pop(script, None)
+            return True, ''
+
+    pids = _find_pids(script)
+    _pid_cache.pop(script, None)
+
+    if not pids:
+        _tracked.pop(script, None)
+        return True, ''
+
+    denied = False
+    if IS_WINDOWS:
+        for pid in pids:
+            # /T also takes any child processes with it. taskkill reports
+            # its failures on stderr, hence want_stderr.
+            ok, out = _run(['taskkill', '/PID', str(pid), '/T', '/F'],
+                           want_stderr=True)
+            if not ok:
+                print(f"⚠️  taskkill {pid}: {out}")
+                if 'denied' in (out or '').lower():
+                    denied = True
+    else:
+        _run(['pkill', '-f', script])
+
+    # Did it actually die? Ports can take a moment to be released, so give
+    # it a beat before believing the answer.
+    time.sleep(0.5)
+    _pid_cache.pop(script, None)
     _tracked.pop(script, None)
+
+    survivors = _find_pids(script)
+    if not survivors:
+        return True, ''
+
+    pid = survivors[0]
+    hint = ("Open Task Manager (Ctrl-Shift-Esc), go to the Details tab, "
+            f"find process {pid} and End task. Or run yobot-stop.bat as "
+            "administrator.")
+
+    if denied:
+        return False, (f"Windows refused to stop {script} — access denied "
+                       f"(process {pid}). {hint}")
+    return False, (f"{script} is still running (process {pid}) after being "
+                   f"asked to stop. {hint}")
 
 
 # ── Unified status / control ───────────────────────────────────────────────
@@ -222,8 +423,33 @@ def _get_status():
     return 'idle'
 
 
+def _timed(label):
+    """Time a block and print it to the Launcher's console.
+
+    Used on the start/stop routes so slowness can be measured instead of
+    guessed at. Prints a line like:
+        ⏱  stop: 0.8s   (find 0.3s, kill 0.5s)
+    """
+    class _T:
+        def __enter__(self):
+            self.t0 = time.time()
+            return self
+
+        def __exit__(self, *exc):
+            print(f"⏱  {label}: {time.time() - self.t0:.1f}s")
+            return False
+    return _T()
+
+
 def _stop_everything():
-    """Stop whatever is running, on either platform."""
+    """Stop whatever is running, on either platform.
+
+    Returns a list of things that refused to stop — empty means all clear.
+    Before 2026-08-12 this reported success no matter what happened, so a
+    program that ignored the Stop button looked like it had stopped.
+    """
+    problems = []
+
     if USE_SYSTEMD:
         for s in GREETER_SERVICES:
             _run(['systemctl', '--user', 'stop', s])
@@ -232,7 +458,11 @@ def _stop_everything():
     else:
         for script in (PROC_GREETER_BOT, PROC_GREETER_BRAIN,
                        PROC_GUI, PROC_CALIBRATION):
-            _proc_stop(script)
+            ok, msg = _proc_stop(script)
+            if not ok:
+                problems.append(msg)
+
+    return problems
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────
@@ -369,13 +599,19 @@ def start_greeter():
         for s in GREETER_SERVICES:
             _run(['systemctl', '--user', 'start', s])
     else:
-        _proc_stop(PROC_GUI)
-        _proc_stop(PROC_CALIBRATION)
+        with _timed('greeter: stop others'):
+            _proc_stop(PROC_GUI)
+            _proc_stop(PROC_CALIBRATION)
         time.sleep(1)
-        # Brain server first (the bot needs it), then the bot in its own window
+        # Brain server first (the bot needs it), then the bot in its own
+        # window. Wait for the brain to actually answer rather than sleeping
+        # a fixed 2 seconds — usually much quicker, and more reliable on a
+        # slow start.
         if not _proc_running(PROC_GREETER_BRAIN):
             _proc_start(PROC_GREETER_BRAIN)
-            time.sleep(2)
+            if not _wait_for_port(SCRIPT_PORTS[PROC_GREETER_BRAIN], 10):
+                print("⚠️  Brain server didn't answer on port "
+                      f"{SCRIPT_PORTS[PROC_GREETER_BRAIN]} — starting the bot anyway")
         _proc_start(PROC_GREETER_BOT, new_terminal=True)
 
     return jsonify({'success': True, 'status': 'greeter'})
@@ -391,11 +627,13 @@ def start_gui():
         time.sleep(1)
         _run(['systemctl', '--user', 'start', GUI_SERVICE])
     else:
-        _proc_stop(PROC_GREETER_BOT)
-        _proc_stop(PROC_GREETER_BRAIN)
-        _proc_stop(PROC_CALIBRATION)
+        with _timed('gui: stop others'):
+            _proc_stop(PROC_GREETER_BOT)
+            _proc_stop(PROC_GREETER_BRAIN)
+            _proc_stop(PROC_CALIBRATION)
         time.sleep(1)
-        _proc_start(PROC_GUI)
+        with _timed('gui: start'):
+            _proc_start(PROC_GUI)
 
     return jsonify({'success': True, 'status': 'gui'})
 
@@ -420,8 +658,11 @@ def start_calibration():
     if USE_SYSTEMD:
         _run(['systemctl', '--user', 'start', CALIBRATION_SERVICE])
     elif not _proc_running(PROC_CALIBRATION):
-        _proc_start(PROC_CALIBRATION)
-        time.sleep(2)
+        with _timed('calibration: start + wait for page'):
+            _proc_start(PROC_CALIBRATION)
+            # Return as soon as the page is actually serving, instead of
+            # always sleeping 2s. The browser tab is already waiting.
+            _wait_for_port(SCRIPT_PORTS[PROC_CALIBRATION], 15)
 
     return jsonify({'success': True, 'status': 'calibration'})
 
@@ -429,7 +670,14 @@ def start_calibration():
 @app.route('/launcher/stop', methods=['POST'])
 def stop_all():
     """Stop whichever service is currently running."""
-    _stop_everything()
+    with _timed('stop all'):
+        problems = _stop_everything()
+    if problems:
+        for p in problems:
+            print(f"⚠️  Stop failed: {p}")
+        return jsonify({'success': False,
+                        'error': ' '.join(problems),
+                        'status': _get_status()}), 500
     return jsonify({'success': True, 'status': 'idle'})
 
 
@@ -477,6 +725,13 @@ if __name__ == '__main__':
     else:
         print(f"Mode: direct process control ({platform.system()})")
         print("      Shut Down / Restart buttons are disabled.")
+        if HAVE_PSUTIL:
+            print("      Finding programs: psutil")
+        elif IS_WINDOWS:
+            print("      Finding programs: PowerShell (slower)")
+            print("      Tip: 'pip install psutil' makes this quicker.")
+        else:
+            print("      Finding programs: pgrep / pkill")
     print()
     print("Open in your browser:")
     print("   http://localhost:5000       (on this computer)")

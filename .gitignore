@@ -15,6 +15,13 @@
 *.pyc
 __pycache__/
 
+# Safety-copies made before a risky edit (ohbot_chat.py.backup and friends).
+# These are snapshots of THIS machine's work-in-progress. Sharing them would
+# push half-finished code to the Pi and clutter every diff. Added 2026-08-12.
+*.backup
+*.orig
+*.rej
+
 # --- SAMBA leftovers + cleanup quarantine ---
 .smbdelete*
 **/.smbdelete*
@@ -76,3 +83,4 @@ docs/power_hardening.md
 # --- Sequences folder (created at runtime by the GUI) ---
 # Uncomment the next line if you don't want to share your saved sequences
 # sequences/
+_audio_check_*.wav

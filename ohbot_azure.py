@@ -216,6 +216,37 @@ class AzureSpeechManager:
             speechsdk.PropertyId.Speech_SegmentationSilenceTimeoutMs, "500"
         )
 
+        # ------------------------------------------------------------------
+        # ONE synthesizer, built here and reused for every sentence.
+        #
+        # Until 2026-08-12 a brand new SpeechSynthesizer was created inside
+        # synthesize_to_file_with_visemes() on every utterance, and each one
+        # opened a fresh connection to Azure. Measured with
+        # bench_azure_synth.py, five different sentences, two runs:
+        #
+        #     new synthesizer each time   0.94s / 0.96s   <- was
+        #     reused synthesizer          0.23s / 0.25s   <- now
+        #
+        # Visemes are unaffected: 38-47 per sentence either way. Pre-opening
+        # the connection and streaming the audio were both tried and added
+        # essentially nothing (0.00s and 0.04s), so neither is done here.
+        #
+        # audio_config=None means "don't write a file, hand us the bytes" —
+        # the output filename on an AudioOutputConfig is fixed at
+        # construction, so a reused synthesizer can't write to a different
+        # temp file per call. We write result.audio_data ourselves instead.
+        # ------------------------------------------------------------------
+        self.speech_config.set_speech_synthesis_output_format(
+            speechsdk.SpeechSynthesisOutputFormat.Riff24Khz16BitMonoPcm
+        )
+        self._visemes = []
+        self._synth_lock = threading.Lock()
+        self._synthesizer = speechsdk.SpeechSynthesizer(
+            speech_config=self.speech_config,
+            audio_config=None
+        )
+        self._synthesizer.viseme_received.connect(self._on_viseme)
+
         # Which microphone to use. Worked out on first use by
         # resolve_microphone(), then remembered. See ohbot_mic.py.
         self._mic_device = None
@@ -416,38 +447,55 @@ class AzureSpeechManager:
         else:
             audio_config = speechsdk.audio.AudioConfig(use_default_microphone=True)
 
-        # Accept either a short code ('es') or a full Azure locale ('es-MX').
-        # Passing nothing still means "auto-detect between the two".
-        if language:
-            language = self.locale_for(language)
-
-        if language:
-            recognizer = speechsdk.SpeechRecognizer(
-                speech_config=self.speech_config,
-                audio_config=audio_config,
-                language=language
-            )
-            print(f"🎤 Listening (locked: {language})...")
-        else:
-            auto_detect_config = speechsdk.languageconfig.AutoDetectSourceLanguageConfig(
-                languages=["es-MX", "en-US"]
-            )
-            recognizer = speechsdk.SpeechRecognizer(
-                speech_config=self.speech_config,
-                audio_config=audio_config,
-                auto_detect_source_language_config=auto_detect_config
-            )
-            print("🎤 Listening (auto-detect)...")
+        # ------------------------------------------------------------------
+        # We always listen in ONE known language. Language is chosen by the
+        # visitor — the 🌐 dropdown on the web pages, or the language buttons
+        # on the kiosk — so there is nothing for Azure to work out.
+        #
+        # Automatic detection was removed on 2026-08-12. Azure's at-start
+        # language ID holds a fixed ~5 second window open before it will
+        # finalise anything, no matter how briefly the visitor spoke.
+        # Measured with stt_test.py:
+        #
+        #     auto-detect (at-start)    5.5s   - and pinned there
+        #     locked to one language    2.6s
+        #
+        # Continuous language ID was tried too: it is rejected outright by
+        # recognize_once, and via continuous recognition it matched the
+        # locked speed but added a second recognition path to maintain for
+        # a capability we no longer need.
+        #
+        # If we can't tell which language someone wants, the honest fix is
+        # to ASK them — not to spend three seconds guessing on every turn.
+        # ------------------------------------------------------------------
+        language = self.locale_for(language)      # None -> default English
+        recognizer = speechsdk.SpeechRecognizer(
+            speech_config=self.speech_config,
+            audio_config=audio_config,
+            language=language
+        )
+        print(f"🎤 Listening ({language})...")
 
         t_start = time.perf_counter()
         t_first_audio = None
+        t_session = None
 
         def on_recognizing(evt):
             nonlocal t_first_audio
             if t_first_audio is None:
                 t_first_audio = time.perf_counter()
 
+        def on_session_started(evt):
+            # Fires when Azure actually starts listening. Everything before
+            # this is setup cost: building the recognizer, opening the
+            # connection. Without this we can't tell setup apart from the
+            # visitor simply not having spoken yet.
+            nonlocal t_session
+            if t_session is None:
+                t_session = time.perf_counter()
+
         recognizer.recognizing.connect(on_recognizing)
+        recognizer.session_started.connect(on_session_started)
 
         loop = asyncio.get_event_loop()
         try:
@@ -467,24 +515,69 @@ class AzureSpeechManager:
 
         t_end = time.perf_counter()
         total_ms = (t_end - t_start) * 1000
-        if t_first_audio is not None:
+
+        # ------------------------------------------------------------------
+        # Break the wait into the four pieces that actually matter.
+        #
+        # The old two-number version was misleading: what it called "waiting
+        # for speech" silently included the time the visitor spent talking,
+        # because with language auto-detect the first partial result doesn't
+        # arrive until near the END of the sentence. That made a normal
+        # pause look like a five-second fault.
+        #
+        # Azure tells us where the speech sat inside the audio it captured:
+        # `offset` is how far in it started, `duration` is how long it ran,
+        # both in ticks of 100 nanoseconds (10,000 ticks = 1 ms). Combined
+        # with session_started we can separate:
+        #
+        #   connecting          setup before Azure was even listening
+        #   silence before      visitor hadn't started talking yet
+        #   speaking            visitor actually talking - not our problem
+        #   AFTER stopped       silence timeout + final network round trip
+        #
+        # That last one is the delay a visitor feels while waiting for Yobot
+        # to react, and it is the only one worth optimising.
+        # ------------------------------------------------------------------
+        TICKS_PER_MS = 10_000
+        offset_ms   = getattr(result, 'offset', 0) / TICKS_PER_MS
+        duration_ms = getattr(result, 'duration', 0) / TICKS_PER_MS
+        setup_ms    = ((t_session - t_start) * 1000) if t_session else None
+
+        # On a NoMatch result Azure still fills in offset and duration, but
+        # they describe the listening window rather than any speech — which
+        # made failures print "5260ms speaking" when nothing was said at all.
+        recognised_ok = (result.reason == speechsdk.ResultReason.RecognizedSpeech)
+
+        if recognised_ok and duration_ms > 0 and setup_ms is not None:
+            after_ms = total_ms - (setup_ms + offset_ms + duration_ms)
+            print(
+                f"⏱️  STT: {total_ms:.0f}ms total  |  "
+                f"{setup_ms:.0f}ms connecting  |  "
+                f"{offset_ms:.0f}ms silence before  |  "
+                f"{duration_ms:.0f}ms speaking  |  "
+                f"{after_ms:.0f}ms AFTER stopped"
+            )
+        elif recognised_ok and t_first_audio is not None:
+            # Fallback: Azure gave us no offset/duration (older SDK, or a
+            # result type that doesn't carry them). Old behaviour.
             waiting_ms    = (t_first_audio - t_start) * 1000
             processing_ms = (t_end - t_first_audio) * 1000
             print(
                 f"⏱️  STT: {total_ms:.0f}ms total  |  "
-                f"{waiting_ms:.0f}ms waiting for speech  |  "
-                f"{processing_ms:.0f}ms processing (silence timeout + network)"
+                f"{waiting_ms:.0f}ms until first partial  |  "
+                f"{processing_ms:.0f}ms after that"
             )
         else:
-            print(f"⏱️  STT: {total_ms:.0f}ms total (no speech detected)")
+            setup_note = f", {setup_ms:.0f}ms connecting" if setup_ms else ""
+            heard = "heard something but couldn't make it out" \
+                if t_first_audio is not None else "heard nothing at all"
+            print(f"⏱️  STT: {total_ms:.0f}ms total — no result "
+                  f"({heard}{setup_note})")
 
         if result.reason == speechsdk.ResultReason.RecognizedSpeech:
-            if language:
-                print(f"✅ Recognized ({language}): {result.text}")
-            else:
-                lang_result = speechsdk.AutoDetectSourceLanguageResult(result)
-                detected_lang = lang_result.language
-                print(f"✅ Recognized ({detected_lang}): {result.text}")
+            # `language` is always set now — we never auto-detect — so there
+            # is no detected-language branch to report any more.
+            print(f"✅ Recognized ({language}): {result.text}")
             return result.text
         elif result.reason == speechsdk.ResultReason.NoMatch:
             print("🤔 No speech recognized")
@@ -508,34 +601,47 @@ class AzureSpeechManager:
                 pass
             return ""
 
+    def _on_viseme(self, evt):
+        """Called by Azure as each mouth shape is generated.
+
+        Connected once, in __init__, because the synthesizer now lives for
+        the life of the program. self._visemes is cleared before every
+        sentence in synthesize_to_file_with_visemes() — without that,
+        sentence two would inherit sentence one's mouth shapes and lip sync
+        would drift further out with every line spoken.
+        """
+        self._visemes.append({
+            'viseme_id': evt.viseme_id,
+            'audio_offset': evt.audio_offset
+        })
+
     def synthesize_to_file_with_visemes(self, text: str, output_file: str,
                                         language: str = None) -> List[Dict]:
         """Synthesize speech to file and capture viseme events.
 
         `language` is 'en' or 'es' (None means English). It only affects
         pronunciation and the resulting lip shapes — the voice stays the same.
+
+        Uses the shared synthesizer created in __init__ (see the note there).
+        The signature and return value are unchanged, so callers such as
+        AsyncOhbotController.say() need no changes.
         """
-        visemes = []
+        ssml = self._make_ssml(text, language)
 
-        audio_config = speechsdk.audio.AudioOutputConfig(filename=output_file)
-        synthesizer  = speechsdk.SpeechSynthesizer(
-            speech_config=self.speech_config,
-            audio_config=audio_config
-        )
+        # One sentence at a time. say() already serialises speech via
+        # speech_lock, but gui_server.py drives this class too and the
+        # viseme list is shared state.
+        with self._synth_lock:
+            self._visemes.clear()
+            result = self._synthesizer.speak_ssml(ssml)
 
-        def viseme_callback(evt):
-            visemes.append({
-                'viseme_id': evt.viseme_id,
-                'audio_offset': evt.audio_offset
-            })
+            if result.reason != speechsdk.ResultReason.SynthesizingAudioCompleted:
+                raise RuntimeError(f"Speech synthesis failed: {result.reason}")
 
-        synthesizer.viseme_received.connect(viseme_callback)
+            visemes = list(self._visemes)
 
-        ssml   = self._make_ssml(text, language)
-        result = synthesizer.speak_ssml(ssml)
-
-        if result.reason != speechsdk.ResultReason.SynthesizingAudioCompleted:
-            raise RuntimeError(f"Speech synthesis failed: {result.reason}")
+            with open(output_file, 'wb') as f:
+                f.write(result.audio_data)
 
         return visemes
 
@@ -716,6 +822,15 @@ class AsyncOhbotController:
         ]
 
         viseme_timeline.sort(key=lambda x: x['time'])
+
+        # On Windows a piece of silence is glued onto the front of the audio
+        # so the sound device has time to wake up (see AUDIO_LEAD_IN_MS in
+        # yobot_core.py). The speech therefore starts that much later than
+        # the playback does — so the mouth has to wait the same amount, or
+        # it would move ahead of the voice. Zero on the Pi and the Mac.
+        lead_in = getattr(ohbot, 'AUDIO_LEAD_IN_S', 0)
+        if lead_in:
+            await asyncio.sleep(lead_in)
 
         start_time  = asyncio.get_event_loop().time()
         current_idx = 0

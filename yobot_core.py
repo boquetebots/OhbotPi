@@ -135,6 +135,80 @@ debug = False
 #   Windows : winsound — built into Python. (Untested — Windows port pending.)
 
 
+# ── Audio lead-in (Windows) ────────────────────────────────────────────────
+# Windows powers the sound device down when nothing is playing. Waking it up
+# takes a moment, and whatever plays during that moment is never heard — so
+# the first fraction of a second of speech goes missing.
+#
+# Azure's speech starts at sample zero with no run-up, so the wake-up eats
+# real words. The fix is to glue a short piece of silence onto the front of
+# every clip: the device wakes up during the silence instead.
+#
+# 450 ms is the tested default. Measured on Michael's PC over HDMI, Aug 2026:
+# 300 ms was the wake-up time, 350 ms was borderline, 450 ms was clean with
+# margin to spare. HDMI is one of the slower outputs to wake, so this figure
+# should be generous on most machines.
+#
+# This costs almost nothing in real delay — the wake-up was happening either
+# way. Only the extra margin (lead-in minus wake-up time) is truly added.
+#
+# Change it in .env if a different PC or speaker needs more or less:
+#     AUDIO_LEAD_IN_MS=450
+# Set it to 0 to turn the whole thing off.
+
+DEFAULT_LEAD_IN_MS = 450               # Windows only; Pi and Mac use 0
+
+
+def _default_lead_in_ms():
+    if not IS_WINDOWS:
+        return 0                       # Pi and Mac don't have this problem
+    return DEFAULT_LEAD_IN_MS
+
+
+try:
+    AUDIO_LEAD_IN_MS = int(os.environ.get('AUDIO_LEAD_IN_MS',
+                                          _default_lead_in_ms()))
+except ValueError:
+    print(f"⚠️  AUDIO_LEAD_IN_MS in .env isn't a number — "
+          f"using {_default_lead_in_ms()}")
+    AUDIO_LEAD_IN_MS = _default_lead_in_ms()
+
+AUDIO_LEAD_IN_S = AUDIO_LEAD_IN_MS / 1000.0
+
+
+def _pad_wav_with_silence(src, pad_ms):
+    """Copy a WAV file with silence added to the front.
+
+    Returns the new file's path, or the original path if padding wasn't
+    possible (unusual bit depth, unreadable file — never worth crashing
+    speech over).
+    """
+    import wave
+
+    try:
+        with wave.open(src, 'rb') as w:
+            params = w.getparams()
+            frames = w.readframes(w.getnframes())
+
+        if params.sampwidth != 2:      # silence isn't zero for 8-bit PCM
+            return src
+
+        silent_frames = int(params.framerate * pad_ms / 1000)
+        silence = b'\x00' * (silent_frames * params.nchannels * params.sampwidth)
+
+        padded = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+        padded.close()
+        with wave.open(padded.name, 'wb') as out:
+            out.setparams(params)
+            out.writeframes(silence + frames)
+        return padded.name
+
+    except Exception as e:                                    # noqa: BLE001
+        if debug:
+            print(f"Could not add audio lead-in ({e}) — playing as-is")
+        return src
+
+
 def _find_audio_player():
     """Pick the audio player command for this OS (None on Windows)."""
     if IS_MAC:
@@ -151,16 +225,31 @@ AUDIO_PLAYER = _find_audio_player()
 
 class _WinSoundProcess:
     """Minimal stand-in for a subprocess so Windows playback can be awaited
-    and terminated the same way as afplay/pw-play processes."""
+    and terminated the same way as afplay/pw-play processes.
 
-    def __init__(self, future):
+    `temp_to_clean` is the padded copy of the WAV, if one was made — it gets
+    deleted once playback finishes, so /temp doesn't slowly fill up.
+    """
+
+    def __init__(self, future, temp_to_clean=None):
         self._future = future
+        self._temp = temp_to_clean
 
     async def wait(self):
         try:
             await self._future
         except Exception:
             pass
+        finally:
+            self._cleanup()
+
+    def _cleanup(self):
+        if self._temp:
+            try:
+                os.unlink(self._temp)
+            except OSError:
+                pass
+            self._temp = None
 
     def terminate(self):
         try:
@@ -168,6 +257,7 @@ class _WinSoundProcess:
             winsound.PlaySound(None, winsound.SND_PURGE)
         except Exception:
             pass
+        self._cleanup()
 
 
 async def start_wav(audio_file):
@@ -175,12 +265,24 @@ async def start_wav(audio_file):
     and `.terminate()` — same shape on every platform."""
     if IS_WINDOWS:
         import winsound
-        loop = asyncio.get_event_loop()
+
+        # Give the sound device a moment of silence to wake up in, so it
+        # doesn't swallow the first words. See AUDIO_LEAD_IN_MS above.
+        to_play = str(audio_file)
+        padded = None
+        if AUDIO_LEAD_IN_MS > 0:
+            padded = _pad_wav_with_silence(to_play, AUDIO_LEAD_IN_MS)
+            if padded != to_play:
+                to_play = padded
+            else:
+                padded = None          # padding didn't happen, nothing to clean
+
+        loop = asyncio.get_running_loop()
         future = loop.run_in_executor(
             None,
-            lambda: winsound.PlaySound(str(audio_file), winsound.SND_FILENAME)
+            lambda: winsound.PlaySound(to_play, winsound.SND_FILENAME)
         )
-        return _WinSoundProcess(asyncio.ensure_future(future))
+        return _WinSoundProcess(asyncio.ensure_future(future), padded)
 
     return await asyncio.create_subprocess_exec(
         *AUDIO_PLAYER, str(audio_file),
@@ -421,6 +523,12 @@ class OhbotController:
         volumes = lip_data['volumes']
         times = lip_data['times']
 
+        # Match the silence glued onto the front of the audio on Windows,
+        # so the mouth doesn't start moving before the voice does.
+        # (See AUDIO_LEAD_IN_MS. Zero on the Pi and the Mac.)
+        if AUDIO_LEAD_IN_S:
+            await asyncio.sleep(AUDIO_LEAD_IN_S)
+
         start_time = asyncio.get_event_loop().time()
         current_idx = 0
 
@@ -495,26 +603,37 @@ def init(portName=None):
     # Find serial port
     ports = list(serial.tools.list_ports.comports())
 
+    # A specific port can be forced from .env — handy on Windows if you
+    # already know Yobot is on COM4 and want to skip the search entirely.
+    if not portName:
+        portName = os.environ.get('YOBOT_SERIAL_PORT') or None
+
     if portName:
         if _checkPort([portName]):
             port = portName
             connected = True
+        else:
+            print(f"Nothing answered on {portName} (from YOBOT_SERIAL_PORT or init())")
     else:
-        for p in ports:
-            # Linux: /dev/ttyUSB0, /dev/ttyACM0
-            # Mac:   /dev/cu.usbmodem14101, /dev/cu.usbserial-xxxx
-            # Windows: COM3, COM4... (no 'usb' in the name — probe every port)
-            if IS_WINDOWS or "usb" in p[0].lower() or "acm" in p[0].lower():
-                if _checkPort(p):
-                    port = p[0]
-                    connected = True
-                    print(f"Robot found on port: {port}")
-                    break
+        for p in _candidate_ports(ports):
+            if _checkPort(p):
+                port = p[0]
+                connected = True
+                print(f"Robot found on port: {port}")
+                break
 
     if not connected:
         print("Robot not found - running without hardware")
         if not ports:
             print("  (no serial ports were detected at all — is the USB cable plugged in?)")
+        elif IS_WINDOWS:
+            print("  Serial ports Windows can see right now:")
+            for p in ports:
+                print(f"    {p[0]}  —  {p[1]}")
+            print("  If Yobot's port is listed above, put this line in your .env file:")
+            print("    YOBOT_SERIAL_PORT=COM4          (use the right number)")
+            print("  If NO port appears when the USB cable is plugged in, Windows is")
+            print("  missing the USB-to-serial driver — see SETUP_Windows.md.")
         return False
 
     # Open serial port
@@ -527,6 +646,52 @@ def init(portName=None):
         print(f"Could not connect to {port}: {e}")
         connected = False
         return False
+
+
+def _candidate_ports(ports):
+    """Decide which serial ports are worth asking "are you a robot?".
+
+    Linux/Mac port names say what they are (/dev/ttyACM0, /dev/cu.usbmodem…),
+    so we simply keep the USB-looking ones.
+
+    Windows names (COM3, COM4) say nothing at all, so we look at the port's
+    *description* instead. Ports that are clearly something else — Bluetooth
+    links, dial-up modems, the built-in printer port — are skipped, because
+    opening those can wake up devices that have nothing to do with Yobot.
+    Genuine USB serial adapters are tried first; anything left over is tried
+    afterwards, so an unusual adapter still gets found.
+    """
+    if not IS_WINDOWS:
+        return [p for p in ports
+                if "usb" in p[0].lower() or "acm" in p[0].lower()]
+
+    # Descriptions that mean "definitely not the robot"
+    SKIP = ('bluetooth', 'modem', 'dial-up', 'printer', 'lpt',
+            'virtual', 'com0com', 'standard serial over')
+    # USB-to-serial chips Ohbot brain boards are built around, plus the
+    # generic wording Windows uses for them.
+    #   2e8a  = Raspberry Pi Foundation — the Pico brain board in Yobot.
+    #           Windows describes it only as "USB Serial Device", so the
+    #           vendor ID is the one thing that names it for certain.
+    PREFER = ('vid:pid=2e8a', 'usb', 'ch340', 'ch341', 'cp210', 'ft232',
+              'ftdi', 'silicon labs', 'arduino', 'prolific', 'pl2303')
+
+    # Ohbot's own brain board, by vendor ID — tried before anything else.
+    OHBOT_VIDS = ('vid:pid=2e8a',)          # Raspberry Pi Pico
+
+    best, likely, maybe = [], [], []
+    for p in ports:
+        text = f"{p[1]} {p[2]}".lower()      # description + hardware id
+        if any(s in text for s in SKIP):
+            continue
+        if any(v in text for v in OHBOT_VIDS):
+            best.append(p)
+        elif any(k in text for k in PREFER):
+            likely.append(p)
+        else:
+            maybe.append(p)
+
+    return best + likely + maybe
 
 
 def _checkPort(p):

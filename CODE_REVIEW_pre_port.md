@@ -71,6 +71,16 @@ Also: add `.smbdelete*` to `.gitignore` so those never show up as untracked file
 
 ### Git status — the important one
 
+> **RESOLVED — August 12, 2026.** The work described below was committed and pushed.
+> Checked from the Windows PC: local `main` is level with `origin/main`, nothing ahead
+> or behind. **Ignore the warning below** — it's kept only as a record of what happened.
+>
+> One thing to know if `git status` on Windows ever looks alarming again: an NTFS drive
+> flips every file's permission bits, so git reports dozens of files as "modified" when
+> only the mode changed and the content is identical. `core.fileMode=false` was set on
+> the Windows clone to silence it. If you see 50+ modified files, check
+> `git diff --numstat` before believing it.
+
 Good news: the July 23 "reconciled" commit **did get pushed** — the Pi and GitHub currently match.
 
 Not-so-good news: **~5 weeks of work since July 23 is uncommitted** — 67 changed/new files, including:
