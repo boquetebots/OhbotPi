@@ -36,7 +36,18 @@ ohbot==4.0.18
 pyserial>=3.5
 
 # Raspberry Pi GPIO (for the wake button — skipped gracefully if not available)
-RPi.GPIO>=0.7.1
+#
+# PI ONLY. The tail of this line is a marker meaning "only install this on a
+# Raspberry Pi". Without it, `pip install -r requirements.txt` FAILS on
+# Windows and Mac — RPi.GPIO can't be built there, and pip stops at the
+# first failure, so nothing after this line gets installed either.
+# (Found 2026-08-12 while preparing to install on Windows laptops.)
+RPi.GPIO>=0.7.1; platform_machine in "armv6l armv7l aarch64"
+
+# Lets the Launcher page find and stop programs quickly on any OS.
+# Not strictly required — without it Windows falls back to calling
+# PowerShell, which works but is much slower.
+psutil>=5.9.0
 
 # XML parser used by ohbot_pi.py to read motor calibration file.
 # The 'ohbot' package only installs lxml on Windows and Mac, not Linux,

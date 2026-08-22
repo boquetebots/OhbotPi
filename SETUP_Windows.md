@@ -95,6 +95,37 @@ Without it the Launcher falls back to a slower method that takes about a second 
 
 ### Step 3 — Get the project folder onto the PC
 
+**On a brand-new PC**, get the code from GitHub. Two ways:
+
+*With Git installed* (`winget install --id Git.Git -e`, then reopen PowerShell):
+
+```
+mkdir C:\Projects
+cd C:\Projects
+git clone <your repo URL> OhbotPi2
+cd OhbotPi2
+```
+
+*Without Git* — open the repo page on GitHub, click the green **Code** button, choose
+**Download ZIP**, then right-click the download → **Extract All**. Fine for running it;
+you just can't pull updates or push changes later.
+
+Then run the venv step above from inside the new folder.
+
+⚠️ **Two things are deliberately NOT in git**, so a fresh copy won't have them. Copy both
+from a working machine (the Pi, the Mac, or this PC):
+
+| What | Why it's not in git | Where it goes |
+|------|--------------------|---------------|
+| `.env` | Contains your API keys — must never be on GitHub | project folder |
+| `ohbotData\MotorDefinitions*.omd` | Each robot's own measured calibration | `ohbotData\` |
+
+Without `.env` the robot can't speak or think. Without the calibration file it will still
+move, but on generic built-in limits rather than your robot's measured ones — it now says
+so clearly on startup rather than doing it silently.
+
+---
+
 The project lives at **`D:\Projects\OhbotPi2`** on this PC. It needs two things that are not
 optional:
 

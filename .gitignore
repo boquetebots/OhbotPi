@@ -45,6 +45,18 @@ Ohbot\ Pi\ 4.txt
 # trouble before. Real robot profiles live in ohbotData/robots/ and ARE shared.
 ohbotData/active_robot.txt
 ohbotData/language.txt
+# THE LIVE CALIBRATION FILE. Added 2026-08-13.
+# This is the one yobot_core.py actually reads, so it decides how far every
+# motor on THIS machine's robot is allowed to move. It was tracked by git
+# until now, which was the very hazard the comment above warns about — the
+# scratch copies were excluded but the real file was missed. With Windows
+# holding one robot and the Mac holding another, a push from one machine
+# followed by a pull on the other would have handed the second robot the
+# first robot's mouth. Each machine keeps its own now.
+# The shared robot library in ohbotData/robots/ is still tracked, and that
+# is where a calibration you want on every machine belongs. To set this
+# machine up, load a robot from that library rather than pulling this file.
+ohbotData/MotorDefinitionsv21.omd
 ohbotData/MD_old_*.omd
 ohbotData/MD_Goldie.omd
 ohbotData/MD_blueboy.omd
@@ -84,3 +96,6 @@ docs/power_hardening.md
 # Uncomment the next line if you don't want to share your saved sequences
 # sequences/
 _audio_check_*.wav
+
+# Windows desktop shortcuts - local to one PC, no use to anyone else
+*.lnk

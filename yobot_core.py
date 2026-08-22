@@ -962,7 +962,27 @@ def _loadMotorDefs():
     global motorMins, motorMaxs, motorRev, restPos, motorCenters
 
     if not os.path.exists(motorDefFile):
-        # Use defaults
+        # Built-in defaults are a last resort, not a normal state — they are
+        # generic, not this robot's measured calibration. It used to fall
+        # back to them without a word, which on a fresh clone (the motor file
+        # isn't in git) meant the robot moved with untuned limits and nothing
+        # said so. Say so. (2026-08-12)
+        print(f"⚠️  Motor calibration file not found: {motorDefFile}")
+        try:
+            data_dir = Path(motorDefFile).parent
+            found = sorted(p.name for p in data_dir.glob('*.omd'))
+            if found:
+                print("   Calibration files that ARE in ohbotData:")
+                for name in found:
+                    print(f"     {name}")
+                print("   Load one from the Launcher page (robot profiles),")
+                print("   or copy it over the expected name above.")
+            else:
+                print("   No .omd files at all — copy this robot's calibration")
+                print("   into ohbotData/ (it is deliberately not in git).")
+        except Exception:                                     # noqa: BLE001
+            pass
+        print("   Running on generic built-in limits until then.")
         return
 
     tree = etree.parse(motorDefFile)
