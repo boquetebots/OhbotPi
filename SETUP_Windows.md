@@ -43,6 +43,8 @@ the bottom under "The Long Way".
 | `yobot_core.py` | Updated: smarter COM port hunting (skips Bluetooth and modem ports instead of poking everything), and a `YOBOT_SERIAL_PORT` setting to skip the search entirely. |
 | `launcher_server.py` | Updated: finds and stops programs on Windows, and opens the conversation bot in its own Command Prompt window so you can press Enter to wake Yobot. |
 | `yobot_calibrate.py` | Updated: reads single keypresses using Windows' `msvcrt` instead of Unix's `termios`. It used to crash on Windows before printing anything. |
+| `SETUP.bat` | **New.** One-click setup: finds Python, builds the venv, installs `requirements.txt`, reports what is missing. |
+| `yobot-test.bat` | **New.** One-click movement test, for people who would rather not open a terminal at all. |
 
 Everything else — the Sequence Builder, the Timeline, the Calibration web page, the brain
 server — already had no platform-specific code and needs nothing new.
@@ -52,6 +54,18 @@ server — already had no platform-specific code and needs nothing new.
 ---
 
 ## One-Time Windows Setup (do once)
+
+> **The short version:** double-click **`SETUP.bat`** in the project folder.
+> It does Steps 1-3 below for you — checks Python, builds the venv, installs
+> every package, and then tells you plainly what is still missing (`.env`,
+> calibration). Safe to run again any time. If it works, skip straight to
+> Step 4.
+>
+> The steps below are what it does, written out, for when you want to know —
+> or when it fails and you need to do a bit by hand.
+>
+> For a complete beginner on a blank laptop, hand them
+> **`START_HERE_Windows.md`** instead of this file. Same job, no jargon.
 
 ### Step 1 — Install Python
 
