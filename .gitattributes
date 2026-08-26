@@ -57,3 +57,74 @@
 *.pdf       binary
 *.onnx      binary
 *.rtf       binary
+
+# ── NOT IN THE DOWNLOAD ZIP ────────────────────────────────────────────────
+#
+#  "export-ignore" means: keep this file in the repo, but leave it OUT of the
+#  ZIP that GitHub builds when someone clicks Code -> Download ZIP.
+#
+#  Nothing here is deleted. It is all still on your Mac, still in git, still
+#  there for anyone who does a full `git clone`. It just stops landing in a
+#  stranger's Downloads folder when all they wanted was to run the robot.
+#
+#  To put something back in the ZIP, delete its line below. That is the whole
+#  undo procedure.
+#
+#  Added 2026-08-25.
+
+# --- Your own bench + test scripts ---------------------------------------
+bench_azure_synth.py    export-ignore
+center_servos.py        export-ignore
+chat_test.py            export-ignore
+check_lipsync.py        export-ignore
+check_motors.py         export-ignore
+stt_test.py             export-ignore
+test_pronunciation.py   export-ignore
+yobot_jog_toplip.py     export-ignore
+yobot_position_test.py  export-ignore
+yobot_verify_neutral.py export-ignore
+test?answers.txt        export-ignore
+
+# KEPT ON PURPOSE, even though they look like test scripts:
+#   reword.py           - gui_server.py imports it
+#   win_audio_check.py  - SETUP_Windows.md tells people to run it
+#   yobot_calibrate.py  - named in the guides as the terminal calibrator
+#   announce_ip.py      - a real Pi feature, installed by install_ip_announcer.sh
+
+# --- Your Mac + git housekeeping scripts ---------------------------------
+catch_up_with_github.command       export-ignore
+deploy_gui_page.command            export-ignore
+deploy_local_files.command         export-ignore
+deploy_pronunciation_fix.command   export-ignore
+deploy_test_bench.command          export-ignore
+push_to_github.command             export-ignore
+restart_gui_mac.command            export-ignore
+sync_pi_from_github.command        export-ignore
+unstick_git.command                export-ignore
+push-to-github.bat                 export-ignore
+setup-github-login.bat             export-ignore
+# ("Start Ohbot Launcher.command" is NOT here - Mac users need it.)
+
+# --- Planning notes, reviews, venue-specific docs -------------------------
+PORTING_mac_windows.md    export-ignore
+CODE_REVIEW_pre_port.md   export-ignore
+PIBOT_BUILD_CHECKLIST.md  export-ignore
+CLUBHOUSE_DAY_PLAN.md     export-ignore
+ROUTER_SETUP_RINCON.md    export-ignore
+Clubhouse?info.rtf        export-ignore
+
+# --- Older guides now superseded by the three SETUP/START_HERE files ------
+REBUILD_GUIDE.md            export-ignore
+LAUNCHER_SETUP.md           export-ignore
+GIT_SETUP_AND_UPDATES.md    export-ignore
+SYNC_Windows_Mac_Pi.md      export-ignore
+docs/GUI_SETUP_GUIDE.md     export-ignore
+docs/Flask?GPT?SETUP_GUIDE.md  export-ignore
+docs/AUTOSTART_TROUBLESHOOT.md export-ignore
+# (INSTALL_GUIDE.md is KEPT - it is the only English Pi guide. See README.)
+
+# --- Old calibration files and scratch sequences --------------------------
+ohbotData/archive/          export-ignore
+sequences/New_Sequence.json export-ignore
+sequences/Test_2.json       export-ignore
+sequences/my_first_seq.json export-ignore

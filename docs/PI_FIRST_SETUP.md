@@ -198,7 +198,7 @@ You now have a Raspberry Pi that is:
 - ✅ Accessible via SSH from your computer
 - ✅ Up to date
 
-**Next step:** Follow the main setup guide (`REBUILD_GUIDE.md`) to install the Ohbot software.
+**Next step:** Follow the main setup guide (`INSTALL_GUIDE.md`) to install the Ohbot software.
 
 ---
 

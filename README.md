@@ -1,137 +1,159 @@
-# Ohbot Web GUI — Sequence Builder & Controller
+# Yobot — a robot head that listens, thinks and talks back
 
-A browser-based control panel for the [Ohbot](https://ohbot.readthedocs.io) robot head, running on a Raspberry Pi 4.
+A talking, moving [Ohbot](https://www.ohbot.co.uk) robot head. It hears you, works
+out a reply, and says it out loud with its mouth moving in time with the words.
 
-Built by a retired show tech who wanted to control a robot without writing code every time. 😄
+Runs on a **Raspberry Pi**, a **Mac**, or a **Windows PC** — the same code on all
+three. Built by a retired show tech who wanted to control a robot without writing
+code every time. 😄
 
 ![Status: Working](https://img.shields.io/badge/status-working-brightgreen)
 
 ---
 
-## What It Does
+## Start here
 
-This GUI lets you control and program an Ohbot robot head from any web browser on your local network — no coding required after setup.
+Pick your machine. Each guide assumes you know nothing about code.
 
-**Features:**
-- **Live motor sliders** — move all 8 motors in real time (head, eyes, lips, etc.)
-- **LED eye colour picker** — full RGB control
-- **Emotion presets** — one-click poses: happy, sad, surprised, thinking, sleeping
-- **Sequence builder** — create, save, and play back timed animation sequences (keyframes)
-- **Text-to-speech** — type something and Ohbot says it out loud with lip sync (requires Azure)
-- **Microphone input** — talk to Ohbot using your Pi's USB mic (requires Azure)
-- **AI chat panel** — have a conversation with Ohbot powered by GPT (requires OpenAI)
-- **Personality switcher** — friendly, comedian, pirate, professor, or shy
-- **Demo mode** — a built-in self-running demo that shows off all the moves
+| If you're on... | Read this |
+|---|---|
+| **Windows** | **[START_HERE_Windows.md](START_HERE_Windows.md)** — blank laptop to talking robot |
+| **Mac** | **[SETUP_MacOS.md](SETUP_MacOS.md)** |
+| **Raspberry Pi** | **[INSTALL_GUIDE.md](INSTALL_GUIDE.md)** — from a blank SD card |
+| **Raspberry Pi, en español** | **[GUIA_ESTUDIANTES_Pi5.md](GUIA_ESTUDIANTES_Pi5.md)** |
 
----
-
-## What You Need
-
-### Hardware
-- [Ohbot robot](https://www.ohbot.co.uk) (the hardware kit)
-- Raspberry Pi 4 (any RAM size works)
-- USB mic (optional — needed for voice input)
-
-### Accounts & API Keys
-- **Microsoft Azure** account — for text-to-speech and speech recognition (free tier available)
-- **OpenAI** account — for the AI chat feature (pay-as-you-go, very cheap for light use)
-
-> You can run the GUI without Azure or OpenAI — the motor controls, LED picker, and sequence builder all work without them. Speech and chat just won't be available.
+Whichever you pick, you'll also need **[two API keys](docs/API_KEYS_SETUP.md)** —
+one from Microsoft Azure for the voice and the listening, one from OpenAI for the
+conversation. Both have free or very cheap tiers.
 
 ---
 
-## Installation
+## What you need
 
-> **[→ Read the full installation guide](INSTALL_GUIDE.md)**
+**Hardware**
 
-The install guide covers everything from a blank SD card to a running robot — including what SSH is, how to find your Pi on the network, and how to get your API keys.
+- An [Ohbot robot head](https://www.ohbot.co.uk), its power supply and USB cable
+- A Raspberry Pi 4 or 5, a Mac, or a Windows PC
+- A USB microphone, if you want it to hear you
+- A speaker — wired is better than Bluetooth, which lags and puts the lip sync out of step
 
-The short version, once your Pi is set up and you're SSH'd in:
+**Accounts**
 
-```bash
-cd ~/Projects/Ohbot
-git clone https://github.com/boquetebots/OhbotPi.git .
-bash install.sh
+- **Microsoft Azure** — text-to-speech and speech recognition (free tier available)
+- **OpenAI** — the conversation (pay-as-you-go, pennies for light use)
+
+You can run it without either. The motor controls, the eye colours and the
+sequence builder all work offline — only speech and chat need the keys.
+
+---
+
+## What it does
+
+- **Greeter** — the conversation. It listens, replies out loud, and moves as it talks.
+- **Sequence Builder** — pose the robot with sliders, record keyframes, play it back.
+- **Timeline** — a Pro Tools-style editor for longer routines, with speech timed to movement.
+- **Motor Calibration** — set each motor's limits from a web page.
+- **Bilingual** — every page and the robot's voice work in English and Spanish.
+
+Everything is driven from web pages in your browser, on the same network. No
+coding after setup.
+
+---
+
+## Running it
+
+One page starts everything else:
+
+| Your machine | Do this |
+|---|---|
+| Windows | double-click `yobot-launcher.bat` |
+| Mac | double-click `Start Ohbot Launcher.command` |
+| Raspberry Pi | it starts on boot — open `http://<your-pi>:5000` |
+
+That page starts and stops the Greeter, the Sequence Builder, the Timeline and
+Calibration.
+
+> **Only one of them can run at a time.** They all share the single USB cable to
+> the robot and will fight over it. The Launcher handles the swap for you — just
+> press the one you want.
+
+Ports, if you ever need them directly: **5000** launcher, **5001** Sequence
+Builder and Timeline, **5002** the conversation server, **5003** calibration.
+
+---
+
+## The two files that are not in this download
+
+On purpose, and there is no way around it:
+
+| What | Why it's missing | What to do |
+|---|---|---|
+| `.env` | It holds API keys. Publishing keys is how people wake up to a large bill. | Copy `.env.example` to `.env` and paste your own keys in. See [API_KEYS_SETUP.md](docs/API_KEYS_SETUP.md). |
+| `ohbotData/MotorDefinitions*.omd` | Every robot's motors are physically slightly different. Someone else's numbers can make yours strain. | Skip it at first — it runs on safe generic limits and says so at startup. Calibrate later from the Calibration page. |
+
+---
+
+## Project layout
+
 ```
+START_HERE_Windows.md   the beginner guide (Windows)
+SETUP_MacOS.md          the beginner guide (Mac)
+INSTALL_GUIDE.md        the beginner guide (Raspberry Pi)
 
-The installer will prompt you for your API keys and handle everything else automatically. Ohbot will be configured to start on every boot.
+SETUP.bat               Windows: one-click setup
+yobot-launcher.bat      Windows: start the control page
+install.sh              Pi: one-command install, sets up autostart
 
-Then open a browser on any computer on the same WiFi and go to:
+launcher_server.py      the control page you start everything from  (5000)
+gui_server.py           Sequence Builder + Timeline                 (5001)
+ohbotchat_server.py     the conversation server                     (5002)
+calibration_server.py   motor calibration                           (5003)
+ohbot_chat.py           the microphone / speech / movement loop
 
-```
-http://ohbot.local:5001
+yobot_core.py           talks to the robot's board over USB
+ohbot_azure.py          speech in and out, and the lip sync
+knowledge_base.py       what it knows and how it answers
+knowledge.json          who it is
+venue.py                where it is
+
+gui/  launcher/  calibration/    the web pages
+sequences/                       saved movement sequences
+ohbotData/                       motor calibration files
 ```
 
 ---
 
-## Documentation
+## Something not working?
 
-| Guide | What it covers |
-|-------|---------------|
-| [Installation Guide](INSTALL_GUIDE.md) | Complete setup from scratch — Pi imaging, SSH, GitHub clone, running the installer |
-| [Rebuild Guide](REBUILD_GUIDE.md) | Full manual setup reference if you prefer to do things step by step |
-| [Launcher Setup](LAUNCHER_SETUP.md) | How the web launcher works and how to add new Ohbot personalities |
+Each setup guide ends with a troubleshooting section covering the usual
+suspects — the robot not being found, no sound, the microphone not being heard,
+and the firewall prompt on Windows.
 
----
+The two that catch nearly everyone:
 
-## Important: Two Servers Can't Run at Once
-
-If you're also running the Ohbot conversation bot (a separate project), **stop it before starting this GUI**. Both use the same USB serial cable and they will conflict.
-
-```bash
-sudo systemctl stop ohbot-server
-sudo systemctl stop ohbot-conversation
-```
-
-Restart them when you're done with the GUI.
-
----
-
-## Project Structure
-
-```
-ohbot-web-gui/
-├── gui_server.py       # The Flask web server — all the robot control logic
-├── ohbot_pi.py         # Low-level Ohbot hardware wrapper
-├── ohbot_azure.py      # Azure speech (text-to-speech + microphone input)
-├── gui/
-│   └── index.html      # The entire browser GUI (one self-contained file)
-├── sequences/          # Saved animation sequences (JSON files, created at runtime)
-├── .env.example        # Template for your API keys
-├── .gitignore          # Keeps your .env out of git
-└── README.md
-```
-
----
-
-## How the Sequence Builder Works
-
-1. Use the sliders to pose Ohbot however you like
-2. Click **Add Keyframe** to record that pose at the current time
-3. Scrub the timeline and add more keyframes
-4. Press **Play** to watch Ohbot animate through your sequence
-5. Save it with a name — it gets stored as a JSON file in the `sequences/` folder
-
-Sequences can include motor positions, LED colours, and spoken text — all timed together.
+- **Nothing changed after an update?** Your browser is showing a cached page. Hard-refresh it.
+- **It greets you then goes quiet?** It's listening to the wrong microphone.
 
 ---
 
 ## Contributing
 
-Pull requests are welcome! If you improve something — new features, bug fixes, better documentation — feel free to open a PR.
+Pull requests welcome — new features, bug fixes, better documentation. If you
+build something fun with it, share it in the Issues tab. Always good to see what
+people make.
 
-If you build something cool with this, share it in the Issues tab. Always fun to see what people make.
+**Note for developers:** the Download ZIP is deliberately trimmed to what you
+need to *run* the robot. Test scripts, bench tools and project notes live in the
+repo but are stripped from the archive — `git clone` gets you everything.
 
 ---
 
 ## License
 
-MIT License — do whatever you want with it, just give a nod to the original.
-
----
+MIT — do whatever you like with it, just give a nod to the original.
 
 ## Credits
 
-Built on top of the [Ohbot Python library](https://github.com/ohbot/ohbot-python) by the Ohbot team.
-Speech powered by [Microsoft Azure Cognitive Services](https://azure.microsoft.com/en-us/products/cognitive-services/).
-AI chat powered by [OpenAI](https://openai.com).
+Built on the [Ohbot Python library](https://github.com/ohbot/ohbot-python) by the
+Ohbot team. Speech by [Microsoft Azure](https://azure.microsoft.com/en-us/products/ai-services/ai-speech).
+Conversation by [OpenAI](https://openai.com).
