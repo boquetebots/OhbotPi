@@ -342,6 +342,183 @@
     .robot-row { flex-direction: column; }
     #robot-select, #btn-load-robot { width: 100%; }
   }
+
+  /* ── Settings (keys & accounts) ─────────────────────────────────────────
+     A full-page panel rather than a browser pop-up, for the same reason as
+     the dialog above: browsers are allowed to switch pop-ups off, and then
+     the button looks broken. z-index 900 keeps it under the dialog (1000)
+     and under the language pill, so both still work on top of it. */
+  #settings-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 900;
+    overflow-y: auto;
+    padding: 24px 14px 60px;
+  }
+  #settings-overlay.visible { display: block; }
+  #settings-box {
+    max-width: 620px;
+    margin: 0 auto;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px 26px;
+  }
+  #settings-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  #settings-head h2 { font-size: 1.05rem; font-weight: 700; }
+  #settings-x {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    width: 32px; height: 32px;
+    font-size: 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  #settings-x:hover { color: var(--text); border-color: var(--accent); }
+  #settings-box .intro {
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.55;
+    margin-bottom: 16px;
+  }
+  .set-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 15px 16px;
+    margin-bottom: 14px;
+  }
+  .set-section h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 5px; }
+  .set-section .hint {
+    color: var(--muted);
+    font-size: 0.74rem;
+    line-height: 1.55;
+    margin-bottom: 12px;
+  }
+  .set-section label {
+    display: block;
+    font-size: 0.74rem;
+    color: var(--muted);
+    margin: 10px 0 4px;
+  }
+  .set-section input {
+    width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 0.82rem;
+    font-family: inherit;
+  }
+  .set-section input:focus { outline: none; border-color: var(--accent2); }
+  .set-section input::placeholder { color: #5c6780; }
+  .btn-test {
+    margin-top: 12px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 15px;
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .btn-test:hover:not(:disabled) { color: var(--text); border-color: var(--accent2); }
+  .btn-test:disabled { opacity: 0.4; cursor: wait; }
+  .set-msg {
+    display: none;
+    margin-top: 11px;
+    font-size: 0.76rem;
+    border-radius: 8px;
+    padding: 9px 12px;
+    line-height: 1.5;
+  }
+  .set-msg.show    { display: block; }
+  .set-msg.ok      { background: #0d2e1a; border: 1px solid var(--success); color: var(--success); }
+  .set-msg.problem { background: #2e1414; border: 1px solid var(--danger);  color: var(--danger); }
+  .set-msg.info    { background: #12233f; border: 1px solid var(--accent2); color: var(--accent2); }
+  #settings-advanced summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 0.78rem;
+    padding: 6px 0;
+  }
+  #settings-advanced summary:hover { color: var(--text); }
+  #settings-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+  #btn-settings-save {
+    background: var(--accent2);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #btn-settings-save:hover:not(:disabled) { opacity: 0.85; }
+  #btn-settings-save:disabled { opacity: 0.4; cursor: wait; }
+  #btn-settings-cancel {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  #btn-settings-cancel:hover { color: var(--text); }
+  #settings-lock { display: none; }
+  #settings-lock.visible { display: block; }
+  #settings-body.hidden { display: none; }
+  #settings-skip {
+    display: inline-block;
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  #settings-skip:hover { color: var(--text); }
+  #settings-link { margin-left: 18px; }
+
+  @media (max-width: 500px) {
+    #settings-box { padding: 18px 15px 22px; }
+    #settings-link { margin-left: 0; display: block; margin-top: 12px; }
+    #settings-actions { flex-direction: column-reverse; }
+    #btn-settings-save, #btn-settings-cancel { width: 100%; }
+  }
+
+  /* The AI provider dropdown, styled to match the text boxes next to it. */
+  .set-section select {
+    width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 0.82rem;
+    font-family: inherit;
+  }
+  .set-section select:focus { outline: none; border-color: var(--accent2); }
 </style>
 </head>
 <body data-i18n-pagetitle="launcher.pagetitle">
@@ -419,6 +596,8 @@
        title="Stop the current service first">
       🔧 Motor Calibration
     </a>
+    <a href="#" id="settings-link" onclick="openSettings(); return false;"
+       data-i18n="launcher.settings.link">&#9881; Settings &amp; Keys</a>
   </div>
 
   <!-- ── Which robot are you using? ────────────────────────────────────────
@@ -461,6 +640,116 @@
   <h2 id="shutdown-title" data-i18n="launcher.power.shutdown.title">Shutting down…</h2>
   <div id="countdown">3</div>
   <p id="shutdown-msg" data-i18n="launcher.power.shutdown.msg">You can safely unplug the power after the light goes out.</p>
+</div>
+
+
+<!-- ── Settings: keys and accounts ───────────────────────────────────────
+     Everything in here goes through settings.py on the Pi, which is the
+     only code allowed to touch the .env file. The real keys are never sent
+     to this page — it only ever sees a masked version like sk-proj...4f2a,
+     and an empty box means "leave that key exactly as it is". -->
+<div id="settings-overlay">
+  <div id="settings-box" role="dialog" aria-modal="true">
+
+    <div id="settings-head">
+      <h2 data-i18n="launcher.settings.title">Settings - Keys and Accounts</h2>
+      <button id="settings-x" onclick="closeSettings()" aria-label="Close">&#10005;</button>
+    </div>
+
+    <!-- The password gate. Shown instead of the form when a settings
+         password exists, or when there is not one yet and we are offering
+         to make one. -->
+    <div id="settings-lock">
+      <p class="intro" id="settings-lock-text"></p>
+      <div class="set-section">
+        <label id="settings-pw-label" for="settings-pw">Password</label>
+        <input id="settings-pw" type="password" autocomplete="off">
+        <div id="settings-pw2-wrap" style="display:none">
+          <label for="settings-pw2" data-i18n="launcher.settings.lock.create.pw2">Type it again</label>
+          <input id="settings-pw2" type="password" autocomplete="off">
+        </div>
+        <button class="btn-test" id="settings-unlock-btn" onclick="submitLock()"></button>
+        <div class="set-msg" id="settings-lock-msg"></div>
+        <br>
+        <span id="settings-skip" onclick="skipPassword()"
+              data-i18n="launcher.settings.lock.create.skip">Not now</span>
+      </div>
+    </div>
+
+    <!-- The form itself. -->
+    <div id="settings-body" class="hidden">
+      <div class="set-msg" id="settings-welcome"></div>
+      <p class="intro" data-i18n="launcher.settings.intro"></p>
+
+      <div class="set-section">
+        <h3 data-i18n="launcher.settings.voice.title">Voice - Microsoft Azure Speech</h3>
+        <p class="hint" data-i18n="launcher.settings.voice.hint"></p>
+        <label for="f-AZURE_SPEECH_KEY" data-i18n="launcher.settings.voice.key">Speech key</label>
+        <input id="f-AZURE_SPEECH_KEY" type="password" autocomplete="off" spellcheck="false">
+        <label for="f-AZURE_SPEECH_REGION" data-i18n="launcher.settings.voice.region">Region</label>
+        <input id="f-AZURE_SPEECH_REGION" type="text" autocomplete="off" spellcheck="false"
+               placeholder="eastus">
+        <div class="hint" style="margin:6px 0 0" data-i18n="launcher.settings.voice.regionhint"></div>
+        <button class="btn-test" id="btn-test-voice" onclick="testSetting('voice')"
+                data-i18n="launcher.settings.test">Test this key</button>
+        <div class="set-msg" id="msg-voice"></div>
+      </div>
+
+      <!-- The AI. Every provider in the dropdown understands the same kind
+           of request, so switching between them is a different address and
+           nothing else — see the note at the top of llm.py. -->
+      <div class="set-section">
+        <h3 data-i18n="launcher.settings.brain.title">Brain - the AI that answers</h3>
+        <p class="hint" data-i18n="launcher.settings.brain.hint"></p>
+
+        <label for="f-LLM_PROVIDER" data-i18n="launcher.settings.brain.provider">Who does the thinking</label>
+        <select id="f-LLM_PROVIDER" onchange="providerChanged(true)"></select>
+
+        <label id="lbl-provider-key" for="f-PROVIDER_KEY">API key</label>
+        <input id="f-PROVIDER_KEY" type="password" autocomplete="off" spellcheck="false">
+        <div class="hint" style="margin:6px 0 0" id="hint-provider-key"></div>
+
+        <!-- Only shown for a server you run yourself. -->
+        <div id="row-base-url" style="display:none">
+          <label for="f-LLM_BASE_URL" data-i18n="launcher.settings.brain.address">Server address</label>
+          <input id="f-LLM_BASE_URL" type="text" autocomplete="off" spellcheck="false">
+          <div class="hint" style="margin:6px 0 0" data-i18n="launcher.settings.brain.addresshint"></div>
+        </div>
+
+        <label for="f-LLM_MODEL" data-i18n="launcher.settings.brain.model">Model</label>
+        <input id="f-LLM_MODEL" type="text" autocomplete="off" spellcheck="false" list="model-list">
+        <datalist id="model-list"></datalist>
+        <div class="hint" style="margin:6px 0 0" data-i18n="launcher.settings.brain.modelhint"></div>
+
+        <button class="btn-test" id="btn-test-brain" onclick="testSetting('brain')"
+                data-i18n="launcher.settings.testai">Test the AI</button>
+        <div class="set-msg" id="msg-brain"></div>
+      </div>
+
+      <details id="settings-advanced">
+        <summary data-i18n="launcher.settings.advanced">Advanced</summary>
+        <div class="set-section" style="margin-top:10px">
+          <label for="f-AZURE_MIC_DEVICE" data-i18n="launcher.settings.mic">Microphone (Raspberry Pi only)</label>
+          <input id="f-AZURE_MIC_DEVICE" type="text" autocomplete="off" spellcheck="false"
+                 placeholder="plughw:2,0">
+          <div class="hint" style="margin:6px 0 0" data-i18n="launcher.settings.mic.hint"></div>
+
+          <label for="f-SETTINGS_PASSWORD" data-i18n="launcher.settings.pw.change">Change the settings password</label>
+          <input id="f-SETTINGS_PASSWORD" type="password" autocomplete="off">
+          <div class="hint" style="margin:6px 0 0" data-i18n="launcher.settings.pw.changehint"></div>
+        </div>
+      </details>
+
+      <div id="settings-actions">
+        <button id="btn-settings-cancel" onclick="closeSettings()"
+                data-i18n="launcher.settings.close">Close</button>
+        <button id="btn-settings-save" onclick="saveSettings()"
+                data-i18n="launcher.settings.save">Save</button>
+      </div>
+      <div class="set-msg" id="msg-save"></div>
+    </div>
+
+  </div>
 </div>
 
 <!-- In-page dialog. Filled in and shown by askConfirm/askPrompt/showNotice. -->
@@ -1146,15 +1435,481 @@
     }
   }
 
+
+  // ══ Settings: keys and accounts ═══════════════════════════════════════════
+  //
+  // The page never receives a real key. It gets a masked version like
+  // sk-proj...4f2a to show as grey placeholder text, and sending a box back
+  // empty means "leave that one exactly as it is". So even somebody sitting
+  // at this page cannot read the keys off the screen.
+  //
+  // Once a settings password is set, every request below carries a pass that
+  // the unlock step handed out. It lives in sessionStorage, so it is
+  // forgotten the moment the browser tab is closed.
+
+  const SET_TOKEN_KEY = 'ohbot_settings_token';
+
+  // The boxes that are always the same setting. The AI's key box is NOT in
+  // here, because which .env setting it writes to changes with the provider
+  // you pick — that one is handled in providerChanged() below.
+  const SET_FIELDS = ['AZURE_SPEECH_KEY', 'AZURE_SPEECH_REGION',
+                      'AZURE_MIC_DEVICE', 'SETTINGS_PASSWORD'];
+  const SET_PLACEHOLDER = {
+    'AZURE_SPEECH_REGION': 'eastus',
+    'AZURE_MIC_DEVICE':    'plughw:2,0',
+    'SETTINGS_PASSWORD':   ''
+  };
+
+  let settingsToken = sessionStorage.getItem(SET_TOKEN_KEY) || '';
+  let lockMode      = 'unlock';
+  let settingsData  = null;                          // last reply from the Pi
+  let loaded        = { provider: '', model: '', baseUrl: '' };
+
+  function setMsg(id, kind, text) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'set-msg show ' + kind;
+  }
+  function clearMsg(id) {
+    const el = document.getElementById(id);
+    if (el) { el.className = 'set-msg'; el.textContent = ''; }
+  }
+  function clearAllSettingsMsgs() {
+    ['msg-voice', 'msg-brain', 'msg-save', 'settings-lock-msg',
+     'settings-welcome'].forEach(clearMsg);
+  }
+
+  /** Every settings request goes through here so the pass is never forgotten. */
+  async function setFetch(url, options) {
+    options = options || {};
+    options.headers = Object.assign({
+      'Content-Type':    'application/json',
+      'X-Settings-Token': settingsToken
+    }, options.headers || {});
+
+    const r = await fetch(url, options);
+    const d = await r.json().catch(() => ({}));
+
+    if (r.status === 401 && d.locked) {
+      // The pass expired, or somebody changed the password from elsewhere.
+      settingsToken = '';
+      sessionStorage.removeItem(SET_TOKEN_KEY);
+      showLock('unlock');
+      throw new Error('locked');
+    }
+    return d;
+  }
+
+  // ── Opening and closing ───────────────────────────────────────────────────
+  async function openSettings() {
+    document.getElementById('settings-overlay').classList.add('visible');
+    clearAllSettingsMsgs();
+
+    let state = {};
+    try {
+      state = await (await fetch('/launcher/settings/state')).json();
+    } catch (e) {
+      setMsg('msg-save', 'problem', t('common.noserver.detail', { msg: e.message }));
+      return;
+    }
+
+    // No password yet: offer to make one, unless they already said "not now"
+    // in this browser session.
+    if (!state.password_set && !sessionStorage.getItem('ohbot_pw_skipped')) {
+      showLock('create');
+      return;
+    }
+    if (state.password_set && !settingsToken) {
+      showLock('unlock');
+      return;
+    }
+    loadSettings(state.needs_setup);
+  }
+
+  function closeSettings() {
+    document.getElementById('settings-overlay').classList.remove('visible');
+    ['settings-pw', 'settings-pw2', 'f-SETTINGS_PASSWORD'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  }
+
+  // Escape closes the panel — but only if the little dialog is not on top
+  // of it, because Escape belongs to whichever one is in front.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const back = document.getElementById('dialog-backdrop');
+    if (back && back.classList.contains('visible')) return;
+    if (document.getElementById('settings-overlay').classList.contains('visible')) {
+      closeSettings();
+    }
+  });
+
+  // ── The password gate ─────────────────────────────────────────────────────
+  function showLock(mode) {
+    lockMode = mode;
+    const creating = (mode === 'create');
+    document.getElementById('settings-lock').classList.add('visible');
+    document.getElementById('settings-body').classList.add('hidden');
+    document.getElementById('settings-pw2-wrap').style.display = creating ? 'block' : 'none';
+    document.getElementById('settings-skip').style.display     = creating ? 'inline-block' : 'none';
+
+    document.getElementById('settings-lock-text').textContent =
+      t(creating ? 'launcher.settings.lock.create.msg' : 'launcher.settings.lock.msg');
+    document.getElementById('settings-pw-label').textContent =
+      t(creating ? 'launcher.settings.lock.create.pw' : 'launcher.settings.lock.pw');
+    document.getElementById('settings-unlock-btn').textContent =
+      t(creating ? 'launcher.settings.lock.create.btn' : 'launcher.settings.lock.unlock');
+
+    clearMsg('settings-lock-msg');
+    setTimeout(() => document.getElementById('settings-pw').focus(), 60);
+  }
+
+  function skipPassword() {
+    sessionStorage.setItem('ohbot_pw_skipped', '1');
+    document.getElementById('settings-lock').classList.remove('visible');
+    loadSettings();
+  }
+
+  async function submitLock() {
+    const pw  = document.getElementById('settings-pw').value;
+    const pw2 = document.getElementById('settings-pw2').value;
+    const btn = document.getElementById('settings-unlock-btn');
+
+    if (lockMode === 'create') {
+      if (pw.length < 4)  { setMsg('settings-lock-msg', 'problem', t('launcher.settings.lock.tooshort')); return; }
+      if (pw !== pw2)     { setMsg('settings-lock-msg', 'problem', t('launcher.settings.lock.mismatch')); return; }
+    } else if (!pw) {
+      return;
+    }
+
+    btn.disabled = true;
+    try {
+      if (lockMode === 'create') {
+        // Allowed without a pass precisely because no password exists yet.
+        const saved = await setFetch('/launcher/settings', {
+          method: 'POST',
+          body: JSON.stringify({ values: { SETTINGS_PASSWORD: pw } })
+        });
+        if (!saved.success) {
+          setMsg('settings-lock-msg', 'problem', saved.error || t('launcher.settings.savefail', { error: '' }));
+          return;
+        }
+      }
+
+      const d = await setFetch('/launcher/settings/unlock', {
+        method: 'POST',
+        body: JSON.stringify({ password: pw })
+      });
+      if (!d.success) {
+        setMsg('settings-lock-msg', 'problem', d.error || t('launcher.settings.lock.wrong'));
+        return;
+      }
+
+      settingsToken = d.token;
+      sessionStorage.setItem(SET_TOKEN_KEY, settingsToken);
+      document.getElementById('settings-pw').value  = '';
+      document.getElementById('settings-pw2').value = '';
+      document.getElementById('settings-lock').classList.remove('visible');
+      loadSettings();
+    } catch (e) {
+      if (e.message !== 'locked') {
+        setMsg('settings-lock-msg', 'problem', t('common.noserver.detail', { msg: e.message }));
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // Enter submits the password box.
+  ['settings-pw', 'settings-pw2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') submitLock(); });
+  });
+
+  // ── Filling in the form ───────────────────────────────────────────────────
+  async function loadSettings(needsSetupHint) {
+    document.getElementById('settings-lock').classList.remove('visible');
+    document.getElementById('settings-body').classList.remove('hidden');
+    clearAllSettingsMsgs();
+
+    let d;
+    try {
+      d = await setFetch('/launcher/settings');
+    } catch (e) {
+      if (e.message !== 'locked') {
+        setMsg('msg-save', 'problem', t('launcher.settings.readfail'));
+      }
+      return;
+    }
+    if (!d.success) { setMsg('msg-save', 'problem', d.error || t('launcher.settings.readfail')); return; }
+
+    settingsData = d;
+
+    SET_FIELDS.forEach(name => {
+      const el   = document.getElementById('f-' + name);
+      const info = (d.fields || {})[name] || {};
+      if (!el) return;
+      el.value = info.display || '';
+      if (info.masked) {
+        el.placeholder = t('launcher.settings.saved.placeholder', { masked: info.masked });
+      } else if (SET_PLACEHOLDER[name] !== undefined) {
+        el.placeholder = SET_PLACEHOLDER[name];
+      } else {
+        el.placeholder = t('launcher.settings.empty.placeholder');
+      }
+    });
+
+    // ── The AI dropdown ────────────────────────────────────────────────────
+    // The list of providers comes from llm.py on the Pi, so adding one there
+    // makes it appear here with no change to this page.
+    // Sent as a list so the order llm.py chose survives the trip — the
+    // familiar one first, "Custom" last. Also indexed by name for lookups.
+    const sel = document.getElementById('f-LLM_PROVIDER');
+    settingsData.providerMap = {};
+    sel.innerHTML = '';
+    (d.providers || []).forEach(spec => {
+      settingsData.providerMap[spec.name] = spec;
+      const opt = document.createElement('option');
+      opt.value = spec.name;
+      opt.textContent = spec.label;
+      sel.appendChild(opt);
+    });
+
+    loaded.provider = (d.brain && d.brain.provider) || 'openai';
+    if (settingsData.providerMap[loaded.provider]) sel.value = loaded.provider;
+    loaded.model    = ((d.fields || {})['LLM_MODEL']    || {}).display || '';
+    loaded.baseUrl  = ((d.fields || {})['LLM_BASE_URL'] || {}).display || '';
+    document.getElementById('f-LLM_MODEL').value    = loaded.model;
+    document.getElementById('f-LLM_BASE_URL').value = loaded.baseUrl;
+    providerChanged(false);
+
+    if (d.needs_setup || needsSetupHint) {
+      setMsg('settings-welcome', 'info', t('launcher.settings.firstrun'));
+    }
+  }
+
+  // ── Switching AI provider ─────────────────────────────────────────────────
+  // Each provider has its own key, its own usual address and its own model
+  // names, so changing the dropdown rewrites the boxes underneath it.
+  function providerChanged(userSwitched) {
+    if (!settingsData) return;
+    const name   = document.getElementById('f-LLM_PROVIDER').value;
+    const spec   = (settingsData.providerMap || {})[name] || {};
+    const fields = settingsData.fields || {};
+    const saved  = fields[spec.key_env] || {};
+
+    // The key box writes to a different .env setting for each provider, so
+    // its label, its hint and its "already saved" text all change with it.
+    const keyBox = document.getElementById('f-PROVIDER_KEY');
+    keyBox.value = '';
+    keyBox.placeholder = saved.masked
+      ? t('launcher.settings.saved.placeholder', { masked: saved.masked })
+      : (spec.needs_key ? t('launcher.settings.empty.placeholder')
+                        : t('launcher.settings.brain.nokey'));
+    document.getElementById('lbl-provider-key').textContent =
+      t(spec.needs_key ? 'launcher.settings.brain.key'
+                       : 'launcher.settings.brain.key.optional');
+    document.getElementById('hint-provider-key').textContent =
+      t('launcher.settings.brain.where', { where: spec.where || '' });
+
+    // Only a server you run yourself needs its address typing in.
+    const ownServer = (name === 'ollama' || name === 'custom');
+    document.getElementById('row-base-url').style.display = ownServer ? 'block' : 'none';
+    document.getElementById('f-LLM_BASE_URL').placeholder = spec.base_url || 'http://…';
+
+    // Suggestions, not a fixed list — the box takes any name you type,
+    // because model names change every few months.
+    const list = document.getElementById('model-list');
+    list.innerHTML = '';
+    (spec.models || []).forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      list.appendChild(opt);
+    });
+    const modelBox = document.getElementById('f-LLM_MODEL');
+    modelBox.placeholder = spec.model
+      ? t('launcher.settings.brain.modeldefault', { model: spec.model })
+      : t('launcher.settings.empty.placeholder');
+
+    // Switching provider by hand clears the old one's model and address —
+    // a model name from the last provider will not exist on the new one.
+    if (userSwitched) {
+      modelBox.value = '';
+      document.getElementById('f-LLM_BASE_URL').value = '';
+      clearMsg('msg-brain');
+    }
+  }
+
+  // ── Test buttons ──────────────────────────────────────────────────────────
+  async function testSetting(what) {
+    const btn    = document.getElementById('btn-test-' + what);
+    const msgId  = 'msg-' + what;
+    const body   = { what: what };
+
+    // Send whatever is typed in the boxes. Empty means "test the saved one".
+    if (what === 'voice') {
+      body.AZURE_SPEECH_KEY    = document.getElementById('f-AZURE_SPEECH_KEY').value.trim();
+      body.AZURE_SPEECH_REGION = document.getElementById('f-AZURE_SPEECH_REGION').value.trim();
+    } else {
+      body.LLM_PROVIDER = document.getElementById('f-LLM_PROVIDER').value;
+      body.LLM_MODEL    = document.getElementById('f-LLM_MODEL').value.trim();
+      body.LLM_BASE_URL = document.getElementById('f-LLM_BASE_URL').value.trim();
+      body.key          = document.getElementById('f-PROVIDER_KEY').value.trim();
+    }
+
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = t('launcher.settings.testing');
+    clearMsg(msgId);
+
+    try {
+      const d = await setFetch('/launcher/settings/test', {
+        method: 'POST', body: JSON.stringify(body)
+      });
+      if (!d.success) { setMsg(msgId, 'problem', d.error || 'Test failed.'); return; }
+      setMsg(msgId, d.ok ? 'ok' : 'problem', d.message);
+    } catch (e) {
+      if (e.message !== 'locked') {
+        setMsg(msgId, 'problem', t('common.noserver.detail', { msg: e.message }));
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  }
+
+  // ── Saving ────────────────────────────────────────────────────────────────
+  async function saveSettings() {
+    const btn = document.getElementById('btn-settings-save');
+    const values = {};
+    let anything = false;
+
+    SET_FIELDS.forEach(name => {
+      const el = document.getElementById('f-' + name);
+      if (!el) return;
+      const v = el.value.trim();
+      if (v) { values[name] = v; anything = true; }
+    });
+
+    // ── The AI section ─────────────────────────────────────────────────────
+    // Sent as a group, because switching provider must ALSO clear the old
+    // one's model and address. Left behind, a model name from the previous
+    // provider silently breaks the new one. DELETE means "clear this and go
+    // back to the provider's own default".
+    const prov  = document.getElementById('f-LLM_PROVIDER').value;
+    const model = document.getElementById('f-LLM_MODEL').value.trim();
+    const base  = document.getElementById('f-LLM_BASE_URL').value.trim();
+    const pkey  = document.getElementById('f-PROVIDER_KEY').value.trim();
+    const spec  = ((settingsData || {}).providerMap || {})[prov] || {};
+
+    if (prov !== loaded.provider || model !== loaded.model ||
+        base !== loaded.baseUrl || pkey) {
+      anything = true;
+      values['LLM_PROVIDER'] = prov;
+      values['LLM_MODEL']    = model || 'DELETE';
+      values['LLM_BASE_URL'] = base  || 'DELETE';
+      if (pkey && spec.key_env) values[spec.key_env] = pkey;
+    }
+
+    if (!anything) {
+      setMsg('msg-save', 'info', t('launcher.settings.nochange'));
+      return;
+    }
+
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = t('launcher.settings.saving');
+    clearMsg('msg-save');
+
+    try {
+      const d = await setFetch('/launcher/settings', {
+        method: 'POST', body: JSON.stringify({ values: values })
+      });
+      if (!d.success) {
+        setMsg('msg-save', 'problem', t('launcher.settings.savefail', { error: d.error || '' }));
+        return;
+      }
+
+      // The password box is emptied so it is not sitting there in the open.
+      const pwBox = document.getElementById('f-SETTINGS_PASSWORD');
+      if (pwBox && pwBox.value) {
+        pwBox.value = '';
+        // Changing the password invalidates nothing server-side, but get a
+        // fresh pass anyway so the next request is against the new one.
+      }
+
+      setMsg('msg-save', 'ok', t('launcher.settings.savedok'));
+      await loadSettings();
+      setMsg('msg-save', 'ok', t('launcher.settings.savedok'));
+
+      // Nothing already running knows about the new keys — it read them once
+      // when it started. Offer to restart it.
+      const running = d.running;
+      if (running && running !== 'idle' && running !== 'unknown') {
+        const yes = await askConfirm(
+          t('launcher.settings.restart.ask', { running: t('launcher.name.' + running) }),
+          { title: t('launcher.settings.title'),
+            okLabel: t('launcher.settings.restart.yes') });
+        if (yes) {
+          setMsg('msg-save', 'info', t('launcher.settings.restarting'));
+          const r = await setFetch('/launcher/settings/restart', { method: 'POST' });
+          setMsg('msg-save', r.success ? 'ok' : 'problem',
+                 r.success ? t('launcher.settings.restarted')
+                           : (r.error || t('launcher.settings.restartfail')));
+          pollStatus();
+        }
+      }
+    } catch (e) {
+      if (e.message !== 'locked') {
+        setMsg('msg-save', 'problem', t('common.noserver.detail', { msg: e.message }));
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  }
+
+  // ── Brand-new install: open Settings by itself ────────────────────────────
+  // Without keys the robot cannot speak or think, and there is nothing on
+  // this page telling you that. So on a fresh install the panel opens itself
+  // once, with a short welcome at the top.
+  async function checkFirstRun() {
+    try {
+      const st = await (await fetch('/launcher/settings/state')).json();
+      if (st.needs_setup) {
+        const link = document.getElementById('settings-link');
+        if (link) link.style.color = 'var(--warn)';
+        if (!sessionStorage.getItem('ohbot_setup_seen')) {
+          sessionStorage.setItem('ohbot_setup_seen', '1');
+          openSettings();
+        }
+      }
+    } catch (e) { /* older launcher without settings — just carry on */ }
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────
   startPolling();
   refreshRobots();
+  checkFirstRun();
 
   // When the language is switched, i18n.js re-translates all the fixed text
   // on its own. The robot dropdown is built here in JavaScript, so it has to
   // be rebuilt by hand.
   window.addEventListener('ohbot-lang-change', () => {
     refreshRobots();
+
+    // Parts of the Settings panel are written by JavaScript rather than
+    // sitting in the page as fixed text — the grey placeholder inside each
+    // key box, and the password box's labels. i18n.js cannot re-translate
+    // those on its own, so rebuild them if the panel is open right now.
+    const overlay = document.getElementById('settings-overlay');
+    if (overlay && overlay.classList.contains('visible')) {
+      const lock = document.getElementById('settings-lock');
+      if (lock && lock.classList.contains('visible')) showLock(lockMode);
+      else loadSettings();
+    }
   });
 </script>
 </body>

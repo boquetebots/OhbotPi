@@ -68,6 +68,7 @@ except Exception as _log_err:                                # noqa: BLE001
 
 # Saved per-robot calibrations (ohbotData/robots/). See robot_profiles.py.
 import robot_profiles
+import settings          # reads and writes the .env keys — see settings.py
 
 app = Flask(__name__)
 
@@ -711,6 +712,146 @@ def restart_pi():
         subprocess.run(['sudo', 'reboot'])
     threading.Thread(target=do_restart, daemon=True).start()
     return jsonify({'success': True})
+
+
+# ── Settings: the API keys page ────────────────────────────────────────────
+# All of these talk to settings.py, which is the only code allowed to touch
+# the .env file. See the long note at the top of that file.
+#
+# The real keys NEVER come back to the browser — only a masked version like
+# sk-proj…4f2a. Sending an empty field back means "leave that one alone",
+# which is how the page can offer to change a key it cannot read.
+
+def _settings_guard():
+    """
+    None if this request is allowed to see or change settings.
+
+    Anybody on the WiFi can open this page, so once a settings password is
+    set every request has to carry the pass the unlock step handed out. If
+    no password has been set yet, everything is allowed — otherwise a fresh
+    install would lock you out of the page you need to set it from.
+    """
+    token = request.headers.get('X-Settings-Token', '')
+    if settings.token_is_good(token):
+        return None
+    return jsonify({'success': False, 'locked': True,
+                    'error': 'Enter the settings password first.'}), 401
+
+
+@app.route('/launcher/settings/state')
+def settings_state():
+    """
+    Deliberately open to everyone: the page has to ask this before it knows
+    whether to show a password box. It gives away nothing — only whether a
+    password exists and whether any keys are missing.
+    """
+    return jsonify({
+        'success':      True,
+        'needs_setup':  settings.needs_setup(),
+        'password_set': settings.password_is_set(),
+    })
+
+
+@app.route('/launcher/settings/unlock', methods=['POST'])
+def settings_unlock():
+    """Swap the settings password for a pass that lasts an hour."""
+    data = request.get_json(silent=True) or {}
+    if not settings.check_password(data.get('password', '')):
+        time.sleep(1.0)            # a small delay makes guessing impractical
+        print("🔒 Settings unlock refused — wrong password")
+        return jsonify({'success': False, 'error': 'Wrong password.'}), 401
+    return jsonify({'success': True, 'token': settings.new_token()})
+
+
+@app.route('/launcher/settings')
+def settings_read():
+    """What is filled in right now — secrets masked."""
+    guard = _settings_guard()
+    if guard:
+        return guard
+    return jsonify({
+        'success':     True,
+        'fields':      settings.read_for_page(),
+        'providers':   settings.brain_providers(),   # for the AI dropdown
+        'brain':       settings.brain_active(),      # what is in force now
+        'needs_setup': settings.needs_setup(),
+        'running':     _get_status(),
+    })
+
+
+@app.route('/launcher/settings', methods=['POST'])
+def settings_save():
+    """Save changed keys to .env. Empty fields are left as they were."""
+    guard = _settings_guard()
+    if guard:
+        return guard
+    data = request.get_json(silent=True) or {}
+    ok, result = settings.write_values(data.get('values') or {})
+    if not ok:
+        return jsonify({'success': False, 'error': result}), 400
+    return jsonify({'success': True, 'changed': result,
+                    'running': _get_status()})
+
+
+@app.route('/launcher/settings/test', methods=['POST'])
+def settings_test():
+    """
+    Try a key for real, before trusting it.
+
+    Both tests are free and silent — no speaking, no motors — so this is
+    safe to press even while the Greeter is running.
+    """
+    guard = _settings_guard()
+    if guard:
+        return guard
+    data = request.get_json(silent=True) or {}
+    what = data.get('what')
+    if what == 'brain':
+        # Everything here is optional. Whatever the page sends is tried
+        # WITHOUT saving it, so Test checks what is typed on screen.
+        ok, message = settings.test_brain(
+            provider=data.get('LLM_PROVIDER'),
+            model=data.get('LLM_MODEL'),
+            base_url=data.get('LLM_BASE_URL'),
+            key=data.get('key'),
+        )
+    elif what == 'voice':
+        ok, message = settings.test_voice(data.get('AZURE_SPEECH_KEY'),
+                                          data.get('AZURE_SPEECH_REGION'))
+    else:
+        return jsonify({'success': False, 'error': 'Unknown test.'}), 400
+    print(f"🔎 Settings test ({what}): {'PASS' if ok else 'FAIL'} — {message}")
+    return jsonify({'success': True, 'ok': ok, 'message': message})
+
+
+@app.route('/launcher/settings/restart', methods=['POST'])
+def settings_restart():
+    """
+    Restart whatever is running so it picks up the new keys.
+
+    This is the whole reason the Settings page lives on the Launcher: every
+    program reads .env once when it starts, so a saved key does nothing
+    until the program using it is restarted. The Launcher is the only thing
+    that is always running and already knows how to do that safely.
+    """
+    guard = _settings_guard()
+    if guard:
+        return guard
+
+    was = _get_status()
+    if was in ('idle', 'unknown'):
+        return jsonify({'success': True, 'status': was, 'restarted': False})
+
+    _stop_everything()
+    time.sleep(1)
+    if was == 'greeter':
+        start_greeter()
+    elif was == 'gui':
+        start_gui()
+    elif was == 'calibration':
+        start_calibration()
+    print(f"♻️  Restarted the {was} so it picks up the new settings")
+    return jsonify({'success': True, 'status': _get_status(), 'restarted': True})
 
 
 # ── Startup ────────────────────────────────────────────────────────────────

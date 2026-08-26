@@ -33,7 +33,6 @@ import os
 import time
 import threading
 from collections import deque
-from openai import OpenAI
 
 # Save everything this program prints into logs/gui-<date>.log
 try:
@@ -94,9 +93,15 @@ def _lang_from(data=None):
             return value
     return get_language()
 
-# ── OpenAI (for GUI chat) ──────────────────────────────────────────────────
-_openai_key    = os.environ.get("OPENAI_API_KEY")
-_openai_client = OpenAI(api_key=_openai_key) if _openai_key else None
+# ── The AI (for the GUI chat panel) ────────────────────────────────────────
+# Which company answers is decided in llm.py from the .env settings, and is
+# changed from the Launcher's Settings page. See the note at the top of
+# llm.py — OpenAI, Anthropic, Gemini, Grok and Ollama all speak the same
+# format, so there is only one piece of code here.
+import llm
+_ai_ready, _ai_problem = llm.is_ready()
+if _ai_ready:
+    print(f"\U0001f9e0 Chat panel AI: {llm.describe()}")
 _chat_history  = deque(maxlen=20)   # last 10 exchanges
 
 # ── Where the robot lives ──────────────────────────────────────────────────
@@ -626,9 +631,8 @@ def gui_chat():
     When "lang" is 'es' the personality gets an extra instruction telling it
     to answer in Spanish — see _system_prompt above.
     """
-    if not _openai_client:
-        return jsonify({'success': False,
-                        'error': 'No OpenAI API key — check your .env file'}), 503
+    if not _ai_ready:
+        return jsonify({'success': False, 'error': _ai_problem}), 503
     try:
         data    = request.get_json()
         message = data.get('message', '').strip()
@@ -641,14 +645,7 @@ def gui_chat():
         messages.extend(_chat_history)
         messages.append({"role": "user", "content": message})
 
-        response = _openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            max_tokens=150,
-            temperature=0.7
-        )
-
-        reply = response.choices[0].message.content.strip()
+        reply = llm.ask(messages, max_tokens=150, temperature=0.7)
 
         _chat_history.append({"role": "user",     "content": message})
         _chat_history.append({"role": "assistant", "content": reply})

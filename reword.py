@@ -90,9 +90,14 @@ VERBATIM_TOPICS = {
     "contact",    # phone and WhatsApp numbers
 }
 
-# Which model does the rewording, and how loose it's allowed to be.
-# temperature 0.8 is deliberately high — that variety is the whole point.
-MODEL = "gpt-4o-mini"
+# How loose the rewording is allowed to be. temperature 0.8 is deliberately
+# high — that variety is the whole point.
+#
+# There is no model setting here on purpose: rewording uses whichever AI the
+# robot is set to use, chosen on the Launcher's Settings page. Set MODEL to a
+# name here only if you want the rewording done by a different (say cheaper)
+# model than the one doing the talking.
+MODEL = None
 TEMPERATURE = 0.8
 MAX_TOKENS = 140
 
@@ -120,7 +125,8 @@ def _load_personality() -> str:
     That file quits on the spot if there is no API key, so this is wrapped up
     tightly. If anything at all goes wrong we use the fallback above.
     """
-    if not os.environ.get("OPENAI_API_KEY"):
+    import llm
+    if not llm.is_ready()[0]:
         return _FALLBACK_VOICE
     try:
         from ohbotchat_server import SYSTEM_PROMPT
@@ -211,24 +217,9 @@ def times_said(topic: str) -> int:
 # THE MAIN JOB
 # ============================================================================
 
-_client = None
-
-
-def _get_client():
-    """Make the OpenAI connection once, the first time it's needed."""
-    global _client
-    if _client is None:
-        try:
-            from yobot_core import load_env
-            load_env()
-        except Exception:                                  # noqa: BLE001
-            pass
-        from openai import OpenAI
-        key = os.environ.get("OPENAI_API_KEY")
-        if not key:
-            raise RuntimeError("OPENAI_API_KEY is not set")
-        _client = OpenAI(api_key=key, timeout=TIMEOUT_SECONDS)
-    return _client
+# Rewording talks to the AI through llm.py, the same as everything else, so
+# it follows whichever provider is chosen on the Settings page.
+import llm
 
 
 _INSTRUCTION = {
@@ -318,16 +309,14 @@ def reword(text: str,
     system = "\n".join(p for p in (voice, VENUE_INFO, SAFETY_RULES) if p)
 
     try:
-        response = _get_client().chat.completions.create(
-            model=MODEL,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user",   "content": prompt},
-            ],
+        new_text = llm.ask(
+            [{"role": "system", "content": system},
+             {"role": "user",   "content": prompt}],
             max_tokens=MAX_TOKENS,
             temperature=TEMPERATURE,
-        )
-        new_text = response.choices[0].message.content.strip().strip('"')
+            timeout=TIMEOUT_SECONDS,
+            model=MODEL,
+        ).strip('"')
     except Exception as e:                                 # noqa: BLE001
         print(f"⚠️  Rewording failed ({e}) — using the original wording.")
         return text

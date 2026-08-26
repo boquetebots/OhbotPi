@@ -11,7 +11,6 @@ Runs on port 5002. ohbot_chat.py connects to this server.
 """
 
 from flask import Flask, request, jsonify
-from openai import OpenAI
 import json
 import os
 import sys
@@ -36,15 +35,42 @@ except ImportError:
 
 app = Flask(__name__)
 
-# ── OpenAI setup ───────────────────────────────────────────────────────────────
-api_key = os.environ.get("OPENAI_API_KEY")
+# ── The AI ─────────────────────────────────────────────────────────────────
+# WHICH company answers — OpenAI, Anthropic, Gemini, Grok, an Ollama server on
+# your own network, or anything else that speaks the same format — is decided
+# in llm.py from the .env settings, and is changed from the Launcher's
+# Settings page. Nothing in this file needs to know which one it is.
+import llm
 
-if not api_key:
-    print("❌ ERROR: OPENAI_API_KEY not set!")
-    print("Add it to your .env file — see .env.example for instructions.")
-    exit(1)
+AI_READY, AI_PROBLEM = llm.is_ready()
 
-client = OpenAI(api_key=api_key)
+# NO AI? START ANYWAY.
+# --------------------
+# This used to quit on the spot. That was wrong for anybody installing the
+# robot for the first time: the Launcher page reports "Greeter" as running,
+# it dies a second later, and there is nothing on screen explaining why.
+#
+# Now it starts regardless. The keyword answers in knowledge.json still work
+# with no AI at all, so the robot is not mute — and anything it cannot
+# answer gets the polite line below, which tells whoever is standing there
+# exactly what to do about it.
+if AI_READY:
+    print(f"\U0001f9e0 AI: {llm.describe()}")
+else:
+    print(f"\u26a0\ufe0f  {AI_PROBLEM}")
+    print("    Keyword answers still work. Open the Launcher page in a")
+    print("    browser and use \u2699\ufe0f Settings & Keys to switch the AI on.")
+
+# What Yobot says out loud when it has no AI and the question was not one of
+# the keyword answers.
+NO_BRAIN_REPLY = {
+    "en": ("I don\u2019t have my thinking key yet, so I can only answer a few set "
+           "questions. Whoever set me up can add one on my Launcher page, "
+           "under Settings."),
+    "es": ("Todav\u00eda no tengo mi clave para pensar, as\u00ed que solo puedo "
+           "responder algunas preguntas fijas. Quien me configur\u00f3 puede "
+           "a\u00f1adirla en mi p\u00e1gina de Lanzador, en Ajustes."),
+}
 
 # Conversation memory — stores last 10 exchanges (20 messages)
 conversation_history = deque(maxlen=20)
@@ -243,19 +269,25 @@ def detect_intent():
                 'language':     local['language'],
             })
 
+        # No AI key: everything the keyword matcher missed is just chat.
+        # /chat below answers those with the "no key yet" line.
+        if not AI_READY:
+            return jsonify({
+                'success':      True,
+                'intent':       'general_chat',
+                'search_terms': None,
+                'topic':        None,
+                'language':     _detect_language(user_message),
+            })
+
         # ── LLM FALLBACK (for ambiguous questions) ────────────────────────────
         print("🤖 Ambiguous — asking LLM to classify")
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": INTENT_PROMPT},
-                {"role": "user",   "content": user_message}
-            ],
+        raw = llm.ask(
+            [{"role": "system", "content": INTENT_PROMPT},
+             {"role": "user",   "content": user_message}],
             max_tokens=100,
-            temperature=0.1
+            temperature=0.1,
         )
-
-        raw = response.choices[0].message.content.strip()
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
 
@@ -313,15 +345,13 @@ def chat():
         messages.extend(conversation_history)
         messages.append({"role": "user", "content": user_message})
 
-        print("🤖 Calling OpenAI...")
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            max_tokens=150,
-            temperature=0.7
-        )
+        if not AI_READY:
+            reply = NO_BRAIN_REPLY.get(lang, NO_BRAIN_REPLY["en"])
+            print(f"⚠️  No AI key — answering: {reply}")
+            return jsonify({'success': True, 'response': reply})
 
-        assistant_message = response.choices[0].message.content.strip()
+        print(f"🤖 Asking {llm.describe()}...")
+        assistant_message = llm.ask(messages, max_tokens=150, temperature=0.7)
         print(f"📤 Response: {assistant_message}")
 
         conversation_history.append({"role": "user",      "content": user_message})
