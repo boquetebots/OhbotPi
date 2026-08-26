@@ -2,7 +2,7 @@
 REM ===========================================================================
 REM  yobot-stop.bat  —  stop everything Yobot, no matter how it was started
 REM ===========================================================================
-REM  Run it from D:\Projects\OhbotPi2 with:   .\yobot-stop.bat
+REM  Double-click it, or run  .\yobot-stop.bat  from this folder.
 REM
 REM  Use this when:
 REM    - you've lost the window something was running in
@@ -43,6 +43,6 @@ echo Checking for the conversation bot...
 powershell -NoProfile -NonInteractive -Command "$names = 'ohbot_chat.py','ohbotchat_server.py','gui_server.py','calibration_server.py','launcher_server.py','yobot_win.py'; $hits = Get-CimInstance Win32_Process | Where-Object { $_.Name -like 'python*' -and $_.CommandLine }; $any = $false; foreach ($p in $hits) { foreach ($n in $names) { if ($p.CommandLine -like ('*' + $n + '*')) { Write-Host ('   stopping ' + $n + ' (process ' + $p.ProcessId + ')'); Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue; $any = $true; break } } }; if (-not $any) { Write-Host '   none running' }"
 
 echo.
-echo Done. Start the Launcher again with:  .\yobot-launcher.bat
+echo Done. Start Yobot again by double-clicking yobot-launcher.bat
 echo.
 endlocal

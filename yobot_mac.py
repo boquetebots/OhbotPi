@@ -27,7 +27,7 @@ Audio: uses the Mac's current default microphone and speaker
 (whatever is selected in System Settings → Sound).
 
 Remember: only one computer can run Yobot at a time. Stop the Pi's
-services and plug the USB cable into the Mac first — see SETUP_MacOS.md.
+services and plug the USB cable into the Mac first — see the "Mac" folder.
 """
 
 import os
@@ -67,7 +67,7 @@ def check_dependencies(need_azure=False, need_chat=False):
         print("   python3 -m venv ~/yobot-venv")
         print(f"   ~/yobot-venv/bin/pip install {' '.join(missing)}\n")
         print("   Then always run Yobot with:  ~/yobot-venv/bin/python3 yobot_mac.py")
-        print("   (Full guide: SETUP_MacOS.md in the OhbotPi2 folder)")
+        print("   (Full guide: Mac/START HERE.md in the project folder)")
         sys.exit(1)
 
 

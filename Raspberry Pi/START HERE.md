@@ -36,7 +36,7 @@ You'll paste both of these in during the install. If you skip them, Ohbot's moto
 
 ## Part 1 — Image the SD Card
 
-If you have not set up a Raspberry Pi before, start with `docs/PI_FIRST_SETUP.md`, then come back here.
+If you have not set up a Raspberry Pi before, start with `First time Pi setup.md` in this same folder, then come back here.
 ---
 
 ## Part 2 — Boot the Pi and Find Its Address

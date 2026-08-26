@@ -54,7 +54,11 @@ That's the only decision in the whole installer. Everything else, click through.
 
 ## Step 3 — Set Yobot up
 
-Open the Yobot folder and **double-click `SETUP.bat`**.
+Open the Yobot folder, go into the **`Windows`** folder, and
+**double-click `SETUP.bat`**.
+
+> Everything you ever need to double-click on Windows lives in that one
+> folder. You can ignore the rest of the project.
 
 A black window opens and installs everything Yobot needs. It takes a few
 minutes — the speech package is a big one. Let it finish.
@@ -88,7 +92,8 @@ Both have free or very cheap tiers. Light use costs pennies.
 
 **Put them in the file**
 
-In the Yobot folder there's a file called **`.env.example`**. Make a copy of
+In the **main** Yobot folder — one level up from `Windows` — there's a file
+called **`.env.example`**. Make a copy of
 it, and rename the copy to exactly **`.env`** — no `.example`, no `.txt`.
 Open it in Notepad and fill in your three values:
 
@@ -114,7 +119,8 @@ Run `SETUP.bat` again and it should now report `.env` as found.
 ## Step 5 — The motor settings file
 
 Each robot's motors are slightly different, so each has its own settings file,
-ending in **`.omd`**. It goes in the **`ohbotData`** folder.
+ending in **`.omd`**. It goes in the **`ohbotData`** folder, in the main Yobot
+folder.
 
 - **If Michael set up your robot**, ask him for its `.omd` file and drop it in
 - **If your robot has never been calibrated**, skip this for now. Yobot will
@@ -179,6 +185,8 @@ If a window won't close or something seems stuck, **double-click
 
 ## The Four Buttons, In Short
 
+All four are in the **`Windows`** folder.
+
 | Double-click this | To do this |
 |-------------------|-----------|
 | `SETUP.bat` | Set Yobot up. Once, at the start. |
@@ -196,7 +204,7 @@ If a window won't close or something seems stuck, **double-click
 2. Check Yobot's power supply is actually on
 3. Try `yobot-test.bat` again
 
-Still stuck? Open PowerShell in the Yobot folder and run `.\yobot.bat ports`.
+Still stuck? Open PowerShell in the `Windows` folder and run `.\yobot.bat ports`.
 That lists what the laptop can see. If **nothing** is listed, Windows is
 missing the driver for Yobot's controller board — open **Device Manager** and
 look for a yellow warning triangle. The name beside it tells you which driver

@@ -2,21 +2,24 @@
 REM ===========================================================================
 REM  yobot-test.bat  -  does the robot move?
 REM ===========================================================================
-REM
-REM  DOUBLE-CLICK THIS FILE. This is Step 6 of START_HERE_Windows.md.
+REM  DOUBLE-CLICK THIS FILE. This is Step 6 of "START HERE.md" in this folder.
 REM
 REM  Yobot should turn its head, nod, blink, open its mouth and change eye
-REM  colour. No internet needed, no API keys needed - this only talks to the
-REM  robot down the USB cable. If this works, the hardware side is good.
+REM  colour. No internet, no API keys - this only talks to the robot down the
+REM  USB cable. If this works, the hardware side is good.
 REM ===========================================================================
 
 setlocal
-title Yobot - Movement Test
-
+REM --- Find the project folder --------------------------------------------
 set "HERE=%~dp0"
-set "VENVPY=%USERPROFILE%\yobot-venv\Scripts\python.exe"
+if "%HERE:~-1%"=="\" set "HERE=%HERE:~0,-1%"
+set "PROJ=%HERE%"
+if not exist "%PROJ%\yobot_win.py" (
+    for %%I in ("%HERE%\..") do set "PROJ=%%~fI"
+)
 
-cd /d "%HERE%"
+title Yobot - Movement Test
+set "VENVPY=%USERPROFILE%\yobot-venv\Scripts\python.exe"
 
 echo.
 echo ===========================================================
@@ -24,10 +27,9 @@ echo    YOBOT  -  MOVEMENT TEST
 echo ===========================================================
 echo.
 
-if not exist "%HERE%yobot_win.py" (
-    echo  [X] yobot_win.py is not next to this file, so this is not
-    echo      the Yobot folder. Move yobot-test.bat into the folder
-    echo      that has yobot_win.py in it.
+if not exist "%PROJ%\yobot_win.py" (
+    echo  [X] I could not find the Yobot project files.
+    echo      This file belongs in the project's "Windows" folder.
     echo.
     pause
     endlocal
@@ -37,8 +39,8 @@ if not exist "%HERE%yobot_win.py" (
 if not exist "%VENVPY%" (
     echo  [X] Yobot has not been set up on this laptop yet.
     echo.
-    echo      Double-click  SETUP.bat  first, let it finish, then
-    echo      come back to this one.
+    echo      Double-click  SETUP.bat  in this folder first, let it
+    echo      finish, then come back to this one.
     echo.
     pause
     endlocal
@@ -58,7 +60,8 @@ echo.
 echo  Running the test - watch the robot, not the screen...
 echo.
 
-"%VENVPY%" "%HERE%yobot_win.py" test
+cd /d "%PROJ%"
+"%VENVPY%" "%PROJ%\yobot_win.py" test
 set "RESULT=%ERRORLEVEL%"
 
 echo.
@@ -83,7 +86,7 @@ if "%RESULT%"=="0" (
     echo.
     echo   Still nothing? Windows may be missing the driver for
     echo   Yobot's controller board. See Troubleshooting in
-    echo   START_HERE_Windows.md.
+    echo   "START HERE.md".
 )
 echo -----------------------------------------------------------
 echo.

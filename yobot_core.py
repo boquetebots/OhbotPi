@@ -633,7 +633,7 @@ def init(portName=None):
             print("  If Yobot's port is listed above, put this line in your .env file:")
             print("    YOBOT_SERIAL_PORT=COM4          (use the right number)")
             print("  If NO port appears when the USB cable is plugged in, Windows is")
-            print("  missing the USB-to-serial driver — see SETUP_Windows.md.")
+            print("  missing the USB-to-serial driver — see Windows\\START HERE.md.")
         return False
 
     # Open serial port

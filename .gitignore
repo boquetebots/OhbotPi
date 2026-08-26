@@ -99,3 +99,10 @@ _audio_check_*.wav
 
 # Windows desktop shortcuts - local to one PC, no use to anyone else
 *.lnk
+
+# temporary holding folder - safe to trash
+_to_delete/
+
+# The *key* / *keys* rules above are a deliberately wide net for secrets.
+# This one file is a GUIDE about getting keys, not a key. Let it through.
+!Getting your API keys.md

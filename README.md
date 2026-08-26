@@ -11,20 +11,23 @@ code every time. 😄
 
 ---
 
-## Start here
+## Start here — open the folder for your computer
 
-Pick your machine. Each guide assumes you know nothing about code.
+Everything you need is in one folder. You can ignore the rest.
 
-| If you're on... | Read this |
-|---|---|
-| **Windows** | **[START_HERE_Windows.md](START_HERE_Windows.md)** — blank laptop to talking robot |
-| **Mac** | **[SETUP_MacOS.md](SETUP_MacOS.md)** |
-| **Raspberry Pi** | **[INSTALL_GUIDE.md](INSTALL_GUIDE.md)** — from a blank SD card |
-| **Raspberry Pi, en español** | **[GUIA_ESTUDIANTES_Pi5.md](GUIA_ESTUDIANTES_Pi5.md)** |
+| If you're on... | Open this folder | And read |
+|---|---|---|
+| **Windows** | `Windows` | [START HERE.md](Windows/START%20HERE.md) |
+| **Mac** | `Mac` | [START HERE.md](Mac/START%20HERE.md) |
+| **Raspberry Pi** | `Raspberry Pi` | [START HERE.md](Raspberry%20Pi/START%20HERE.md) |
+| **Raspberry Pi, en español** | `Raspberry Pi` | [EMPIEZA AQUI.md](Raspberry%20Pi/EMPIEZA%20AQUI%20%28Espanol%29.md) |
 
-Whichever you pick, you'll also need **[two API keys](docs/API_KEYS_SETUP.md)** —
+Whichever you pick, you'll also need **[two API keys](Getting%20your%20API%20keys.md)** —
 one from Microsoft Azure for the voice and the listening, one from OpenAI for the
 conversation. Both have free or very cheap tiers.
+
+Each platform folder holds that platform's guide *and* the files you
+double-click. Nothing else in the project needs opening.
 
 ---
 
@@ -55,8 +58,7 @@ sequence builder all work offline — only speech and chat need the keys.
 - **Motor Calibration** — set each motor's limits from a web page.
 - **Bilingual** — every page and the robot's voice work in English and Spanish.
 
-Everything is driven from web pages in your browser, on the same network. No
-coding after setup.
+Everything is driven from web pages in your browser. No coding after setup.
 
 ---
 
@@ -66,8 +68,8 @@ One page starts everything else:
 
 | Your machine | Do this |
 |---|---|
-| Windows | double-click `yobot-launcher.bat` |
-| Mac | double-click `Start Ohbot Launcher.command` |
+| Windows | double-click `Windows\yobot-launcher.bat` |
+| Mac | double-click `Mac/Start Ohbot Launcher.command` |
 | Raspberry Pi | it starts on boot — open `http://<your-pi>:5000` |
 
 That page starts and stops the Greeter, the Sequence Builder, the Timeline and
@@ -88,33 +90,49 @@ On purpose, and there is no way around it:
 
 | What | Why it's missing | What to do |
 |---|---|---|
-| `.env` | It holds API keys. Publishing keys is how people wake up to a large bill. | Copy `.env.example` to `.env` and paste your own keys in. See [API_KEYS_SETUP.md](docs/API_KEYS_SETUP.md). |
+| `.env` | It holds API keys. Publishing keys is how people wake up to a large bill. | Copy `.env.example` to `.env` and paste your own keys in. See [Getting your API keys.md](Getting%20your%20API%20keys.md). |
 | `ohbotData/MotorDefinitions*.omd` | Every robot's motors are physically slightly different. Someone else's numbers can make yours strain. | Skip it at first — it runs on safe generic limits and says so at startup. Calibrate later from the Calibration page. |
 
 ---
 
 ## Project layout
 
+Only the top three folders concern a normal user.
+
 ```
-START_HERE_Windows.md   the beginner guide (Windows)
-SETUP_MacOS.md          the beginner guide (Mac)
-INSTALL_GUIDE.md        the beginner guide (Raspberry Pi)
+READ ME FIRST.txt        which folder is yours
+Getting your API keys.md needed on every platform
 
-SETUP.bat               Windows: one-click setup
-yobot-launcher.bat      Windows: start the control page
-install.sh              Pi: one-command install, sets up autostart
+Windows/                 the guide + everything you double-click
+   START HERE.md
+   SETUP.bat             set up, once
+   yobot-test.bat        does the robot move?
+   yobot-launcher.bat    use Yobot — the everyday one
+   yobot-stop.bat        unstick things
+   yobot.bat             the same, from a terminal
+   Reference - Windows in detail.md
 
-launcher_server.py      the control page you start everything from  (5000)
-gui_server.py           Sequence Builder + Timeline                 (5001)
-ohbotchat_server.py     the conversation server                     (5002)
-calibration_server.py   motor calibration                           (5003)
-ohbot_chat.py           the microphone / speech / movement loop
+Mac/
+   START HERE.md
+   Start Ohbot Launcher.command
 
-yobot_core.py           talks to the robot's board over USB
-ohbot_azure.py          speech in and out, and the lip sync
-knowledge_base.py       what it knows and how it answers
-knowledge.json          who it is
-venue.py                where it is
+Raspberry Pi/
+   START HERE.md
+   First time Pi setup.md
+   EMPIEZA AQUI (Espanol).md  +  .html
+
+install.sh               Pi: run this from the main folder
+
+── below here is the robot itself; you never need to open it ──
+
+launcher_server.py       the control page                 (5000)
+gui_server.py            Sequence Builder + Timeline      (5001)
+ohbotchat_server.py      the conversation server          (5002)
+calibration_server.py    motor calibration                (5003)
+ohbot_chat.py            the microphone / speech / movement loop
+yobot_core.py            talks to the robot's board over USB
+ohbot_azure.py           speech in and out, and the lip sync
+knowledge_base.py        what it knows and how it answers
 
 gui/  launcher/  calibration/    the web pages
 sequences/                       saved movement sequences
@@ -125,7 +143,7 @@ ohbotData/                       motor calibration files
 
 ## Something not working?
 
-Each setup guide ends with a troubleshooting section covering the usual
+Each START HERE guide ends with a troubleshooting section covering the usual
 suspects — the robot not being found, no sound, the microphone not being heard,
 and the firewall prompt on Windows.
 
@@ -144,7 +162,8 @@ people make.
 
 **Note for developers:** the Download ZIP is deliberately trimmed to what you
 need to *run* the robot. Test scripts, bench tools and project notes live in the
-repo but are stripped from the archive — `git clone` gets you everything.
+repo but are stripped from the archive — `git clone` gets you everything. The
+rules are at the bottom of `.gitattributes`.
 
 ---
 

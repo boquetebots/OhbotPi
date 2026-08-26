@@ -45,7 +45,7 @@ selected in Settings → System → Sound). Playback uses winsound, which is
 built into Python — nothing extra to install.
 
 Remember: only one computer can run Yobot at a time. Stop the Pi's
-services and plug the USB cable into the PC first — see SETUP_Windows.md.
+services and plug the USB cable into the PC first — see the "Windows" folder.
 """
 
 import os
@@ -90,7 +90,7 @@ def check_dependencies(need_azure=False, need_chat=False):
         print("    (In Command Prompt instead: drop the & and use %USERPROFILE%")
         print("     where PowerShell uses $HOME.)\n")
         print("    Then run Yobot with:   .\\yobot.bat test")
-        print("    Full guide: SETUP_Windows.md in the project folder")
+        print("    Full guide: Windows\\START HERE.md in the project folder")
         sys.exit(1)
 
 
@@ -126,7 +126,7 @@ def list_ports():
         print("    2. Yobot's power supply is off")
         print("    3. The USB-to-serial driver isn't installed — open Device")
         print("       Manager and look for a yellow warning triangle under")
-        print("       'Other devices'. See SETUP_Windows.md for the fix.")
+        print("       'Other devices'. See Windows\\START HERE.md for the fix.")
         return
 
     for p in ports:

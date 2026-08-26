@@ -3,7 +3,7 @@
 **Date:** August 12, 2026
 **What this covers:** everything needed to run Yobot from a Windows PC instead of the Pi or the Mac.
 
-This mirrors `SETUP_MacOS.md`. If you've done the Mac, this will feel familiar — the same
+This mirrors the Mac guide (`Mac/START HERE.md`). If you've done the Mac, this will feel familiar — the same
 code runs on all three machines, it just picks different behaviour underneath.
 
 ---
@@ -65,7 +65,7 @@ server — already had no platform-specific code and needs nothing new.
 > or when it fails and you need to do a bit by hand.
 >
 > For a complete beginner on a blank laptop, hand them
-> **`START_HERE_Windows.md`** instead of this file. Same job, no jargon.
+> **`START HERE.md`** in this same folder instead. Same job, no jargon.
 
 ### Step 1 — Install Python
 

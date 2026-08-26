@@ -1,0 +1,67 @@
+===========================================================================
+  YOBOT  -  a robot head that listens, thinks and talks back
+===========================================================================
+
+  WHICH FOLDER IS MINE?
+
+      On a Windows PC ........  open the  "Windows"  folder
+      On a Mac ...............  open the  "Mac"  folder
+      On a Raspberry Pi ......  open the  "Raspberry Pi"  folder
+
+  Inside each one there is a file called START HERE. Read that.
+  It assumes you know nothing about code, and it is written to be
+  followed in order.
+
+  Everything you need to double-click is in your own folder too.
+  You can ignore the rest of this project - it is the robot's
+  innards and it looks after itself.
+
+  En espanol: abre la carpeta "Raspberry Pi" y lee
+  "EMPIEZA AQUI (Espanol)".
+
+
+---------------------------------------------------------------------------
+  TWO THINGS YOU WILL NEED WHATEVER YOU ARE ON
+---------------------------------------------------------------------------
+
+  1. TWO FREE-ISH ACCOUNTS - one with Microsoft Azure for the voice
+     and the listening, one with OpenAI for the conversation. Light
+     use costs pennies. See "Getting your API keys.md" in this folder.
+
+  2. A FILE CALLED .env - it holds those keys. It is deliberately NOT
+     in this download, because publishing keys is how people wake up
+     to a large bill. There is a template called .env.example here;
+     copy it, rename the copy to .env, and paste your keys in.
+
+
+---------------------------------------------------------------------------
+  A WINDOWS TRAP WORTH KNOWING ABOUT
+---------------------------------------------------------------------------
+
+  Windows lets you look inside a ZIP file as though it were an
+  ordinary folder. Things half-work if you try to run Yobot from in
+  there, in ways that are very confusing.
+
+  Right-click the ZIP, choose "Extract All", and work in the real
+  folder that appears.
+
+  Windows also hides file extensions by default, which matters when
+  you make the .env file - a file that shows as ".env" may really be
+  ".env.txt", and Yobot will not find it. In File Explorer turn on
+  View - Show - File name extensions.
+
+
+---------------------------------------------------------------------------
+  STUCK?
+---------------------------------------------------------------------------
+
+  Every START HERE guide ends with a Troubleshooting section. The two
+  that catch nearly everyone:
+
+    - Nothing changed after an update?  Your browser is showing you a
+      saved copy of the page. Hard-refresh it.
+
+    - It greets you, then goes silent?  It is listening to the wrong
+      microphone.
+
+===========================================================================
