@@ -8,7 +8,7 @@ Building a new Raspberry Pi from scratch to run Yobot at the Rincón Clubhouse.
 | **Username** | `yobot` |
 | **Project folder on the Pi** | `/home/yobot/Projects/Ohbot/` |
 | **Repo** | `https://github.com/boquetebots/OhbotPi.git` |
-| **Old Pi (for reference)** | user `michael`, IP `192.168.50.155` |
+| **Old Pi (for reference)** | user `<your-user>`, IP `<your-pi-address>` |
 
 **Do not reformat the old SD card.** It is your only way back if this goes
 wrong. Put it in a drawer until Pibot has worked at the Clubhouse for a week.
@@ -161,7 +161,7 @@ you had a different Pi at this name before. Clear the old record and retry:
 
 ```
 ssh-keygen -R pibot.local
-ssh-keygen -R 192.168.50.155
+ssh-keygen -R <your-pi-address>
 ```
 
 **If `pibot.local` isn't found at all,** jump to
@@ -666,7 +666,7 @@ longer being shareable. Both are reasonable — just pick one on purpose.
 
 Fixed on 7 August 2026 while writing this:
 
-- **`gui/timeline.html`** had `http://192.168.50.155:5001/gui` hardcoded in the
+- **`gui/timeline.html`** had `http://<your-pi-address>:5001/gui` hardcoded in the
   "← Sequence Builder" link. Now a relative link, so it works on any Pi.
 
 - **`push_to_github.command`** was rewritten. The old one had a *fixed list of

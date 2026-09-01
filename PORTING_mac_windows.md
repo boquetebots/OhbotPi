@@ -161,7 +161,7 @@ Plain-English install steps, mirroring `SETUP_MacOS.md`.
 - **Python 3** from python.org — tick **"Add Python to PATH"** during install
 - A virtual environment (same idea as the Mac's, but the Windows path is `Scripts\python.exe` instead of `bin/python3`)
 - These packages: flask, pyserial, lxml, openai, httpx, azure-cognitiveservices-speech
-- A copy of **`.env`** (API keys) and the **`ohbotData`** folder (Yobot's calibration) — either by mapping the Pi's shared folder as a network drive (`\\192.168.50.155\Projects`) or copying the project folder to the PC
+- A copy of **`.env`** (API keys) and the **`ohbotData`** folder (Yobot's calibration) — either by mapping the Pi's shared folder as a network drive (`\\<your-pi-address>\Projects`) or copying the project folder to the PC
 - The Ohbot USB cable plugged into the PC — and remember the standing rule: only one computer can drive the robot at a time
 
 ---

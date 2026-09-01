@@ -50,7 +50,7 @@ If the Pi is on the network, this will show its IP address. Press Ctrl-C to stop
 **Option C — Use a network scanner**
 Download the free app **LanScan** from the Mac App Store. It lists every device on your network with its IP address.
 
-**Once you have the IP address, write it down.** The old IP was `192.168.50.155` — it may or may not be the same on a fresh install.
+**Once you have the IP address, write it down.** A fresh install may or may not end up with the same address the Pi had before.
 
 ---
 
@@ -58,7 +58,7 @@ Download the free app **LanScan** from the Mac App Store. It lists every device 
 
 On a fresh install, the Pi's IP address can change every time it reboots. Fix this in your router so it always gets the same address.
 
-Log into your router's admin page, find the DHCP or "Address Reservation" section, and reserve an IP for the Pi by its MAC address. Assign it `192.168.50.155` (the old address) so everything stays the same — or pick any address and note it down.
+Log into your router's admin page, find the DHCP or "Address Reservation" section, and reserve an IP for the Pi by its MAC address. Assign it the address the Pi had before, so everything stays the same — or pick any address and note it down.
 
 ---
 
@@ -67,10 +67,10 @@ Log into your router's admin page, find the DHCP or "Address Reservation" sectio
 On your Mac, open **Terminal** and connect:
 
 ```bash
-ssh YOUR_USERNAME@192.168.50.155
+ssh YOUR_USERNAME@<your-pi-address>
 ```
 
-Replace `192.168.50.155` with the actual IP if it's different. Type `yes` if asked about the host key, then enter the password you set in Step 1.
+Put your Pi's own address in place of the one above. Type `yes` if asked about the host key, then enter the password you set in Step 1.
 
 You're now controlling the Pi from your Mac.
 
@@ -81,7 +81,7 @@ You're now controlling the Pi from your Mac.
 Still in Terminal on your Mac (not SSH — open a new tab with Cmd-T):
 
 ```bash
-scp ~/Projects/OhbotPi2/Ohbot_rebuild_2026-06-13.zip YOUR_USERNAME@192.168.50.155:~/
+scp ~/Projects/OhbotPi2/Ohbot_rebuild_2026-06-13.zip YOUR_USERNAME@<your-pi-address>:~/
 ```
 
 This copies the zip file to the Pi's home folder. It will take a minute or two.
@@ -248,7 +248,7 @@ sudo systemctl enable smbd
 
 1. Open **Finder** on your Mac
 2. In the menu bar: **Go → Connect to Server** (or press **⌘K**)
-3. Type: `smb://192.168.50.155/Projects` (use your actual IP if different)
+3. Type: `smb://<your-pi-address>/Projects` (use your actual IP if different)
 4. Click **Connect**
 5. Enter username `YOUR_USERNAME` and the SAMBA password you just set
 6. The Projects folder will appear in Finder
@@ -268,7 +268,7 @@ To reconnect automatically every time you log into your Mac: go to **System Sett
 
 ## Step 14 — Update the IP Address in CLAUDE.md
 
-If the Pi's IP address changed from `192.168.50.155`, update it in two places:
+If the Pi's IP address changed, update it in two places:
 
 **In `~/Projects/OhbotPi2/CLAUDE.md`** — find the line that says `Pi IP address` and update it.
 
@@ -281,7 +281,7 @@ You can also tell Claude in your next session: "The Pi's IP address is now X.X.X
 Make sure everything is running:
 
 ```bash
-ssh YOUR_USERNAME@192.168.50.155
+ssh YOUR_USERNAME@<your-pi-address>
 systemctl --user status ohbot-server
 systemctl --user status ohbot-conversation
 ```
@@ -324,7 +324,7 @@ systemctl --user restart ohbot-server ohbot-conversation
 **"WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED" when using SSH or SCP**
 Your Mac remembers the old Pi's security fingerprint. Clear it and reconnect:
 ```bash
-ssh-keygen -R 192.168.50.155
+ssh-keygen -R <your-pi-address>
 ```
 Then retry your SSH or SCP command and type `yes` when asked to confirm the new fingerprint.
 
@@ -363,10 +363,10 @@ See above — unplug and replug the USB cable, then restart the server.
 
 | What | Details |
 |------|---------|
-| Pi IP address | `192.168.50.155` (update if changed) |
-| SSH command | `ssh YOUR_USERNAME@192.168.50.155` |
-| SAMBA share | `smb://192.168.50.155/Projects` |
+| Pi IP address | fill in your own |
+| SSH command | `ssh YOUR_USERNAME@<your-pi-address>` |
+| SAMBA share | `smb://<your-pi-address>/Projects` |
 | Project folder on Pi | `/home/YOUR_USERNAME/Projects/Ohbot/` |
-| GUI URL | `http://192.168.50.155:5001/gui` |
-| Bot URL | `http://192.168.50.155:5000` |
+| GUI URL | `http://<your-pi-address>:5001/gui` |
+| Bot URL | `http://<your-pi-address>:5000` |
 | Rebuild zip | `Ohbot_rebuild_2026-06-13.zip` in OhbotPi2 folder |

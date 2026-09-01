@@ -186,9 +186,9 @@ This is a one-time install. Windows 11 usually handles it automatically, but not
 Only one computer can drive Yobot at a time — they'd fight over the one USB cable.
 
 1. Stop the Pi's services. The easiest way is the Pi's own Launcher page at
-   http://192.168.50.155:5000 — press its **Stop** button. Or from PowerShell:
+   http://<your-pi-address>:5000 — press its **Stop** button. Or from PowerShell:
    ```
-   ssh michael@192.168.50.155 "systemctl --user stop ohbot-server ohbot-conversation"
+   ssh <your-user>@<your-pi-address> "systemctl --user stop ohbot-server ohbot-conversation"
    ```
    (Windows 10 and 11 have `ssh` built in.)
 2. Unplug Yobot's **USB cable from the Pi** and plug it into the **PC**.
@@ -238,7 +238,7 @@ That starts the Launcher and opens http://localhost:5000 in your browser. From t
 page you can start and stop the Greeter, the Sequence Builder, the Timeline, and
 Calibration. Leave the black window open — closing it stops the Launcher.
 
-`localhost` just means "this computer" — it replaces the Pi's `192.168.50.155`.
+`localhost` just means "this computer" — on the Pi you would use the Pi's own address instead.
 
 **Or start a page directly**, if you'd rather skip the Launcher. Each one is its own
 program; `Ctrl-C` in the window stops it.
@@ -268,7 +268,7 @@ Ports: 5000 launcher, 5001 GUI/Timeline, 5002 brain server, 5003 calibration.
 2. Plug the USB cable back into the Pi.
 3. Restart the services:
    ```
-   ssh michael@192.168.50.155 "systemctl --user start ohbot-server ohbot-conversation"
+   ssh <your-user>@<your-pi-address> "systemctl --user start ohbot-server ohbot-conversation"
    ```
 
 ---

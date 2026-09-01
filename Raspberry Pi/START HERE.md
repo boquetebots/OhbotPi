@@ -70,7 +70,7 @@ If you set the hostname to `ohbot` during imaging, you can often just use `ohbot
 1. Open a browser and go to your router's admin page. This is usually `192.168.1.1` or `192.168.0.1` — it's often printed on the bottom of your router.
 2. Log in and look for a section called **Connected Devices**, **DHCP Clients**, or **Device List**
 3. Find your Pi by the hostname you gave it (e.g. `ohbot`)
-4. The number next to it (like `192.168.50.155`) is its IP address — write it down
+4. The number next to it (like `192.168.1.42`) is its IP address — write it down
 
 ---
 

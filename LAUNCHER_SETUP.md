@@ -19,8 +19,8 @@ This sets up the launcher so it starts automatically when the Pi boots.
 Via SAMBA (if mounted) or SCP from your Mac:
 
 ```bash
-scp launcher_server.py YOUR_USERNAME@192.168.50.155:/home/YOUR_USERNAME/Projects/Ohbot/
-scp -r launcher/ YOUR_USERNAME@192.168.50.155:/home/YOUR_USERNAME/Projects/Ohbot/
+scp launcher_server.py YOUR_USERNAME@<your-pi-address>:/home/YOUR_USERNAME/Projects/Ohbot/
+scp -r launcher/ YOUR_USERNAME@<your-pi-address>:/home/YOUR_USERNAME/Projects/Ohbot/
 ```
 
 ---
@@ -30,7 +30,7 @@ scp -r launcher/ YOUR_USERNAME@192.168.50.155:/home/YOUR_USERNAME/Projects/Ohbot
 SSH into the Pi first:
 
 ```bash
-ssh YOUR_USERNAME@192.168.50.155
+ssh YOUR_USERNAME@<your-pi-address>
 ```
 
 Then disable the greeter services so they no longer start on boot:
@@ -138,7 +138,7 @@ You only need to run this once.
 Open a browser and go to:
 
 ```
-http://192.168.50.155:5000
+http://<your-pi-address>:5000
 ```
 
 You should see the launcher page with two choices.

@@ -34,7 +34,7 @@ and password.
 | Pi's hostname | `pibot` → `pibot.local` |
 
 **There is no fixed IP address for the Pi and that's on purpose.** An earlier
-draft of this plan pinned it to `192.168.50.155` to match the home network. That
+draft of this plan pinned it to a fixed address to match the home network. That
 was dropped — it added three ways to fail and bought nothing, because you don't
 need to know the address. See "Finding the Pi" below.
 
