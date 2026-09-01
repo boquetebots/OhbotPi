@@ -1,0 +1,84 @@
+===========================================================================
+  YOBOT  -  una cabeza robot que escucha, piensa y te contesta
+===========================================================================
+
+  La versión en inglés de este archivo es  "READ ME FIRST.txt"
+
+  ¿CUÁL CARPETA ES LA MÍA?
+
+      En una PC con Windows ..  abre la carpeta  "Windows"
+      En una Mac .............  abre la carpeta  "Mac"
+      En una Raspberry Pi ....  abre la carpeta  "Raspberry Pi"
+
+  Dentro de cada una hay un archivo que se llama START HERE. Léelo.
+  Da por hecho que no sabes nada de código, y está escrito para que
+  lo sigas en orden.
+
+  Todo lo que tienes que abrir con doble clic está también en tu
+  propia carpeta. Puedes ignorar el resto del proyecto - son las
+  tripas del robot y se cuidan solas.
+
+  En español: abre la carpeta "Raspberry Pi" y lee
+  "EMPIEZA AQUI (Espanol)".
+
+
+---------------------------------------------------------------------------
+  DOS COSAS QUE VAS A NECESITAR, USES LO QUE USES
+---------------------------------------------------------------------------
+
+  1. UNA CUENTA CASI GRATIS - Microsoft Azure, para la voz y para
+     escuchar. Usarlo poco cuesta centavos, y es la única cuenta de la
+     que Yobot no puede prescindir. Mira el archivo
+     "Getting your API keys.md" que está aquí mismo.
+
+     UNA SEGUNDA CUENTA ES OPCIONAL, y solo si quieres que Yobot
+     converse contigo. Sirve cualquiera de estas: OpenAI, Anthropic,
+     Google Gemini o Groq - o también Ollama corriendo en tu propia
+     computadora, que no necesita cuenta. Tu archivo START HERE te las
+     lista. El ajedrez no necesita nada de esto.
+
+  2. UN ARCHIVO QUE SE LLAMA .env - ahí van las llaves. A propósito NO
+     viene en esta descarga, porque publicar las llaves es la forma
+     más común de amanecer con una cuenta enorme. Aquí hay una
+     plantilla que se llama .env.example; cópiala, ponle .env de
+     nombre a la copia, y pega tus llaves adentro.
+
+     O NO LO HAGAS. Cuando Yobot ya esté corriendo, la página del
+     Launcher en tu navegador tiene un enlace "Settings & Keys"
+     (Ajustes y llaves) que hace lo mismo sin editar ningún archivo, y
+     además prueba cada llave. Tu archivo START HERE te dice dónde
+     está.
+
+
+---------------------------------------------------------------------------
+  UNA TRAMPA DE WINDOWS QUE CONVIENE CONOCER
+---------------------------------------------------------------------------
+
+  Windows te deja ver lo que hay dentro de un archivo ZIP como si
+  fuera una carpeta normal. Si tratas de correr Yobot desde ahí, las
+  cosas funcionan a medias, y de maneras muy confusas.
+
+  Haz clic derecho en el ZIP, escoge "Extract All", y trabaja en la
+  carpeta de verdad que aparece.
+
+  Windows también esconde las extensiones de los archivos, y eso
+  importa cuando creas el archivo .env - uno que se ve como ".env"
+  puede en realidad llamarse ".env.txt", y Yobot no lo encuentra. En
+  el Explorador de archivos activa View - Show - File name extensions.
+
+
+---------------------------------------------------------------------------
+  ¿TE ATASCASTE?
+---------------------------------------------------------------------------
+
+  Cada guía START HERE termina con una sección de solución de
+  problemas. Las dos cosas que le pasan a casi todo el mundo:
+
+    - ¿No cambió nada después de una actualización?  Tu navegador te
+      está mostrando una copia guardada de la página. Recárgala a la
+      fuerza.
+
+    - ¿Te saluda y después se queda callado?  Está escuchando el
+      micrófono equivocado.
+
+===========================================================================

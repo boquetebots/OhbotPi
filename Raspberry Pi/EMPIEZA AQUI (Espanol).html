@@ -1,1019 +1,719 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
-	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
-	<title></title>
-	<meta name="generator" content="LibreOffice 26.2.4.2 (Linux)"/>
-	<meta name="created" content="00:00:00"/>
-	<meta name="changed" content="00:00:00"/>
-	<style type="text/css">
-		@page { size: 8.27in 11.69in; margin: 0.79in }
-		p { margin-bottom: 0.1in; line-height: 115%; background: transparent }
-		h1 { margin-bottom: 0.08in; background: transparent; page-break-after: avoid }
-		h1.western { font-weight: bold; font-size: 18pt; font-family: "Liberation Sans", sans-serif }
-		h1.cjk { font-weight: bold; font-size: 18pt; font-family: "AR PL SungtiL GB" }
-		h1.ctl { font-weight: bold; font-family: "Noto Sans Devanagari"; font-size: 18pt }
-		blockquote { margin-right: 0.39in; margin-left: 0.39in; background: transparent }
-		h2 { margin-top: 0.14in; margin-bottom: 0.08in; background: transparent; page-break-after: avoid }
-		h2.western { font-weight: bold; font-size: 16pt; font-family: "Liberation Sans", sans-serif }
-		h2.cjk { font-weight: bold; font-size: 16pt; font-family: "AR PL SungtiL GB" }
-		h2.ctl { font-weight: bold; font-family: "Noto Sans Devanagari"; font-size: 16pt }
-		h3 { margin-top: 0.1in; margin-bottom: 0.08in; background: transparent; page-break-after: avoid }
-		h3.western { font-weight: bold; font-size: 14pt; font-family: "Liberation Sans", sans-serif }
-		h3.cjk { font-weight: bold; font-size: 14pt; font-family: "AR PL SungtiL GB" }
-		h3.ctl { font-weight: bold; font-family: "Noto Sans Devanagari"; font-size: 14pt }
-		td p { widows: 0; orphans: 0; background: transparent }
-		th p { widows: 0; text-align: center; orphans: 0; font-weight: bold; background: transparent }
-		pre { font-size: 10pt; font-family: "Liberation Mono", monospace; background: transparent }
-		a:link { color: #000080; text-decoration: underline }
-	</style>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Guía de construcción — Yobot en Raspberry Pi 5</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+  </style>
+  <style>
+    body { max-width: 46rem; margin: 2rem auto; padding: 0 1.2rem;
+           font: 16px/1.65 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+           color: #1c1c1c; background: #fff; }
+    h1 { font-size: 1.8rem; border-bottom: 3px solid #333; padding-bottom: .4rem; }
+    h2 { font-size: 1.35rem; margin-top: 2.4rem; border-bottom: 1px solid #ccc;
+         padding-bottom: .3rem; }
+    h3 { font-size: 1.1rem; margin-top: 1.8rem; }
+    code, pre { font-family: "SF Mono", Consolas, "Liberation Mono", monospace; }
+    code { background: #f2f2f2; padding: .1rem .3rem; border-radius: 3px; font-size: .92em; }
+    pre { background: #f6f6f6; border-left: 4px solid #999; padding: .8rem 1rem;
+          overflow-x: auto; }
+    pre code { background: none; padding: 0; }
+    blockquote { border-left: 4px solid #f0a000; background: #fffaf0; margin: 1rem 0;
+                 padding: .6rem 1rem; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+    th, td { border: 1px solid #ccc; padding: .45rem .6rem; text-align: left;
+             vertical-align: top; font-size: .95rem; }
+    th { background: #f2f2f2; }
+    hr { border: 0; border-top: 1px solid #ddd; margin: 2.2rem 0; }
+    @media print { body { max-width: none; } pre { white-space: pre-wrap; } }
+  </style>
 </head>
-<body lang="en-US" link="#000080" vlink="#800000" dir="ltr"><h1 class="western">
-Guía de construcción — Yobot en Raspberry Pi 5</h1>
-<p><b>Clubhouse Rincón · Construye tu propio robot desde cero</b></p>
-<p>Esta guía te lleva desde una tarjeta SD vacía hasta un robot que
-mueve la&nbsp;cabeza, escucha y habla. No necesitas saber Linux. Solo
-sigue los pasos en&nbsp;orden y lee lo que aparece en la pantalla.</p>
-<blockquote><b>Los comandos están en inglés.</b> Todo lo que
-escribes en la terminal y todo&nbsp;lo que la computadora te responde
-está en inglés — así es el sistema. Las&nbsp;explicaciones están
-en español. Copia los comandos exactamente como están,&nbsp;incluyendo
-los guiones y los puntos.</blockquote>
-<hr/>
-
-<h2 class="western">Antes de empezar</h2>
-<h3 class="western">Lo que necesitas en la mesa</h3>
-<table width="100%" cellpadding="4" cellspacing="0">
-	<col width="128*"/>
-	<col width="128*"/>
-	<thead>
-		<tr valign="top">
-			<th width="50%" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.04in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Cosa</p>
-			</th>
-			<th width="50%" style="border: 1px solid #000000; padding: 0.04in"><p align="left">
-				Detalle</p>
-			</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Raspberry Pi 5</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				Con su fuente de poder oficial (27W USB-C)</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Tarjeta microSD</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				32 GB o más, y un lector de tarjetas para la computadora</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Cabeza Ohbot</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				Con su cable USB</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Micrófono Neewer USB de solapa</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				Tiene entrada de micrófono y salida de audífonos</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Parlante amplificado pequeño</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				Se conecta al conector de audífonos del Neewer</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Una computadora</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				Mac o Windows, en el mismo WiFi que el Pi</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				WiFi del Clubhouse</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				Nombre de la red y contraseña</p>
-			</td>
-		</tr>
-	</tbody>
+<body>
+<header id="title-block-header">
+<h1 class="title">Guía de construcción — Yobot en Raspberry Pi 5</h1>
+</header>
+<h1 id="guía-de-construcción--yobot-en-raspberry-pi-5">Guía de construcción — Yobot en Raspberry Pi 5</h1>
+<p><strong>Clubhouse Rincón · Construye tu propio robot desde cero</strong></p>
+<p>Esta guía te lleva desde una tarjeta SD vacía hasta un robot que mueve la cabeza, escucha y habla. No necesitas saber Linux. Solo sigue los pasos en orden y lee lo que aparece en la pantalla.</p>
+<blockquote>
+<p><strong>Los comandos están en inglés.</strong> Todo lo que escribes en la terminal y todo lo que la computadora te responde está en inglés — así es el sistema. Las explicaciones están en español. Copia los comandos exactamente como están, incluyendo los guiones y los puntos.</p>
+</blockquote>
+<hr />
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<h3 id="lo-que-necesitas-en-la-mesa">Lo que necesitas en la mesa</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Cosa</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Raspberry Pi 5</td>
+<td>Con su fuente de poder oficial (27W USB-C)</td>
+</tr>
+<tr class="even">
+<td>Tarjeta microSD</td>
+<td>32 GB o más, y un lector de tarjetas para la computadora</td>
+</tr>
+<tr class="odd">
+<td>Cabeza Ohbot</td>
+<td>Con su cable USB</td>
+</tr>
+<tr class="even">
+<td>Micrófono Neewer USB de solapa</td>
+<td>Tiene entrada de micrófono y salida de audífonos</td>
+</tr>
+<tr class="odd">
+<td>Parlante amplificado pequeño</td>
+<td>Se conecta al conector de audífonos del Neewer</td>
+</tr>
+<tr class="even">
+<td>Una computadora</td>
+<td>Mac o Windows, en el mismo WiFi que el Pi</td>
+</tr>
+<tr class="odd">
+<td>WiFi del Clubhouse</td>
+<td>Nombre de la red y contraseña</td>
+</tr>
+</tbody>
 </table>
-<p><br/>
-<br/>
-
-</p>
-<h3 class="western">El nombre de tu robot</h3>
-<p>Cada Pi necesita un <b>nombre único</b> en la red. Ya existe uno
-llamado&nbsp;<font face="Liberation Mono, monospace">yobot1</font>.
-Los siguientes son:</p>
+<h3 id="el-nombre-de-tu-robot">El nombre de tu robot</h3>
+<p>Cada Pi necesita un <strong>nombre único</strong> en la red. Ya existe uno llamado <code>yobot1</code>. Los siguientes son:</p>
 <ul>
-	<li><p><font face="Liberation Mono, monospace">yobot2</font></p></li>
-	<li><p><font face="Liberation Mono, monospace">yobot3</font></p></li>
+<li><code>yobot2</code></li>
+<li><code>yobot3</code></li>
 </ul>
-<p><b>Escoge el tuyo ahora y anótalo aquí:</b> <font face="Liberation Mono, monospace">yobot____</font></p>
-<p>Cada vez que veas <font face="Liberation Mono, monospace">yobot2</font>
-en esta guía, escribe el tuyo en su lugar.</p>
-<blockquote><b>¿Por qué importa?</b> Si dos Pi tienen el mismo
-nombre, la red se confunde y&nbsp;no puedes conectarte a ninguno de
-los dos. Es como dos personas con el mismo&nbsp;número de cédula.</blockquote>
-<h3 class="western">Una advertencia sobre el parlante</h3>
-<p>El conector de audífonos del micrófono Neewer es para <b>monitoreo</b>
-— está&nbsp;diseñado para audífonos pequeños, no para llenar un
-salón de sonido. Por eso&nbsp;necesitas un parlante <b>amplificado</b>
-(uno que tenga su propia batería o&nbsp;enchufe). Un parlante pasivo
-no va a sonar.</p>
-<blockquote><b>¿Por qué el micrófono da el sonido de salida?</b>
-El Raspberry Pi 5 <b>no</b>&nbsp;<b>tiene</b> conector de audífonos.
-Raspberry Pi lo eliminó en este modelo. El&nbsp;Neewer resuelve las
-dos cosas con un solo cable USB: entra el micrófono y&nbsp;sale el
-audio.</blockquote>
-<hr/>
-
-<h2 class="western">Parte 1 — Grabar la tarjeta SD</h2>
-<p>Aquí es donde le pones el nombre al Pi. <b>Este es el paso más
-importante de</b>&nbsp;<b>toda la guía</b>, porque el nombre se
-define ahora y cambiarlo después es&nbsp;complicado.</p>
-<h3 class="western">1.1 Instala Raspberry Pi Imager</h3>
-<p>Descárgalo en tu computadora desde
-<a href="https://www.raspberrypi.com/software/">https://www.raspberrypi.com/software/</a>
-e&nbsp;instálalo.</p>
-<h3 class="western">1.2 Mete la tarjeta SD en la computadora</h3>
-<p>Usa el lector de tarjetas. Si la computadora pregunta si quieres
-formatearla,&nbsp;di que <b>no</b> — el Imager lo hace solo.</p>
-<h3 class="western">1.3 Escoge las tres opciones</h3>
+<p><strong>Escoge el tuyo ahora y anótalo aquí:</strong> <code>yobot____</code></p>
+<p>Cada vez que veas <code>yobot2</code> en esta guía, escribe el tuyo en su lugar.</p>
+<blockquote>
+<p><strong>¿Por qué importa?</strong> Si dos Pi tienen el mismo nombre, la red se confunde y no puedes conectarte a ninguno de los dos. Es como dos personas con el mismo número de cédula.</p>
+</blockquote>
+<h3 id="una-advertencia-sobre-el-parlante">Una advertencia sobre el parlante</h3>
+<p>El conector de audífonos del micrófono Neewer es para <strong>monitoreo</strong> — está diseñado para audífonos pequeños, no para llenar un salón de sonido. Por eso necesitas un parlante <strong>amplificado</strong> (uno que tenga su propia batería o enchufe). Un parlante pasivo no va a sonar.</p>
+<blockquote>
+<p><strong>¿Por qué el micrófono da el sonido de salida?</strong> El Raspberry Pi 5 <strong>no tiene</strong> conector de audífonos. Raspberry Pi lo eliminó en este modelo. El Neewer resuelve las dos cosas con un solo cable USB: entra el micrófono y sale el audio.</p>
+</blockquote>
+<hr />
+<h2 id="parte-1--grabar-la-tarjeta-sd">Parte 1 — Grabar la tarjeta SD</h2>
+<p>Aquí es donde le pones el nombre al Pi. <strong>Este es el paso más importante de toda la guía</strong>, porque el nombre se define ahora y cambiarlo después es complicado.</p>
+<h3 id="11-instala-raspberry-pi-imager">1.1 Instala Raspberry Pi Imager</h3>
+<p>Descárgalo en tu computadora desde <a href="https://www.raspberrypi.com/software/">https://www.raspberrypi.com/software/</a> e instálalo.</p>
+<h3 id="12-mete-la-tarjeta-sd-en-la-computadora">1.2 Mete la tarjeta SD en la computadora</h3>
+<p>Usa el lector de tarjetas. Si la computadora pregunta si quieres formatearla, di que <strong>no</strong> — el Imager lo hace solo.</p>
+<h3 id="13-escoge-las-tres-opciones">1.3 Escoge las tres opciones</h3>
 <p>Abre Raspberry Pi Imager. Verás tres botones:</p>
 <ol>
-	<li><p><b>Choose device</b> → <font face="Liberation Mono, monospace">Raspberry
-	Pi 5</font></p></li>
-	<li><p><b>Choose OS</b> → <font face="Liberation Mono, monospace">Raspberry
-	Pi OS (64-bit)</font>&nbsp;<i>(el primero de la lista, el de
-	escritorio completo)</i></p></li>
-	<li><p><b>Choose storage</b> → tu tarjeta SD</p></li>
+<li><strong>Choose device</strong> → <code>Raspberry Pi 5</code></li>
+<li><strong>Choose OS</strong> → <code>Raspberry Pi OS (64-bit)</code> <em>(el primero de la lista, el de escritorio completo)</em></li>
+<li><strong>Choose storage</strong> → tu tarjeta SD</li>
 </ol>
-<blockquote><b>Cuidado:</b> asegúrate de que en &quot;Choose
-storage&quot; salga la tarjeta SD y no el&nbsp;disco duro de la
-computadora. Si escoges mal, borras la computadora. Fíjate&nbsp;en
-el tamaño: la tarjeta dice 32 GB o similar.</blockquote>
-<h3 class="western">1.4 Configura antes de grabar — NO te saltes
-esto</h3>
-<p>Haz clic en <b>NEXT</b>. Aparece una ventana que pregunta&nbsp;<i>&quot;Would
-you like to apply OS customisation settings?&quot;</i></p>
-<p>Haz clic en <b>EDIT SETTINGS</b>.</p>
-<p><b>Pestaña GENERAL:</b></p>
-<table width="100%" cellpadding="4" cellspacing="0">
-	<col width="128*"/>
-	<col width="128*"/>
-	<thead>
-		<tr valign="top">
-			<th width="50%" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.04in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Campo</p>
-			</th>
-			<th width="50%" style="border: 1px solid #000000; padding: 0.04in"><p align="left">
-				Qué escribir</p>
-			</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Set hostname</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">yobot2</font> ← <b>tu
-				nombre, sin </b><font face="Liberation Mono, monospace"><b>.local</b></font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Set username</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">yobot</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Password</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				La que te dé Michael (la misma en los tres Pi)</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Configure wireless LAN → SSID</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				El nombre del WiFi del Clubhouse</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Configure wireless LAN → Password</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				La contraseña del WiFi</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Wireless LAN country</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">PA</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Set locale → Time zone</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">America/Panama</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Set locale → Keyboard layout</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">us</font></p>
-			</td>
-		</tr>
-	</tbody>
+<blockquote>
+<p><strong>Cuidado:</strong> asegúrate de que en "Choose storage" salga la tarjeta SD y no el disco duro de la computadora. Si escoges mal, borras la computadora. Fíjate en el tamaño: la tarjeta dice 32 GB o similar.</p>
+</blockquote>
+<h3 id="14-configura-antes-de-grabar--no-te-saltes-esto">1.4 Configura antes de grabar — NO te saltes esto</h3>
+<p>Haz clic en <strong>NEXT</strong>. Aparece una ventana que pregunta <em>"Would you like to apply OS customisation settings?"</em></p>
+<p>Haz clic en <strong>EDIT SETTINGS</strong>.</p>
+<p><strong>Pestaña GENERAL:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Campo</th>
+<th>Qué escribir</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Set hostname</td>
+<td><code>yobot2</code> ← <strong>tu nombre, sin <code>.local</code></strong></td>
+</tr>
+<tr class="even">
+<td>Set username</td>
+<td><code>yobot</code></td>
+</tr>
+<tr class="odd">
+<td>Password</td>
+<td>La que te dé Michael (la misma en los tres Pi)</td>
+</tr>
+<tr class="even">
+<td>Configure wireless LAN → SSID</td>
+<td>El nombre del WiFi del Clubhouse</td>
+</tr>
+<tr class="odd">
+<td>Configure wireless LAN → Password</td>
+<td>La contraseña del WiFi</td>
+</tr>
+<tr class="even">
+<td>Wireless LAN country</td>
+<td><code>PA</code></td>
+</tr>
+<tr class="odd">
+<td>Set locale → Time zone</td>
+<td><code>America/Panama</code></td>
+</tr>
+<tr class="even">
+<td>Set locale → Keyboard layout</td>
+<td><code>us</code></td>
+</tr>
+</tbody>
 </table>
-<p><br/>
-<br/>
-
-</p>
-<p><b>Pestaña SERVICES:</b></p>
+<p><strong>Pestaña SERVICES:</strong></p>
 <ul>
-	<li><p>Marca ✅ <b>Enable SSH</b></p></li>
-	<li><p>Escoge <b>Use password authentication</b></p></li>
+<li>Marca ✅ <strong>Enable SSH</strong></li>
+<li>Escoge <strong>Use password authentication</strong></li>
 </ul>
-<blockquote><b>¿Qué es SSH?</b> Es la forma de escribirle comandos
-al Pi desde tu&nbsp;computadora, sin necesidad de conectarle un
-monitor y un teclado. Sin esto&nbsp;activado no puedes hacer nada.</blockquote>
-<p>Haz clic en <b>SAVE</b>, luego en <b>YES</b> para aplicar la
-configuración, y otra&nbsp;vez <b>YES</b> para confirmar que quieres
-borrar la tarjeta.</p>
-<h3 class="western">1.5 Espera</h3>
-<p>El Imager escribe y después verifica. Toma entre 5 y 15 minutos.
-Cuando diga&nbsp;<b>&quot;Write Successful&quot;</b>, saca la
-tarjeta.</p>
-<ul>
-	<li><p>☐ Tarjeta grabada con el nombre <font face="Liberation Mono, monospace">yobot____</font></p></li>
+<blockquote>
+<p><strong>¿Qué es SSH?</strong> Es la forma de escribirle comandos al Pi desde tu computadora, sin necesidad de conectarle un monitor y un teclado. Sin esto activado no puedes hacer nada.</p>
+</blockquote>
+<p>Haz clic en <strong>SAVE</strong>, luego en <strong>YES</strong> para aplicar la configuración, y otra vez <strong>YES</strong> para confirmar que quieres borrar la tarjeta.</p>
+<h3 id="15-espera">1.5 Espera</h3>
+<p>El Imager escribe y después verifica. Toma entre 5 y 15 minutos. Cuando diga <strong>"Write Successful"</strong>, saca la tarjeta.</p>
+<ul class="task-list">
+<li><input type="checkbox" disabled="" />
+Tarjeta grabada con el nombre <code>yobot____</code></li>
 </ul>
-<hr/>
-
-<h2 class="western">Parte 2 — Primer arranque</h2>
-<h3 class="western">2.1 Arma el Pi</h3>
+<hr />
+<h2 id="parte-2--primer-arranque">Parte 2 — Primer arranque</h2>
+<h3 id="21-arma-el-pi">2.1 Arma el Pi</h3>
 <ol>
-	<li><p>Mete la tarjeta SD en el Raspberry Pi 5 (la ranura está
-	debajo de la placa)</p></li>
-	<li><p>Conecta el <b>cable USB de la cabeza Ohbot</b> a un puerto
-	USB del Pi</p></li>
-	<li><p>Conecta el <b>micrófono Neewer</b> a otro puerto USB</p></li>
-	<li><p>Conecta el <b>parlante amplificado</b> al conector de
-	audífonos del Neewer</p></li>
-	<li><p>Conecta la fuente de poder de último</p></li>
+<li>Mete la tarjeta SD en el Raspberry Pi 5 (la ranura está debajo de la placa)</li>
+<li>Conecta el <strong>cable USB de la cabeza Ohbot</strong> a un puerto USB del Pi</li>
+<li>Conecta el <strong>micrófono Neewer</strong> a otro puerto USB</li>
+<li>Conecta el <strong>parlante amplificado</strong> al conector de audífonos del Neewer</li>
+<li>Conecta la fuente de poder de último</li>
 </ol>
-<p>La luz verde va a parpadear mucho durante el primer arranque. Eso
-es normal.&nbsp;<b>Espera 3 minutos completos</b> antes de intentar
-conectarte — el primer&nbsp;arranque hace trabajo extra que solo se
-hace una vez.</p>
-<h3 class="western">2.2 Conéctate desde tu computadora</h3>
-<p>En tu computadora abre la <b>Terminal</b> (en Mac: Aplicaciones →
-Utilidades →&nbsp;Terminal. En Windows: busca &quot;Terminal&quot;
-o &quot;PowerShell&quot;).</p>
+<p>La luz verde va a parpadear mucho durante el primer arranque. Eso es normal. <strong>Espera 3 minutos completos</strong> antes de intentar conectarte — el primer arranque hace trabajo extra que solo se hace una vez.</p>
+<h3 id="22-conéctate-desde-tu-computadora">2.2 Conéctate desde tu computadora</h3>
+<p>En tu computadora abre la <strong>Terminal</strong> (en Mac: Aplicaciones → Utilidades → Terminal. En Windows: busca "Terminal" o "PowerShell").</p>
 <p>Escribe esto y presiona Enter:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">ssh yobot@yobot2.local</pre><p>
-La primera vez te va a decir algo así:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">The authenticity of host 'yobot2.local' can't be established.<br/>
-ED25519 key fingerprint is SHA256:xxxxxxxxxxxx<br/>
-Are you sure you want to continue connecting (yes/no/[fingerprint])?</pre><p>
-Escribe <font face="Liberation Mono, monospace">yes</font> y presiona
-Enter. Después te pide la contraseña.</p>
-<blockquote><b>La contraseña no se ve mientras la escribes.</b> No
-aparecen ni asteriscos.&nbsp;Es normal en Linux — escríbela
-completa a ciegas y presiona Enter.</blockquote>
+<pre><code>ssh yobot@yobot2.local
+</code></pre>
+<p>La primera vez te va a decir algo así:</p>
+<pre><code>The authenticity of host &#39;yobot2.local&#39; can&#39;t be established.
+ED25519 key fingerprint is SHA256:xxxxxxxxxxxx
+Are you sure you want to continue connecting (yes/no/[fingerprint])?
+</code></pre>
+<p>Escribe <code>yes</code> y presiona Enter. Después te pide la contraseña.</p>
+<blockquote>
+<p><strong>La contraseña no se ve mientras la escribes.</strong> No aparecen ni asteriscos. Es normal en Linux — escríbela completa a ciegas y presiona Enter.</p>
+</blockquote>
 <p>Cuando funcione verás algo como:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">yobot@yobot2:~ $</pre><p>
-Eso significa: <i>estás dentro del Pi</i>. Todo lo que escribas de
-ahora en&nbsp;adelante le habla al Pi, no a tu computadora.</p>
-<ul>
-	<li><p>☐ Conectado por SSH</p></li>
+<pre><code>yobot@yobot2:~ $
+</code></pre>
+<p>Eso significa: <em>estás dentro del Pi</em>. Todo lo que escribas de ahora en adelante le habla al Pi, no a tu computadora.</p>
+<ul class="task-list">
+<li><input type="checkbox" disabled="" />
+Conectado por SSH</li>
 </ul>
-<h3 class="western">Si no conecta</h3>
-<table width="100%" cellpadding="4" cellspacing="0">
-	<col width="128*"/>
-	<col width="128*"/>
-	<thead>
-		<tr valign="top">
-			<th width="50%" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.04in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Lo que dice</p>
-			</th>
-			<th width="50%" style="border: 1px solid #000000; padding: 0.04in"><p align="left">
-				Qué hacer</p>
-			</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p>
-				<font face="Liberation Mono, monospace">ssh: Could not resolve
-				hostname</font></p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				El Pi no está en la red todavía. Espera 2 minutos más e
-				intenta de nuevo. Revisa que escribiste bien el WiFi en el
-				Imager.</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p>
-				<font face="Liberation Mono, monospace">Permission denied</font></p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				Contraseña equivocada. Cuidado con las mayúsculas.</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p>
-				<font face="Liberation Mono, monospace">REMOTE HOST
-				IDENTIFICATION HAS CHANGED</font></p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				Tu computadora recuerda otro Pi con ese nombre. Corre <font face="Liberation Mono, monospace">ssh-keygen
-				-R yobot2.local</font> y vuelve a intentar.</p>
-			</td>
-		</tr>
-	</tbody>
+<h3 id="si-no-conecta">Si no conecta</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Lo que dice</th>
+<th>Qué hacer</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>ssh: Could not resolve hostname</code></td>
+<td>El Pi no está en la red todavía. Espera 2 minutos más e intenta de nuevo. Revisa que escribiste bien el WiFi en el Imager.</td>
+</tr>
+<tr class="even">
+<td><code>Permission denied</code></td>
+<td>Contraseña equivocada. Cuidado con las mayúsculas.</td>
+</tr>
+<tr class="odd">
+<td><code>REMOTE HOST IDENTIFICATION HAS CHANGED</code></td>
+<td>Tu computadora recuerda otro Pi con ese nombre. Corre <code>ssh-keygen -R yobot2.local</code> y vuelve a intentar.</td>
+</tr>
+</tbody>
 </table>
-<p><br/>
-<br/>
-
-</p>
-<hr/>
-
-<h2 class="western">Parte 3 — Preparar el sistema</h2>
+<hr />
+<h2 id="parte-3--preparar-el-sistema">Parte 3 — Preparar el sistema</h2>
 <p>Ahora le instalamos al Pi los programas que Yobot necesita.</p>
-<h3 class="western">3.1 Actualiza la lista de programas</h3>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">sudo apt update</pre><blockquote>
-<b>¿Qué es </b><font face="Liberation Mono, monospace"><b>sudo</b></font><b>?</b>
-Significa &quot;hazlo como administrador&quot;. Te va a pedir
-la&nbsp;contraseña la primera vez. <font face="Liberation Mono, monospace">apt</font>
-es el instalador de programas de Linux.</blockquote>
-<h3 class="western">3.2 Instala lo que falta</h3>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">sudo apt install -y espeak-ng git python3-venv</pre><p>
-Esto instala tres cosas:</p>
+<h3 id="31-actualiza-la-lista-de-programas">3.1 Actualiza la lista de programas</h3>
+<pre><code>sudo apt update
+</code></pre>
+<blockquote>
+<p><strong>¿Qué es <code>sudo</code>?</strong> Significa "hazlo como administrador". Te va a pedir la contraseña la primera vez. <code>apt</code> es el instalador de programas de Linux.</p>
+</blockquote>
+<h3 id="32-instala-lo-que-falta">3.2 Instala lo que falta</h3>
+<pre><code>sudo apt install -y espeak-ng git python3-venv
+</code></pre>
+<p>Esto instala tres cosas:</p>
 <ul>
-	<li><p><b>espeak-ng</b> — una voz de respaldo, por si Azure no
-	está disponible</p></li>
-	<li><p><b>git</b> — para bajar el código del proyecto</p></li>
-	<li><p><b>python3-venv</b> — para crear un espacio aislado de
-	Python</p></li>
+<li><strong>espeak-ng</strong> — una voz de respaldo, por si Azure no está disponible</li>
+<li><strong>git</strong> — para bajar el código del proyecto</li>
+<li><strong>python3-venv</strong> — para crear un espacio aislado de Python</li>
 </ul>
 <p>Toma unos minutos.</p>
-<h3 class="western">3.3 Revisa que puedes hablarle a la cabeza</h3>
-<p>El robot se comunica por el cable USB. Tu usuario necesita permiso
-para usarlo.</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">groups</pre><p>
-Busca la palabra <font face="Liberation Mono, monospace">dialout</font>
-en la respuesta. Si <b>está</b>, sigue adelante.</p>
-<p>Si <b>no está</b>, corre esto:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">sudo usermod -aG dialout $USER</pre><p>
-...y después <b>cierra la sesión y vuelve a entrar</b> (escribe
-<font face="Liberation Mono, monospace">exit</font>, y luego&nbsp;otra
-vez <font face="Liberation Mono, monospace">ssh yobot@yobot2.local</font>).
-El permiso solo se activa al volver a&nbsp;entrar.</p>
-<h3 class="western">3.4 Confirma que el Pi ve la cabeza Ohbot</h3>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">ls /dev/ttyACM*</pre><p>
-Debe responder algo como <font face="Liberation Mono, monospace">/dev/ttyACM0</font>.</p>
-<p>Si dice <font face="Liberation Mono, monospace">No such file or
-directory</font>, la cabeza no está conectada o el cable&nbsp;está
-flojo. Desconéctalo y vuélvelo a conectar.</p>
-<ul>
-	<li><p>☐ Sistema preparado y la cabeza detectada</p></li>
+<h3 id="33-revisa-que-puedes-hablarle-a-la-cabeza">3.3 Revisa que puedes hablarle a la cabeza</h3>
+<p>El robot se comunica por el cable USB. Tu usuario necesita permiso para usarlo.</p>
+<pre><code>groups
+</code></pre>
+<p>Busca la palabra <code>dialout</code> en la respuesta. Si <strong>está</strong>, sigue adelante.</p>
+<p>Si <strong>no está</strong>, corre esto:</p>
+<pre><code>sudo usermod -aG dialout $USER
+</code></pre>
+<p>...y después <strong>cierra la sesión y vuelve a entrar</strong> (escribe <code>exit</code>, y luego otra vez <code>ssh yobot@yobot2.local</code>). El permiso solo se activa al volver a entrar.</p>
+<h3 id="34-confirma-que-el-pi-ve-la-cabeza-ohbot">3.4 Confirma que el Pi ve la cabeza Ohbot</h3>
+<pre><code>ls /dev/ttyACM*
+</code></pre>
+<p>Debe responder algo como <code>/dev/ttyACM0</code>.</p>
+<p>Si dice <code>No such file or directory</code>, la cabeza no está conectada o el cable está flojo. Desconéctalo y vuélvelo a conectar.</p>
+<ul class="task-list">
+<li><input type="checkbox" disabled="" />
+Sistema preparado y la cabeza detectada</li>
 </ul>
-<hr/>
-
-<h2 class="western">Parte 4 — Bajar el proyecto</h2>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">mkdir -p ~/Projects<br/>
-cd ~/Projects<br/>
-git clone https://github.com/boquetebots/OhbotPi.git Ohbot<br/>
-cd Ohbot</pre><p>
-Línea por línea:</p>
+<hr />
+<h2 id="parte-4--bajar-el-proyecto">Parte 4 — Bajar el proyecto</h2>
+<pre><code>mkdir -p ~/Projects
+cd ~/Projects
+git clone https://github.com/boquetebots/OhbotPi.git Ohbot
+cd Ohbot
+</code></pre>
+<p>Línea por línea:</p>
 <ul>
-	<li><p><font face="Liberation Mono, monospace">mkdir -p ~/Projects</font>
-	— crea una carpeta llamada Projects</p></li>
-	<li><p><font face="Liberation Mono, monospace">cd ~/Projects</font>
-	— entra a esa carpeta</p></li>
-	<li><p><font face="Liberation Mono, monospace">git clone ...</font>
-	— descarga todo el código de Yobot desde internet</p></li>
-	<li><p><font face="Liberation Mono, monospace">cd Ohbot</font> —
-	entra a la carpeta que se acaba de crear</p></li>
+<li><code>mkdir -p ~/Projects</code> — crea una carpeta llamada Projects</li>
+<li><code>cd ~/Projects</code> — entra a esa carpeta</li>
+<li><code>git clone ...</code> — descarga todo el código de Yobot desde internet</li>
+<li><code>cd Ohbot</code> — entra a la carpeta que se acaba de crear</li>
 </ul>
 <p>Para confirmar que llegó todo:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">ls</pre><p>
-Debes ver muchos archivos, entre ellos <font face="Liberation Mono, monospace">install.sh</font>,
-<font face="Liberation Mono, monospace">launcher_server.py</font>
-y&nbsp;<font face="Liberation Mono, monospace">ohbot_chat.py</font>.</p>
-<ul>
-	<li><p>☐ Proyecto descargado</p></li>
+<pre><code>ls
+</code></pre>
+<p>Debes ver muchos archivos, entre ellos <code>install.sh</code>, <code>launcher_server.py</code> y <code>ohbot_chat.py</code>.</p>
+<ul class="task-list">
+<li><input type="checkbox" disabled="" />
+Proyecto descargado</li>
 </ul>
-<hr/>
-
-<h2 class="western">Parte 5 — Instalar Yobot</h2>
+<hr />
+<h2 id="parte-5--instalar-yobot">Parte 5 — Instalar Yobot</h2>
 <p>Este es el paso largo. Corre el instalador:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">bash install.sh</pre><p>
-Va paso por paso solo. <b>Va a hacerte cuatro preguntas.</b> Estas
-son las&nbsp;respuestas:</p>
-<h3 class="western">Pregunta 1 — &quot;Press Enter to begin&quot;</h3>
-<p>Presiona <b>Enter</b>.</p>
-<h3 class="western">Pregunta 2 — Las llaves de API (Step 7)</h3>
+<pre><code>bash install.sh
+</code></pre>
+<p>Va paso por paso solo. <strong>Va a hacerte cuatro preguntas.</strong> Estas son las respuestas:</p>
+<h3 id="pregunta-1--press-enter-to-begin">Pregunta 1 — "Press Enter to begin"</h3>
+<p>Presiona <strong>Enter</strong>.</p>
+<h3 id="pregunta-2--las-llaves-de-api-step-7">Pregunta 2 — Las llaves de API (Step 7)</h3>
 <p>Te va a pedir tres cosas:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">Paste your OpenAI key (or Enter to skip/keep):<br/>
-Paste your Azure Speech key (or Enter to skip/keep):<br/>
-Enter region [default: eastus]:</pre><p>
-<b>Presiona Enter en las tres.</b> No escribas nada.</p>
-<p>Va a mostrar dos advertencias amarillas diciendo que sin llaves la
-voz no va a&nbsp;funcionar. <b>Está bien, es lo esperado.</b>
-Michael pone las llaves al final,&nbsp;en la Parte 10.</p>
-<blockquote><b>¿Qué son las llaves de API?</b> Son contraseñas que
-le dan a Yobot acceso a&nbsp;los servicios de voz e inteligencia
-artificial en internet. Cuestan dinero&nbsp;por uso, así que las
-maneja Michael y no van en esta guía.</blockquote>
-<h3 class="western">Pregunta 3 — El sistema de archivos &quot;overlay&quot;
-(Step 10)</h3>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">Enable overlay filesystem now? (y/N):</pre><p>
-Escribe <font face="Liberation Mono, monospace"><b>N</b></font> y
-presiona Enter.</p>
-<blockquote><b>¿Por qué N?</b> El modo overlay protege la tarjeta
-SD, pero también hace que&nbsp;<b>todo cambio que hagas se pierda al
-reiniciar</b>. Todavía te falta calibrar&nbsp;el robot, así que no
-lo queremos activado ahora. Se activa al final, cuando&nbsp;el robot
-ya quedó como lo quieres.</blockquote>
-<h3 class="western">Pregunta 4 — &quot;Start the launcher right
-now?&quot;</h3>
-<p>Escribe <font face="Liberation Mono, monospace"><b>y</b></font> y
-presiona Enter.</p>
-<h3 class="western">La espera</h3>
-<p>El paso 6 (<font face="Liberation Mono, monospace">Installing
-Python packages</font>) es el más lento — puede tomar de 10 a&nbsp;25
-minutos según cómo esté el internet del Clubhouse. La pantalla se
-ve&nbsp;detenida y no pasa nada. <b>Es normal. No cierres la ventana
-ni presiones</b>&nbsp;<b>Ctrl-C.</b></p>
+<pre><code>Paste your OpenAI key (or Enter to skip/keep):
+Paste your Azure Speech key (or Enter to skip/keep):
+Enter region [default: eastus]:
+</code></pre>
+<p><strong>Presiona Enter en las tres.</strong> No escribas nada.</p>
+<p>Va a mostrar dos advertencias amarillas diciendo que sin llaves la voz no va a funcionar. <strong>Está bien, es lo esperado.</strong> Las llaves se ponen al final, en la Parte 10.</p>
+<blockquote>
+<p><strong>¿Qué son las llaves de API?</strong> Son contraseñas que le dan a Yobot acceso a los servicios de voz e inteligencia artificial en internet. Se pagan por uso: unos centavos si el robot trabaja un rato al día. Cada quien pone las suyas — no vienen dentro de esta descarga, a propósito.</p>
+</blockquote>
+<h3 id="pregunta-3--el-sistema-de-archivos-overlay-step-10">Pregunta 3 — El sistema de archivos "overlay" (Step 10)</h3>
+<pre><code>Enable overlay filesystem now? (y/N):
+</code></pre>
+<p>Escribe <strong><code>N</code></strong> y presiona Enter.</p>
+<blockquote>
+<p><strong>¿Por qué N?</strong> El modo overlay protege la tarjeta SD, pero también hace que <strong>todo cambio que hagas se pierda al reiniciar</strong>. Todavía te falta calibrar el robot, así que no lo queremos activado ahora. Se activa al final, cuando el robot ya quedó como lo quieres.</p>
+</blockquote>
+<h3 id="pregunta-4--start-the-launcher-right-now">Pregunta 4 — "Start the launcher right now?"</h3>
+<p>Escribe <strong><code>y</code></strong> y presiona Enter.</p>
+<h3 id="la-espera">La espera</h3>
+<p>El paso 6 (<code>Installing Python packages</code>) es el más lento — puede tomar de 10 a 25 minutos según cómo esté el internet del Clubhouse. La pantalla se ve detenida y no pasa nada. <strong>Es normal. No cierres la ventana ni presiones Ctrl-C.</strong></p>
 <p>Cuando termine verás:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">  ╔══════════════════════════════════════════════════╗<br/>
-  ║   ✅  Installation complete!                     ║<br/>
-  ╚══════════════════════════════════════════════════╝</pre>
-<ul>
-	<li><p>☐ Instalación completa</p></li>
+<pre><code>  ╔══════════════════════════════════════════════════╗
+  ║   ✅  Installation complete!                     ║
+  ╚══════════════════════════════════════════════════╝
+</code></pre>
+<ul class="task-list">
+<li><input type="checkbox" disabled="" />
+Instalación completa</li>
 </ul>
-<hr/>
-
-<h2 class="western">Parte 6 — El micrófono</h2>
+<hr />
+<h2 id="parte-6--el-micrófono">Parte 6 — El micrófono</h2>
 <p>Ahora revisamos que el Pi encuentre el micrófono Neewer.</p>
-<h3 class="western">6.1 Pregúntale a Linux qué micrófonos ve</h3>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">arecord -l</pre><p>
-La respuesta se ve así (los números pueden ser distintos en tu Pi):</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">**** List of CAPTURE Hardware Devices ****<br/>
-card 1: Device [USB Audio Device], device 0: USB Audio [USB Audio]</pre><p>
-<b>Anota el número de </b><font face="Liberation Mono, monospace"><b>card</b></font><b>:</b>
-______</p>
+<h3 id="61-pregúntale-a-linux-qué-micrófonos-ve">6.1 Pregúntale a Linux qué micrófonos ve</h3>
+<pre><code>arecord -l
+</code></pre>
+<p>La respuesta se ve así (los números pueden ser distintos en tu Pi):</p>
+<pre><code>**** List of CAPTURE Hardware Devices ****
+card 1: Device [USB Audio Device], device 0: USB Audio [USB Audio]
+</code></pre>
+<p><strong>Anota el número de <code>card</code>:</strong> ______</p>
 <p>Si la lista sale vacía, el Neewer no está conectado. Revísalo.</p>
-<h3 class="western">6.2 Deja que Yobot lo busque solo</h3>
-<p>Yobot tiene un programa que encuentra el micrófono por su <b>nombre</b>,
-no por&nbsp;su número — porque los números cambian cada vez que
-reinicias el Pi. Pruébalo:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">cd ~/Projects/Ohbot<br/>
-python3 ohbot_mic.py</pre><p>
-Debe responder algo como:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">🎤 Microphones found: 1<br/>
-     card 1: Device [USB Audio] → plughw:1,0<br/>
-🎤 Auto-detected USB microphone: plughw:1,0</pre><p>
-<b>Si dice que encontró el micrófono, ya terminaste con este paso.</b>
-No hay&nbsp;que configurar nada más.</p>
-<blockquote>Esta detección automática existe por una razón: el 10
-de agosto de 2026, en&nbsp;este mismo Clubhouse, Yobot saludó a la
-gente y después se quedó mudo. El&nbsp;código buscaba la tarjeta
-número 3 y el micrófono estaba en la 2. No dio&nbsp;ningún error —
-simplemente se quedó esperando para siempre. Ahora busca por&nbsp;nombre.</blockquote>
-<h3 class="western">6.3 Revisa que el parlante suene</h3>
+<h3 id="62-deja-que-yobot-lo-busque-solo">6.2 Deja que Yobot lo busque solo</h3>
+<p>Yobot tiene un programa que encuentra el micrófono por su <strong>nombre</strong>, no por su número — porque los números cambian cada vez que reinicias el Pi. Pruébalo:</p>
+<pre><code>cd ~/Projects/Ohbot
+python3 ohbot_mic.py
+</code></pre>
+<p>Debe responder algo como:</p>
+<pre><code>🎤 Microphones found: 1
+     card 1: Device [USB Audio] → plughw:1,0
+🎤 Auto-detected USB microphone: plughw:1,0
+</code></pre>
+<p><strong>Si dice que encontró el micrófono, ya terminaste con este paso.</strong> No hay que configurar nada más.</p>
+<blockquote>
+<p>Esta detección automática existe por una razón: el 10 de agosto de 2026, en este mismo Clubhouse, Yobot saludó a la gente y después se quedó mudo. El código buscaba la tarjeta número 3 y el micrófono estaba en la 2. No dio ningún error — simplemente se quedó esperando para siempre. Ahora busca por nombre.</p>
+</blockquote>
+<h3 id="63-revisa-que-el-parlante-suene">6.3 Revisa que el parlante suene</h3>
 <p>Primero mira qué salidas de audio hay:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">aplay -l</pre><p>
-Vas a ver el Neewer y también <font face="Liberation Mono, monospace">vc4hdmi0</font>
-y <font face="Liberation Mono, monospace">vc4hdmi1</font> — esas
-dos son el HDMI&nbsp;del monitor, no sirven aquí. Fíjate en el
-número de <font face="Liberation Mono, monospace">card</font> del
-USB (debería&nbsp;ser el mismo que anotaste arriba).</p>
-<p>Ahora prueba el sonido, <b>cambiando el </b><font face="Liberation Mono, monospace"><b>1</b></font><b>
-por tu número de card</b>:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">speaker-test -D plughw:1,0 -t wave -c 2 -l 1</pre><p>
-Debe salir una voz diciendo &quot;front left, front right&quot; por
-el parlante.&nbsp;Presiona <b>Ctrl-C</b> para detenerlo.</p>
+<pre><code>aplay -l
+</code></pre>
+<p>Vas a ver el Neewer y también <code>vc4hdmi0</code> y <code>vc4hdmi1</code> — esas dos son el HDMI del monitor, no sirven aquí. Fíjate en el número de <code>card</code> del USB (debería ser el mismo que anotaste arriba).</p>
+<p>Ahora prueba el sonido, <strong>cambiando el <code>1</code> por tu número de card</strong>:</p>
+<pre><code>speaker-test -D plughw:1,0 -t wave -c 2 -l 1
+</code></pre>
+<p>Debe salir una voz diciendo "front left, front right" por el parlante. Presiona <strong>Ctrl-C</strong> para detenerlo.</p>
 <p>Si no se oye nada, revisa en este orden:</p>
 <ol>
-	<li><p>¿El parlante está encendido y tiene batería o corriente?</p></li>
-	<li><p>¿Está conectado al conector de <b>audífonos</b> del
-	Neewer, no al de&nbsp;micrófono?</p></li>
-	<li><p>¿El volumen del parlante está arriba?</p></li>
-	<li><p>Sube el volumen del sistema: <font face="Liberation Mono, monospace">alsamixer</font>
-	(con <font face="Liberation Mono, monospace">F6</font> escoges la
-	tarjeta USB,&nbsp;flechas ↑↓ para el volumen, <font face="Liberation Mono, monospace">Esc</font>
-	para salir)</p></li>
-	<li><p>¿Le pusiste el número de card equivocado al comando?</p></li>
+<li>¿El parlante está encendido y tiene batería o corriente?</li>
+<li>¿Está conectado al conector de <strong>audífonos</strong> del Neewer, no al de micrófono?</li>
+<li>¿El volumen del parlante está arriba?</li>
+<li>Sube el volumen del sistema: <code>alsamixer</code> (con <code>F6</code> escoges la tarjeta USB, flechas ↑↓ para el volumen, <code>Esc</code> para salir)</li>
+<li>¿Le pusiste el número de card equivocado al comando?</li>
 </ol>
-<blockquote>Recuerda: el parlante tiene que ser <b>amplificado</b>.
-Esa salida del Neewer&nbsp;es de monitoreo y no tiene fuerza para
-mover un parlante pasivo.</blockquote>
-<ul>
-	<li><p>☐ Micrófono detectado y parlante sonando</p></li>
+<blockquote>
+<p>Recuerda: el parlante tiene que ser <strong>amplificado</strong>. Esa salida del Neewer es de monitoreo y no tiene fuerza para mover un parlante pasivo.</p>
+</blockquote>
+<ul class="task-list">
+<li><input type="checkbox" disabled="" />
+Micrófono detectado y parlante sonando</li>
 </ul>
-<hr/>
-
-<h2 class="western">Parte 7 — Abrir el Launcher</h2>
-<p>El Launcher es una página web que corre <b>dentro del Pi</b>.
-Desde ahí manejas&nbsp;todo el robot sin escribir comandos.</p>
+<hr />
+<h2 id="parte-7--abrir-el-launcher">Parte 7 — Abrir el Launcher</h2>
+<p>El Launcher es una página web que corre <strong>dentro del Pi</strong>. Desde ahí manejas todo el robot sin escribir comandos.</p>
 <p>En tu computadora, abre el navegador y ve a:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">http://yobot2.local:5000</pre><p>
-<i>(con tu nombre, y sin olvidar los </i><font face="Liberation Mono, monospace"><i>:5000</i></font><i>
-al final)</i></p>
-<p>Debe aparecer la página del Launcher con botones para escoger qué
-quieres&nbsp;correr.</p>
-<blockquote><b>Si la página no abre:</b> vuelve a la Terminal y
-corre&nbsp;<font face="Liberation Mono, monospace">systemctl --user
-status ohbot-launcher</font>. Si dice <font face="Liberation Mono, monospace">active
-(running)</font>, el&nbsp;problema es la red o el nombre. Prueba con
-el número IP: corre&nbsp;<font face="Liberation Mono, monospace">hostname
--I</font> en el Pi y usa ese número, por
-ejemplo&nbsp;<font face="Liberation Mono, monospace">http://192.168.50.132:5000</font>.</blockquote>
-<ul>
-	<li><p>☐ Launcher abierto en el navegador</p></li>
+<pre><code>http://yobot2.local:5000
+</code></pre>
+<p><em>(con tu nombre, y sin olvidar los <code>:5000</code> al final)</em></p>
+<p>Debe aparecer la página del Launcher con botones para escoger qué quieres correr.</p>
+<blockquote>
+<p><strong>Si la página no abre:</strong> vuelve a la Terminal y corre <code>systemctl --user status ohbot-launcher</code>. Si dice <code>active (running)</code>, el problema es la red o el nombre. Prueba con el número IP: corre <code>hostname -I</code> en el Pi y usa ese número, por ejemplo <code>http://192.168.50.132:5000</code>.</p>
+</blockquote>
+<p><strong>En esa misma página hay un enlace que dice <code>⚙ Settings &amp; Keys</code></strong> (Ajustes y llaves). Es la manera fácil de hacer la Parte 10: desde ahí pegas tu llave de Azure, escoges qué compañía de inteligencia artificial le presta el cerebro al robot, y hay un botón que prueba cada llave y te dice si sirve. Todo desde el navegador, sin comandos.</p>
+<p>Como cualquiera que esté en el mismo WiFi puede abrir el Launcher, la primera vez que entres a Settings te va a ofrecer ponerle una contraseña. Mientras no le pongas una, queda abierto — así una instalación nueva no te deja afuera de la misma página donde tienes que ponerla.</p>
+<ul class="task-list">
+<li><input type="checkbox" disabled="" />
+Launcher abierto en el navegador</li>
 </ul>
-<hr/>
-
-<h2 class="western">Parte 8 — Cargar un robot</h2>
-<p><b>Este paso no se puede saltar.</b> Un Pi recién instalado <b>no
-tiene</b> archivo&nbsp;de calibración — el archivo con las medidas
-de los motores no viene incluido&nbsp;en la descarga, a propósito.</p>
-<blockquote><b>¿Por qué a propósito?</b> Cada cabeza Ohbot es
-físicamente distinta. Los&nbsp;motores no quedan exactamente iguales
-de una a otra. Si el archivo viniera&nbsp;incluido, tu robot movería
-la boca con las medidas de otro robot y se vería&nbsp;raro o se
-forzarían los motores.</blockquote>
-<p>En la página del Launcher, busca la sección que dice&nbsp;<b>🤖
-Which robot are you using?</b> — ahí sale una lista con los robots
-que ya&nbsp;existen:</p>
-<table width="100%" cellpadding="4" cellspacing="0">
-	<col width="128*"/>
-	<col width="128*"/>
-	<thead>
-		<tr valign="top">
-			<th width="50%" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.04in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Robot</p>
-			</th>
-			<th width="50%" style="border: 1px solid #000000; padding: 0.04in"><p align="left">
-				Quién es</p>
-			</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p>
-				<font face="Liberation Mono, monospace">Lester</font></p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				<br/>
-
-				</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p>
-				<font face="Liberation Mono, monospace">Rubia</font></p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				La hermana de Lester — la de <font face="Liberation Mono, monospace">yobot1</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p>
-				<font face="Liberation Mono, monospace">TallMan</font></p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				El del Clubhouse</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p>
-				<font face="Liberation Mono, monospace">BlueBoy</font></p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				<br/>
-
-				</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p>
-				<font face="Liberation Mono, monospace">Goldie</font></p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				<br/>
-
-				</p>
-			</td>
-		</tr>
-	</tbody>
+<hr />
+<h2 id="parte-8--cargar-un-robot">Parte 8 — Cargar un robot</h2>
+<p><strong>Este paso no se puede saltar.</strong> Un Pi recién instalado <strong>no tiene</strong> archivo de calibración — el archivo con las medidas de los motores no viene incluido en la descarga, a propósito.</p>
+<blockquote>
+<p><strong>¿Por qué a propósito?</strong> Cada cabeza Ohbot es físicamente distinta. Los motores no quedan exactamente iguales de una a otra. Si el archivo viniera incluido, tu robot movería la boca con las medidas de otro robot y se vería raro o se forzarían los motores.</p>
+</blockquote>
+<p>En la página del Launcher, busca la sección que dice <strong>🤖 Which robot are you using?</strong> — ahí sale una lista con los robots que ya existen:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Robot</th>
+<th>Quién es</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Lester</code></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>Rubia</code></td>
+<td>La hermana de Lester — la de <code>yobot1</code></td>
+</tr>
+<tr class="odd">
+<td><code>TallMan</code></td>
+<td>El del Clubhouse</td>
+</tr>
+<tr class="even">
+<td><code>BlueBoy</code></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>Goldie</code></td>
+<td></td>
+</tr>
+</tbody>
 </table>
-<p><br/>
-<br/>
-
-</p>
-<p><b>Escoge el que se parezca más a tu cabeza</b> — pregúntale a
-Michael cuál — y&nbsp;presiona <b>Load calibration</b>. Eso copia
-sus medidas al archivo vivo y los&nbsp;motores empiezan a funcionar.</p>
-<p>Arriba te va a decir <b>&quot;Currently loaded:&quot;</b> con el
-nombre del robot que&nbsp;cargaste.</p>
-<ul>
-	<li><p>☐ Robot cargado y la cabeza responde</p></li>
+<p><strong>Escoge el que se parezca más a tu cabeza</strong> — pregúntale a Michael cuál — y presiona <strong>Load calibration</strong>. Eso copia sus medidas al archivo vivo y los motores empiezan a funcionar.</p>
+<p>Arriba te va a decir <strong>"Currently loaded:"</strong> con el nombre del robot que cargaste.</p>
+<ul class="task-list">
+<li><input type="checkbox" disabled="" />
+Robot cargado y la cabeza responde</li>
 </ul>
-<hr/>
-
-<h2 class="western">Parte 9 — Calibrar tu robot</h2>
-<p>Ahora ajustas los motores a <b>tu</b> cabeza y le pones su propio
-nombre.</p>
+<hr />
+<h2 id="parte-9--calibrar-tu-robot">Parte 9 — Calibrar tu robot</h2>
+<p>Ahora ajustas los motores a <strong>tu</strong> cabeza y le pones su propio nombre.</p>
 <ol>
-	<li><p>En el Launcher, haz clic en <b>🔧 Motor Calibration</b></p></li>
-	<li><p style="margin-bottom: 0in">Ajusta los ocho motores hasta que
-	se vea bien:</p>
-	<ul>
-		<li><p><b>HeadTurn</b> — la cabeza mira al frente</p></li>
-		<li><p><b>HeadNod</b> — la cabeza derecha, ni mirando arriba ni
-		abajo</p></li>
-		<li><p><b>HeadRoll</b> — la cabeza no está inclinada hacia un
-		lado</p></li>
-		<li><p><b>EyeTurn</b> y <b>EyeTilt</b> — los ojos al centro</p></li>
-		<li><p><b>TopLip</b> y <b>BottomLip</b> — la boca cerrada pero
-		sin apretar</p></li>
-		<li><p><b>LidBlink</b> — los párpados abiertos</p></li>
-	</ul>
-	<li><p>Cuando quede bien, guárdalo con un <b>nombre nuevo</b> —
-	el nombre de tu robot</p></li>
+<li>En el Launcher, haz clic en <strong>🔧 Motor Calibration</strong></li>
+<li>Ajusta los ocho motores hasta que se vea bien:
+<ul>
+<li><strong>HeadTurn</strong> — la cabeza mira al frente</li>
+<li><strong>HeadNod</strong> — la cabeza derecha, ni mirando arriba ni abajo</li>
+<li><strong>HeadRoll</strong> — la cabeza no está inclinada hacia un lado</li>
+<li><strong>EyeTurn</strong> y <strong>EyeTilt</strong> — los ojos al centro</li>
+<li><strong>TopLip</strong> y <strong>BottomLip</strong> — la boca cerrada pero sin apretar</li>
+<li><strong>LidBlink</strong> — los párpados abiertos</li>
+</ul></li>
+<li>Cuando quede bien, guárdalo con un <strong>nombre nuevo</strong> — el nombre de tu robot</li>
 </ol>
-<blockquote>Si necesitas guardar la calibración sin pasar por la
-página de ajuste, en el&nbsp;Launcher hay un botón que dice <b>💾
-Save current calibration as a robot…</b></blockquote>
-<blockquote><b>Ve despacio con los motores.</b> Si algo hace un ruido
-de forcejeo o se&nbsp;traba, <b>detente y devuélvelo</b>. Los servos
-son de plástico y se rompen.</blockquote>
-<blockquote><b>Regla de oro:</b> guarda con un nombre <b>nuevo</b>.
-No sobreescribas a Rubia&nbsp;ni a TallMan — esos son los robots de
-otras personas.</blockquote>
-<ul>
-	<li><p>☐ Robot calibrado y guardado como: ______________</p></li>
+<blockquote>
+<p>Si necesitas guardar la calibración sin pasar por la página de ajuste, en el Launcher hay un botón que dice <strong>💾 Save current calibration as a robot…</strong></p>
+</blockquote>
+<blockquote>
+<p><strong>Ve despacio con los motores.</strong> Si algo hace un ruido de forcejeo o se traba, <strong>detente y devuélvelo</strong>. Los servos son de plástico y se rompen.</p>
+</blockquote>
+<blockquote>
+<p><strong>Regla de oro:</strong> guarda con un nombre <strong>nuevo</strong>. No sobreescribas a Rubia ni a TallMan — esos son los robots de otras personas.</p>
+</blockquote>
+<ul class="task-list">
+<li><input type="checkbox" disabled="" />
+Robot calibrado y guardado como: ______________</li>
 </ul>
-<hr/>
-
-<h2 class="western">Parte 10 — Michael pone las llaves</h2>
-<p><b>Este paso lo hace Michael, no los estudiantes.</b></p>
-<p>Michael entra al Pi y edita el archivo de configuración:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">nano ~/Projects/Ohbot/.env</pre><p>
-Reemplaza las dos líneas que dicen <font face="Liberation Mono, monospace">YOUR_OPENAI_KEY_HERE</font>
-y&nbsp;<font face="Liberation Mono, monospace">YOUR_AZURE_KEY_HERE</font>
-con las llaves reales, y confirma que la región sea la&nbsp;correcta.
-Guarda con <b>Ctrl-O</b>, Enter, y sale con <b>Ctrl-X</b>.</p>
-<p>Después reinicia los servicios:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">systemctl --user restart ohbot-launcher</pre>
-<ul>
-	<li><p>☐ Llaves instaladas (Michael)</p></li>
+<hr />
+<h2 id="parte-10--poner-las-llaves">Parte 10 — Poner las llaves</h2>
+<p>Son dos cuentas, y <strong>solo una hace falta</strong>.</p>
+<p><strong>Microsoft Azure — la voz. Esta sí la necesitas.</strong> Es lo que le da voz al robot. Sin ella se mueve, pero en silencio. Se saca en <a href="https://portal.azure.com">https://portal.azure.com</a>: crea un recurso de <strong>Speech</strong>, escoge una región (<code>eastus</code> sirve), y copia la <strong>KEY 1</strong> y el nombre de la región.</p>
+<p><strong>El cerebro — la conversación. Esta es opcional y puede esperar.</strong> Es lo que hace que Yobot te conteste cuando le hablas. Nada más la usa: ni los motores, ni la página de control, ni el ajedrez. Escoge <strong>una sola</strong> compañía:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Compañía</th>
+<th>Dónde sacar la llave</th>
+<th>Vale saber</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>OpenAI</strong></td>
+<td>platform.openai.com → API keys</td>
+<td>La de siempre, la que trae por defecto.</td>
+</tr>
+<tr class="even">
+<td><strong>Anthropic</strong></td>
+<td>console.anthropic.com → API keys</td>
+<td>Claude.</td>
+</tr>
+<tr class="odd">
+<td><strong>Google Gemini</strong></td>
+<td>aistudio.google.com/apikey</td>
+<td>Tiene plan gratis.</td>
+</tr>
+<tr class="even">
+<td><strong>Groq</strong></td>
+<td>console.groq.com → API keys</td>
+<td>Corre modelos abiertos en su propio equipo: rápido y muy barato.</td>
+</tr>
+<tr class="odd">
+<td><strong>Ollama</strong></td>
+<td>no hay que registrarse</td>
+<td>Corre en tu propia red. Sin cuenta, sin cobro, y lo que piensa el robot no sale del edificio.</td>
+</tr>
+</tbody>
+</table>
+<p>Copia la llave apenas aparezca — casi todas se enseñan una sola vez.</p>
+<h3 id="la-manera-fácil-desde-el-navegador">La manera fácil: desde el navegador</h3>
+<p>En la página del Launcher, entra a <strong><code>⚙ Settings &amp; Keys</code></strong> (Ajustes y llaves), pega las llaves ahí y presiona el botón que las prueba. Listo. Es lo mismo que hace el archivo, pero sin comandos y avisándote si algo está mal escrito.</p>
+<h3 id="la-otra-manera-editando-el-archivo">La otra manera: editando el archivo</h3>
+<pre><code>nano ~/Projects/Ohbot/.env
+</code></pre>
+<p>Con estas dos líneas ya tienes un archivo completo que funciona — el robot se mueve, habla y juega ajedrez:</p>
+<pre><code>AZURE_SPEECH_KEY=tu llave de Azure
+AZURE_SPEECH_REGION=eastus
+</code></pre>
+<p>Para prender la conversación son dos líneas más — cuál compañía, y su llave:</p>
+<pre><code>LLM_PROVIDER=openai
+OPENAI_API_KEY=tu llave
+</code></pre>
+<p>Cambia el nombre por el que escogiste: <code>anthropic</code> con <code>ANTHROPIC_API_KEY</code>, <code>gemini</code> con <code>GEMINI_API_KEY</code>, <code>groq</code> con <code>GROQ_API_KEY</code>, u <code>ollama</code>, que no lleva llave. Si dejas <code>LLM_PROVIDER</code> afuera, asume OpenAI, como siempre fue.</p>
+<p>Guarda con <strong>Ctrl-O</strong>, Enter, y sale con <strong>Ctrl-X</strong>. Después reinicia:</p>
+<pre><code>systemctl --user restart ohbot-launcher
+</code></pre>
+<ul class="task-list">
+<li><input type="checkbox" disabled="" />
+Llave de Azure puesta y probada</li>
+<li><input type="checkbox" disabled="" />
+Llave del cerebro puesta, o dejada para después a propósito</li>
 </ul>
-<hr/>
-
-<h2 class="western">Parte 11 — La prueba final</h2>
+<hr />
+<h2 id="parte-11--la-prueba-final">Parte 11 — La prueba final</h2>
 <ol>
-	<li><p>En el Launcher, presiona el botón <b>Greeter Bot</b></p></li>
-	<li><p>Espera unos 15 segundos — hay una pausa programada mientras
-	arranca</p></li>
-	<li><p>Háblale al micrófono</p></li>
+<li>En el Launcher, presiona el botón <strong>Greeter Bot</strong></li>
+<li>Espera unos 15 segundos — hay una pausa programada mientras arranca</li>
+<li>Háblale al micrófono</li>
 </ol>
-<p>Si te responde con voz y mueve la boca al hablar: <b>terminaste.</b>
-🎉</p>
-<h3 class="western">Prueba de reinicio</h3>
-<p>Lo último: comprueba que el robot arranca solo después de un
-apagón.</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">sudo reboot</pre><p>
-Espera 2 minutos y vuelve a abrir <font face="Liberation Mono, monospace">http://yobot2.local:5000</font>.
-Si la página&nbsp;carga sin que nadie haya iniciado sesión en el
-Pi, quedó bien.</p>
-<ul>
-	<li><p>☐ Prueba de reinicio pasada</p></li>
+<p>Si te responde con voz y mueve la boca al hablar: <strong>terminaste.</strong> 🎉</p>
+<h3 id="prueba-de-reinicio">Prueba de reinicio</h3>
+<p>Lo último: comprueba que el robot arranca solo después de un apagón.</p>
+<pre><code>sudo reboot
+</code></pre>
+<p>Espera 2 minutos y vuelve a abrir <code>http://yobot2.local:5000</code>. Si la página carga sin que nadie haya iniciado sesión en el Pi, quedó bien.</p>
+<ul class="task-list">
+<li><input type="checkbox" disabled="" />
+Prueba de reinicio pasada</li>
 </ul>
-<hr/>
-
-<h2 class="western">Apéndice A — Cuando algo sale mal</h2>
-<h3 class="western">Yobot saluda y después se queda mudo</h3>
+<hr />
+<h2 id="apéndice-d--agregar-el-ajedrez">Apéndice D — Agregar el ajedrez</h2>
+<p>El ajedrez es un segundo proyecto que le presta la voz y los motores a este, para que Yobot juegue una partida hablando en voz alta. Un Pi normalmente maneja un robot mientras otra computadora corre el juego, pero un Pi puede correr todo él solo — y <strong>no necesita pantalla</strong>, porque el tablero es una página web que abres desde una laptop o una tablet.</p>
+<p>Cuando el robot ya salude, es poca cosa:</p>
+<pre><code>cd ~/Projects
+git clone https://github.com/boquetebots/YobotChess.git Chess
+cd Chess
+bash install.sh
+</code></pre>
+<p>Después abre <strong><code>EMPIEZA AQUI - Raspberry Pi (Espanol).md</code></strong> adentro de esa carpeta y sigue esa guía. No pide ninguna llave propia: usa la voz de Azure que pusiste en la Parte 10, y nunca toca la llave de la conversación.</p>
+<hr />
+<h2 id="apéndice-a--cuando-algo-sale-mal">Apéndice A — Cuando algo sale mal</h2>
+<h3 id="yobot-saluda-y-después-se-queda-mudo">Yobot saluda y después se queda mudo</h3>
 <p>Es el micrófono. Corre:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">cd ~/Projects/Ohbot<br/>
-python3 ohbot_mic.py</pre><p>
-Si no encuentra el micrófono, desconecta y reconecta el Neewer y
-reinicia el&nbsp;Pi.</p>
-<h3 class="western">El robot no se mueve / &quot;robot not found&quot;</h3>
-<p>El cable USB. Desconéctalo, vuelve a conectarlo, y desde el
-Launcher detén y&nbsp;vuelve a arrancar lo que estabas usando.</p>
-<blockquote><b>Importante:</b> el Greeter, el GUI y la Calibración
-<b>comparten el mismo</b>&nbsp;<b>cable USB</b>, así que solo uno
-puede correr a la vez. El Launcher se encarga&nbsp;de eso, pero si
-arrancas algo por fuera del Launcher vas a tener conflictos.</blockquote>
-<h3 class="western">Cambié algo y no se ve ningún cambio</h3>
-<p>Casi siempre es el navegador mostrando una página vieja guardada
-en memoria.&nbsp;Recarga forzando:</p>
+<pre><code>cd ~/Projects/Ohbot
+python3 ohbot_mic.py
+</code></pre>
+<p>Si no encuentra el micrófono, desconecta y reconecta el Neewer y reinicia el Pi.</p>
+<h3 id="el-robot-no-se-mueve--robot-not-found">El robot no se mueve / "robot not found"</h3>
+<p>El cable USB. Desconéctalo, vuelve a conectarlo, y desde el Launcher detén y vuelve a arrancar lo que estabas usando.</p>
+<blockquote>
+<p><strong>Importante:</strong> el Greeter, el GUI y la Calibración <strong>comparten el mismo cable USB</strong>, así que solo uno puede correr a la vez. El Launcher se encarga de eso, pero si arrancas algo por fuera del Launcher vas a tener conflictos.</p>
+</blockquote>
+<h3 id="cambié-algo-y-no-se-ve-ningún-cambio">Cambié algo y no se ve ningún cambio</h3>
+<p>Casi siempre es el navegador mostrando una página vieja guardada en memoria. Recarga forzando:</p>
 <ul>
-	<li><p>Mac: <b>Cmd + Shift + R</b></p></li>
-	<li><p>Windows: <b>Ctrl + Shift + R</b></p></li>
+<li>Mac: <strong>Cmd + Shift + R</strong></li>
+<li>Windows: <strong>Ctrl + Shift + R</strong></li>
 </ul>
-<h3 class="western">Una página se ve rara o falta un botón</h3>
-<p>Fíjate arriba a la derecha — ahí siempre está fija la
-pastilla del idioma 🌐.&nbsp;Cualquier cosa que se ponga en esa
-esquina queda tapada.</p>
-<h3 class="western">Ver qué está pasando por dentro</h3>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">journalctl --user -u ohbot-launcher -f</pre><p>
-Muestra en vivo lo que hace el Launcher. <b>Ctrl-C</b> para salir.</p>
-<p>Cambia <font face="Liberation Mono, monospace">ohbot-launcher</font>
-por <font face="Liberation Mono, monospace">ohbot-server</font> o
-<font face="Liberation Mono, monospace">ohbot-conversation</font>
-para ver los&nbsp;otros.</p>
-<h3 class="western">El Pi se quedó congelado</h3>
-<p>Está protegido: el <i>watchdog</i> de hardware lo reinicia solo
-después de 15&nbsp;segundos si se congela por completo. Espera medio
-minuto antes de desconectar&nbsp;el cable de poder.</p>
-<hr/>
-
-<h2 class="western">Apéndice B — El botón de despertar (opcional)</h2>
-<p>En el Raspberry Pi 5 el botón físico de despertar <b>no funciona
-todavía</b>.</p>
-<p>La librería que lee los botones (<font face="Liberation Mono, monospace">RPi.GPIO</font>)
-se instala sin dar error, pero&nbsp;falla cuando el robot la usa. El
-código lo detecta, imprime&nbsp;<font face="Liberation Mono, monospace">GPIO
-setup failed</font> y sigue funcionando sin botón. <b>No es una
-falla tuya y no</b>&nbsp;<b>rompe nada.</b></p>
+<h3 id="una-página-se-ve-rara-o-falta-un-botón">Una página se ve rara o falta un botón</h3>
+<p>Fíjate arriba a la derecha — ahí siempre está fija la pastilla del idioma 🌐. Cualquier cosa que se ponga en esa esquina queda tapada.</p>
+<h3 id="ver-qué-está-pasando-por-dentro">Ver qué está pasando por dentro</h3>
+<pre><code>journalctl --user -u ohbot-launcher -f
+</code></pre>
+<p>Muestra en vivo lo que hace el Launcher. <strong>Ctrl-C</strong> para salir.</p>
+<p>Cambia <code>ohbot-launcher</code> por <code>ohbot-server</code> o <code>ohbot-conversation</code> para ver los otros.</p>
+<h3 id="el-pi-se-quedó-congelado">El Pi se quedó congelado</h3>
+<p>Está protegido: el <em>watchdog</em> de hardware lo reinicia solo después de 15 segundos si se congela por completo. Espera medio minuto antes de desconectar el cable de poder.</p>
+<hr />
+<h2 id="apéndice-b--el-botón-de-despertar-opcional">Apéndice B — El botón de despertar (opcional)</h2>
+<p>En el Raspberry Pi 5 el botón físico de despertar <strong>no funciona todavía</strong>.</p>
+<p>La librería que lee los botones (<code>RPi.GPIO</code>) se instala sin dar error, pero falla cuando el robot la usa. El código lo detecta, imprime <code>GPIO setup failed</code> y sigue funcionando sin botón. <strong>No es una falla tuya y no rompe nada.</strong></p>
 <p>Si quieres intentar arreglarlo:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">sudo apt install -y swig python3-dev<br/>
-cd ~/Projects/Ohbot<br/>
-venv/bin/pip uninstall -y RPi.GPIO<br/>
-venv/bin/pip install rpi-lgpio</pre><p>
-La librería <font face="Liberation Mono, monospace">lgpio</font> no
-tiene versión lista para Python 3.13, así que se tiene&nbsp;que
-compilar desde cero — de ahí <font face="Liberation Mono, monospace">swig</font>.
-Toma varios minutos. <b>Consulta con</b>&nbsp;<b>Michael antes de
-hacerlo.</b></p>
-<hr/>
-
-<h2 class="western">Apéndice C — Comandos útiles</h2>
+<pre><code>sudo apt install -y swig python3-dev
+cd ~/Projects/Ohbot
+venv/bin/pip uninstall -y RPi.GPIO
+venv/bin/pip install rpi-lgpio
+</code></pre>
+<p>La librería <code>lgpio</code> no tiene versión lista para Python 3.13, así que se tiene que compilar desde cero — de ahí <code>swig</code>. Toma varios minutos. <strong>Consulta con Michael antes de hacerlo.</strong></p>
+<hr />
+<h2 id="apéndice-c--comandos-útiles">Apéndice C — Comandos útiles</h2>
 <p>Todos se corren dentro del Pi, después de entrar por SSH.</p>
-<table width="100%" cellpadding="4" cellspacing="0">
-	<col width="128*"/>
-	<col width="128*"/>
-	<thead>
-		<tr valign="top">
-			<th width="50%" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.04in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Para qué</p>
-			</th>
-			<th width="50%" style="border: 1px solid #000000; padding: 0.04in"><p align="left">
-				Comando</p>
-			</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Entrar al Pi</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">ssh yobot@yobot2.local</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Salir del Pi</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">exit</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Ir a la carpeta del proyecto</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">cd ~/Projects/Ohbot</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Ver si el Launcher está vivo</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">systemctl --user status
-				ohbot-launcher</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Reiniciar el Launcher</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">systemctl --user restart
-				ohbot-launcher</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Detener todo</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">systemctl --user stop
-				ohbot-launcher ohbot-server ohbot-conversation ohbot-gui</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Ver el registro en vivo</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">journalctl --user -u
-				ohbot-launcher -f</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Ver el número IP del Pi</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">hostname -I</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Ver los micrófonos</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">arecord -l</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Ver las salidas de audio</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">aplay -l</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Probar el micrófono de Yobot</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">python3 ohbot_mic.py</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Apagar el Pi bien</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">sudo shutdown -h now</font></p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Reiniciar el Pi</p>
-			</td>
-			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">sudo reboot</font></p>
-			</td>
-		</tr>
-	</tbody>
+<table>
+<thead>
+<tr class="header">
+<th>Para qué</th>
+<th>Comando</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Entrar al Pi</td>
+<td><code>ssh yobot@yobot2.local</code></td>
+</tr>
+<tr class="even">
+<td>Salir del Pi</td>
+<td><code>exit</code></td>
+</tr>
+<tr class="odd">
+<td>Ir a la carpeta del proyecto</td>
+<td><code>cd ~/Projects/Ohbot</code></td>
+</tr>
+<tr class="even">
+<td>Ver si el Launcher está vivo</td>
+<td><code>systemctl --user status ohbot-launcher</code></td>
+</tr>
+<tr class="odd">
+<td>Reiniciar el Launcher</td>
+<td><code>systemctl --user restart ohbot-launcher</code></td>
+</tr>
+<tr class="even">
+<td>Detener todo</td>
+<td><code>systemctl --user stop ohbot-launcher ohbot-server ohbot-conversation ohbot-gui</code></td>
+</tr>
+<tr class="odd">
+<td>Ver el registro en vivo</td>
+<td><code>journalctl --user -u ohbot-launcher -f</code></td>
+</tr>
+<tr class="even">
+<td>Ver el número IP del Pi</td>
+<td><code>hostname -I</code></td>
+</tr>
+<tr class="odd">
+<td>Ver los micrófonos</td>
+<td><code>arecord -l</code></td>
+</tr>
+<tr class="even">
+<td>Ver las salidas de audio</td>
+<td><code>aplay -l</code></td>
+</tr>
+<tr class="odd">
+<td>Probar el micrófono de Yobot</td>
+<td><code>python3 ohbot_mic.py</code></td>
+</tr>
+<tr class="even">
+<td>Apagar el Pi bien</td>
+<td><code>sudo shutdown -h now</code></td>
+</tr>
+<tr class="odd">
+<td>Reiniciar el Pi</td>
+<td><code>sudo reboot</code></td>
+</tr>
+</tbody>
 </table>
-<p><br/>
-<br/>
-
-</p>
-<blockquote><b>Nunca desconectes el cable de poder sin apagar primero</b>
-con&nbsp;<font face="Liberation Mono, monospace">sudo shutdown -h now</font>
-o con el botón del Launcher. Cortarle la corriente de&nbsp;golpe
-puede dañar la tarjeta SD.</blockquote>
-<hr/>
-
-<h2 class="western">Las cinco partes de Yobot</h2>
-<p>Para que entiendas qué está corriendo. Cada una es un programa
-aparte:</p>
-<table width="100%" cellpadding="4" cellspacing="0">
-	<col width="85*"/>
-	<col width="85*"/>
-	<col width="85*"/>
-	<thead>
-		<tr valign="top">
-			<th width="33%" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.04in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Programa</p>
-			</th>
-			<th width="33%" style="border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0.04in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Qué hace</p>
-			</th>
-			<th width="33%" style="border: 1px solid #000000; padding: 0.04in"><p align="left">
-				Puerto</p>
-			</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr valign="top">
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p>
-				<font face="Liberation Mono, monospace">ohbot-launcher</font></p>
-			</td>
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				La página principal. Arranca sola al encender.</p>
-			</td>
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				5000</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p>
-				<font face="Liberation Mono, monospace">ohbot-gui</font></p>
-			</td>
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Constructor de secuencias y línea de tiempo</p>
-			</td>
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				5001</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p>
-				<font face="Liberation Mono, monospace">ohbot-server</font></p>
-			</td>
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				El cerebro del Greeter</p>
-			</td>
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				5002</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p>
-				<font face="Liberation Mono, monospace">ohbot-conversation</font></p>
-			</td>
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				El micrófono, la voz y los motores</p>
-			</td>
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				—</p>
-			</td>
-		</tr>
-		<tr valign="top">
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p>
-				<font face="Liberation Mono, monospace">ohbot-calibration</font></p>
-			</td>
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: none; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0in"><p align="left">
-				Ajuste de motores</p>
-			</td>
-			<td width="33%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p align="left">
-				5003</p>
-			</td>
-		</tr>
-	</tbody>
+<blockquote>
+<p><strong>Nunca desconectes el cable de poder sin apagar primero</strong> con <code>sudo shutdown -h now</code> o con el botón del Launcher. Cortarle la corriente de golpe puede dañar la tarjeta SD.</p>
+</blockquote>
+<hr />
+<h2 id="las-cinco-partes-de-yobot">Las cinco partes de Yobot</h2>
+<p>Para que entiendas qué está corriendo. Cada una es un programa aparte:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Programa</th>
+<th>Qué hace</th>
+<th>Puerto</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>ohbot-launcher</code></td>
+<td>La página principal. Arranca sola al encender.</td>
+<td>5000</td>
+</tr>
+<tr class="even">
+<td><code>ohbot-gui</code></td>
+<td>Constructor de secuencias y línea de tiempo</td>
+<td>5001</td>
+</tr>
+<tr class="odd">
+<td><code>ohbot-server</code></td>
+<td>El cerebro del Greeter</td>
+<td>5002</td>
+</tr>
+<tr class="even">
+<td><code>ohbot-conversation</code></td>
+<td>El micrófono, la voz y los motores</td>
+<td>—</td>
+</tr>
+<tr class="odd">
+<td><code>ohbot-calibration</code></td>
+<td>Ajuste de motores</td>
+<td>5003</td>
+</tr>
+</tbody>
 </table>
-<p><br/>
-<br/>
-
-</p>
-<p>Solo el Launcher arranca solo. Los demás los enciendes y apagas
-desde su&nbsp;página.</p>
-<hr/>
-
-<p><i>Guía escrita para el Clubhouse Rincón · Raspberry Pi 5 ·
-Raspberry Pi OS</i>&nbsp;<i>(Trixie) · Python 3.13</i></p>
-<p><br/>
-<br/>
-
-</p>
+<p>Solo el Launcher arranca solo. Los demás los enciendes y apagas desde su página.</p>
+<hr />
+<p><em>Guía escrita para el Clubhouse Rincón · Raspberry Pi 5 · Raspberry Pi OS (Trixie) · Python 3.13</em></p>
 </body>
 </html>

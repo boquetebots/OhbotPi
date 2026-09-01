@@ -1,5 +1,7 @@
 # Yobot on the Mac
 
+> **¿Prefieres español?** Lee **`EMPIEZA AQUI (Espanol).md`**, en esta misma carpeta.
+
 Yobot is a robot head that listens, thinks and talks back. This guide gets it
 running on a Mac.
 

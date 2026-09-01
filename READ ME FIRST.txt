@@ -16,8 +16,10 @@
   You can ignore the rest of this project - it is the robot's
   innards and it looks after itself.
 
-  En espanol: abre la carpeta "Raspberry Pi" y lee
-  "EMPIEZA AQUI (Espanol)".
+  EN ESPANOL: empieza con "LEE ESTO PRIMERO (Espanol).txt", aqui
+  mismo. Cada carpeta - Windows, Mac, Raspberry Pi - tiene su
+  propio "EMPIEZA AQUI (Espanol)", y las llaves estan explicadas
+  en "Obtener tus llaves API (Espanol).md".
 
 
 ---------------------------------------------------------------------------

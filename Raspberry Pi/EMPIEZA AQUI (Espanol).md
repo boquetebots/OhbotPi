@@ -305,12 +305,13 @@ Enter region [default: eastus]:
 **Presiona Enter en las tres.** No escribas nada.
 
 Va a mostrar dos advertencias amarillas diciendo que sin llaves la voz no va a
-funcionar. **Está bien, es lo esperado.** Michael pone las llaves al final,
-en la Parte 10.
+funcionar. **Está bien, es lo esperado.** Las llaves se ponen al final, en la
+Parte 10.
 
 > **¿Qué son las llaves de API?** Son contraseñas que le dan a Yobot acceso a
-> los servicios de voz e inteligencia artificial en internet. Cuestan dinero
-> por uso, así que las maneja Michael y no van en esta guía.
+> los servicios de voz e inteligencia artificial en internet. Se pagan por
+> uso: unos centavos si el robot trabaja un rato al día. Cada quien pone las
+> suyas — no vienen dentro de esta descarga, a propósito.
 
 ### Pregunta 3 — El sistema de archivos "overlay" (Step 10)
 
@@ -456,6 +457,17 @@ correr.
 > `hostname -I` en el Pi y usa ese número, por ejemplo
 > `http://192.168.50.132:5000`.
 
+**En esa misma página hay un enlace que dice `⚙ Settings & Keys`**
+(Ajustes y llaves). Es la manera fácil de hacer la Parte 10: desde ahí pegas
+tu llave de Azure, escoges qué compañía de inteligencia artificial le presta
+el cerebro al robot, y hay un botón que prueba cada llave y te dice si sirve.
+Todo desde el navegador, sin comandos.
+
+Como cualquiera que esté en el mismo WiFi puede abrir el Launcher, la primera
+vez que entres a Settings te va a ofrecer ponerle una contraseña. Mientras no
+le pongas una, queda abierto — así una instalación nueva no te deja afuera de
+la misma página donde tienes que ponerla.
+
 - [ ] Launcher abierto en el navegador
 
 ---
@@ -521,27 +533,68 @@ Ahora ajustas los motores a **tu** cabeza y le pones su propio nombre.
 
 ---
 
-## Parte 10 — Michael pone las llaves
+## Parte 10 — Poner las llaves
 
-**Este paso lo hace Michael, no los estudiantes.**
+Son dos cuentas, y **solo una hace falta**.
 
-Michael entra al Pi y edita el archivo de configuración:
+**Microsoft Azure — la voz. Esta sí la necesitas.** Es lo que le da voz al
+robot. Sin ella se mueve, pero en silencio. Se saca en
+<https://portal.azure.com>: crea un recurso de **Speech**, escoge una región
+(`eastus` sirve), y copia la **KEY 1** y el nombre de la región.
+
+**El cerebro — la conversación. Esta es opcional y puede esperar.** Es lo que
+hace que Yobot te conteste cuando le hablas. Nada más la usa: ni los motores,
+ni la página de control, ni el ajedrez. Escoge **una sola** compañía:
+
+| Compañía | Dónde sacar la llave | Vale saber |
+|---|---|---|
+| **OpenAI** | platform.openai.com → API keys | La de siempre, la que trae por defecto. |
+| **Anthropic** | console.anthropic.com → API keys | Claude. |
+| **Google Gemini** | aistudio.google.com/apikey | Tiene plan gratis. |
+| **Groq** | console.groq.com → API keys | Corre modelos abiertos en su propio equipo: rápido y muy barato. |
+| **Ollama** | no hay que registrarse | Corre en tu propia red. Sin cuenta, sin cobro, y lo que piensa el robot no sale del edificio. |
+
+Copia la llave apenas aparezca — casi todas se enseñan una sola vez.
+
+### La manera fácil: desde el navegador
+
+En la página del Launcher, entra a **`⚙ Settings & Keys`** (Ajustes y llaves),
+pega las llaves ahí y presiona el botón que las prueba. Listo. Es lo mismo que
+hace el archivo, pero sin comandos y avisándote si algo está mal escrito.
+
+### La otra manera: editando el archivo
 
 ```
 nano ~/Projects/Ohbot/.env
 ```
 
-Reemplaza las dos líneas que dicen `YOUR_OPENAI_KEY_HERE` y
-`YOUR_AZURE_KEY_HERE` con las llaves reales, y confirma que la región sea la
-correcta. Guarda con **Ctrl-O**, Enter, y sale con **Ctrl-X**.
+Con estas dos líneas ya tienes un archivo completo que funciona — el robot se
+mueve, habla y juega ajedrez:
 
-Después reinicia los servicios:
+```
+AZURE_SPEECH_KEY=tu llave de Azure
+AZURE_SPEECH_REGION=eastus
+```
+
+Para prender la conversación son dos líneas más — cuál compañía, y su llave:
+
+```
+LLM_PROVIDER=openai
+OPENAI_API_KEY=tu llave
+```
+
+Cambia el nombre por el que escogiste: `anthropic` con `ANTHROPIC_API_KEY`,
+`gemini` con `GEMINI_API_KEY`, `groq` con `GROQ_API_KEY`, u `ollama`, que no
+lleva llave. Si dejas `LLM_PROVIDER` afuera, asume OpenAI, como siempre fue.
+
+Guarda con **Ctrl-O**, Enter, y sale con **Ctrl-X**. Después reinicia:
 
 ```
 systemctl --user restart ohbot-launcher
 ```
 
-- [ ] Llaves instaladas (Michael)
+- [ ] Llave de Azure puesta y probada
+- [ ] Llave del cerebro puesta, o dejada para después a propósito
 
 ---
 
@@ -565,6 +618,29 @@ Espera 2 minutos y vuelve a abrir `http://yobot2.local:5000`. Si la página
 carga sin que nadie haya iniciado sesión en el Pi, quedó bien.
 
 - [ ] Prueba de reinicio pasada
+
+---
+
+## Apéndice D — Agregar el ajedrez
+
+El ajedrez es un segundo proyecto que le presta la voz y los motores a este,
+para que Yobot juegue una partida hablando en voz alta. Un Pi normalmente
+maneja un robot mientras otra computadora corre el juego, pero un Pi puede
+correr todo él solo — y **no necesita pantalla**, porque el tablero es una
+página web que abres desde una laptop o una tablet.
+
+Cuando el robot ya salude, es poca cosa:
+
+```
+cd ~/Projects
+git clone https://github.com/boquetebots/YobotChess.git Chess
+cd Chess
+bash install.sh
+```
+
+Después abre **`EMPIEZA AQUI - Raspberry Pi (Espanol).md`** adentro de esa
+carpeta y sigue esa guía. No pide ninguna llave propia: usa la voz de Azure
+que pusiste en la Parte 10, y nunca toca la llave de la conversación.
 
 ---
 

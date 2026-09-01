@@ -1,6 +1,9 @@
 # Ohbot Installation Guide
 ### From a blank SD card to a talking robot
 
+> **¿Prefieres español?** Lee **`EMPIEZA AQUI (Espanol).md`**, en esta misma carpeta —
+> es una guía de construcción completa, con más detalle que ésta.
+
 This guide walks you through everything from setting up a brand-new Raspberry Pi to running Ohbot for the first time. No coding experience required.
 
 ---

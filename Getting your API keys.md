@@ -1,5 +1,7 @@
 # Getting Your API Keys — Azure Speech & OpenAI
 
+> **¿Prefieres español?** Lee **`Obtener tus llaves API (Espanol).md`**.
+
 This guide walks you through getting the two API keys Ohbot needs for speech and AI chat.
 
 **You do NOT need to be a programmer to do this.** Just follow the steps.
