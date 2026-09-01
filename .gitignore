@@ -110,3 +110,37 @@ _to_delete/
 # Files left over from the 2026-09-01 update, kept on this PC only.
 # Safe to delete; never wanted in the repo.
 _superseded_*/
+
+# ============================================================================
+#  Development notes — kept on Michael's computer, NOT published
+#  Added 2026-09-01. This repository is PUBLIC. Everything below was written
+#  for us rather than for someone downloading Yobot: working plans, reviews,
+#  one-off day plans, and guides tied to one venue or to superseded code.
+#  They all still sit in this folder — they just stop going up to GitHub.
+# ============================================================================
+
+# Our own code review before the Mac/Windows port, and the port plan itself.
+CODE_REVIEW_pre_port.md
+PORTING_mac_windows.md
+
+# Plans for specific days and specific venues, with our own hardware in them.
+CLUBHOUSE_DAY_PLAN.md
+ROUTER_SETUP_RINCON.md
+YOBOT_BUILD_CHECKLIST.md
+
+# Written as an answer to Michael, not as a guide.
+SYNC_Windows_Mac_Pi.md
+
+# Needs a rebuild zip only we have, and names the Boquete library.
+REBUILD_GUIDE.md
+
+# A dated handoff, marked RESOLVED. Finished business.
+docs/AUTOSTART_TROUBLESHOOT.md
+
+# Superseded: describes the old Flask + GPT-4o-mini arrangement, replaced by
+# the llm.py provider setup. Would send a newcomer to build the wrong thing.
+docs/Flask GPT SETUP_GUIDE.md
+
+# Half guide, half migration note, and it assumes copying files off the Mac.
+# The START HERE guides cover the launcher for a new person.
+LAUNCHER_SETUP.md
