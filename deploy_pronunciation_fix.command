@@ -39,11 +39,11 @@ echo ""
 
 # ── Which Pi? ───────────────────────────────────────────────────────────────
 echo -e "  ${BOLD}What is the Pi's address?${RESET}"
-echo "  Press Enter to use pibot.local, or type an IP like 192.168.50.155"
+echo "  Press Enter to use yobot1.local, or type an IP like 192.168.50.155"
 echo ""
-echo -n "  Address [pibot.local]: "
+echo -n "  Address [yobot1.local]: "
 read -r PIHOST
-if [ -z "$PIHOST" ]; then PIHOST="pibot.local"; fi
+if [ -z "$PIHOST" ]; then PIHOST="yobot1.local"; fi
 echo ""
 
 # ── One shared SSH connection, so you type the password once ────────────────

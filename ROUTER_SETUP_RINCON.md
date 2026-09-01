@@ -31,7 +31,7 @@ and password.
 | Router LAN range | `192.168.0.x` (TP-Link default — unchanged) |
 | Pi's address on it | `192.168.0.101` (assigned by DHCP, not reserved) |
 | Pi's SSH login | `yobot@` |
-| Pi's hostname | `pibot` → `pibot.local` |
+| Pi's hostname | `yobot1` → `yobot1.local` |
 
 **There is no fixed IP address for the Pi and that's on purpose.** An earlier
 draft of this plan pinned it to a fixed address to match the home network. That
@@ -45,7 +45,7 @@ need to know the address. See "Finding the Pi" below.
 1. **It says its address out loud.** About a minute after boot, the robot speaks
    its own IP through its speaker (`announce_ip.py`). Uses espeak-ng, not the
    Azure voice, so it works with no internet at all.
-2. **By name:** `ssh yobot@pibot.local` — avahi is running on the Pi and this
+2. **By name:** `ssh yobot@yobot1.local` — avahi is running on the Pi and this
    works on any network, whatever address it got.
 3. **The router's client list:** `http://192.168.0.1` → **Network Map** or
    **Clients**. This is ground truth — it doesn't depend on anything on the Pi
@@ -105,7 +105,7 @@ nmcli -f NAME,AUTOCONNECT,AUTOCONNECT-PRIORITY connection show
 5. Listen for the announced address, or just:
 
 ```
-ssh yobot@pibot.local
+ssh yobot@yobot1.local
 ```
 
 6. Confirm the Pi has internet:
@@ -118,7 +118,7 @@ ping -c 3 api.openai.com
 **Both must work or Yobot will be silent.** The first tests raw internet; the
 second also tests name lookup.
 
-7. Open the Launcher at `http://pibot.local:5000/` and start the Greeter.
+7. Open the Launcher at `http://yobot1.local:5000/` and start the Greeter.
 
 ---
 
@@ -159,7 +159,7 @@ password is wrong:
 sudo nmcli connection modify RinconClubhouse wifi-sec.psk "CORRECT_PASSWORD"
 ```
 
-### pibot.local doesn't resolve
+### yobot1.local doesn't resolve
 
 Use the address the robot announced, or the one in the router's client list.
 

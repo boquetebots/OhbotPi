@@ -104,13 +104,13 @@ The Internet Sharing icon appears in the menu bar when it's running.
 Wait about 30 seconds for the Pi to pick up an address, then in **Terminal**:
 
 ```
-ping -c 3 pibot.local
+ping -c 3 yobot1.local
 ```
 
 Replies mean you're in. Then:
 
 ```
-ssh yobot@pibot.local
+ssh yobot@yobot1.local
 ```
 
 ### Step 5 — Confirm the Pi has internet
@@ -156,7 +156,7 @@ No cable, no adapter, no portal.
 3. The Pi joins it automatically *if it was set up in advance* — see the setup
    doc. If it wasn't set up in advance, this won't work, which is why it's worth
    doing tonight.
-4. `ssh yobot@pibot.local`
+4. `ssh yobot@yobot1.local`
 
 This also gives Yobot real internet over cell data, with no portal to click.
 API calls are text and short audio — very little data.
@@ -176,7 +176,7 @@ API calls are text and short audio — very little data.
 - Plug the adapter straight into the Mac, not through a hub or the monitor.
 - Try a different Ethernet cable.
 
-### Lights, but `ping pibot.local` fails
+### Lights, but `ping yobot1.local` fails
 
 The Pi's name may not be resolving. Find it by address instead:
 

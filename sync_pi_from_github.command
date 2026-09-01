@@ -19,7 +19,7 @@
 #
 #  It never deletes your saved sequences or calibration without asking.
 #
-#  Rewritten 2026-08-07 for the pibot build. The previous version was written
+#  Rewritten 2026-08-07 for the yobot1 build. The previous version was written
 #  for a one-time cleanup in August 2026 and had a fixed list of files to
 #  discard, plus the old Pi's username baked in. Both are gone.
 # ============================================================================
@@ -33,7 +33,7 @@ hdr()  { echo -e "\n${BOLD}${CYAN}━━━  $1  ━━━━━━━━━━�
 
 # ── Defaults ────────────────────────────────────────────────────────────────
 # Change these two lines if you rename the Pi or the user.
-DEFAULT_HOST="pibot.local"
+DEFAULT_HOST="yobot1.local"
 PIUSER="yobot"
 
 clear
@@ -80,7 +80,7 @@ if ! ssh "${SSH_OPTS[@]}" "$PI" "echo ok" >/dev/null; then
     echo "    3. If you rebuilt the Pi, clear the stale record:"
     echo "           ssh-keygen -R $PIHOST"
     echo ""
-    echo "  See PIBOT_BUILD_CHECKLIST.md, Part 9, for the full list."
+    echo "  See YOBOT_BUILD_CHECKLIST.md, Part 9, for the full list."
     echo ""
     read -p "  Press Return to close."
     exit 1

@@ -26,7 +26,7 @@ SERVICE_DIR="$HOME/.config/systemd/user"
 SCRIPT="$PROJECT_DIR/announce_ip.py"
 
 echo ""
-echo -e "${BOLD}${CYAN}  Pibot — IP Announcer setup${RESET}"
+echo -e "${BOLD}${CYAN}  Yobot — IP Announcer setup${RESET}"
 echo ""
 
 # ── Check the script is actually here ───────────────────────────────────────
@@ -66,10 +66,10 @@ for candidate in /boot/firmware /boot; do
 done
 
 if [ -n "$BOOT_DIR" ]; then
-    sudo touch "$BOOT_DIR/PIBOT_IP.txt" 2>/dev/null || true
-    sudo chown "$(whoami)" "$BOOT_DIR/PIBOT_IP.txt" 2>/dev/null || true
-    if [ -w "$BOOT_DIR/PIBOT_IP.txt" ]; then
-        ok "Can write $BOOT_DIR/PIBOT_IP.txt"
+    sudo touch "$BOOT_DIR/YOBOT_IP.txt" 2>/dev/null || true
+    sudo chown "$(whoami)" "$BOOT_DIR/YOBOT_IP.txt" 2>/dev/null || true
+    if [ -w "$BOOT_DIR/YOBOT_IP.txt" ]; then
+        ok "Can write $BOOT_DIR/YOBOT_IP.txt"
     else
         warn "Couldn't get write access to $BOOT_DIR — the address will still"
         warn "be saved in the project folder and your home folder."
@@ -137,9 +137,9 @@ echo "  From now on, about half a minute after you plug the robot in,"
 echo "  it will say its own address out loud. Twice."
 echo ""
 echo "  If you miss it, the same address is written to all of these:"
-echo "      ${BOOT_DIR:-/boot}/PIBOT_IP.txt   (readable by putting the SD card in your Mac)"
+echo "      ${BOOT_DIR:-/boot}/YOBOT_IP.txt   (readable by putting the SD card in your Mac)"
 echo "      $PROJECT_DIR/last_known_ip.txt"
-echo "      $HOME/PIBOT_IP.txt"
+echo "      $HOME/YOBOT_IP.txt"
 echo ""
 echo "  To hear it again without rebooting:"
 echo "      systemctl --user start ohbot-announce-ip"

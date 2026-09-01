@@ -7,7 +7,7 @@ THE PROBLEM THIS SOLVES
 
 You plug the robot in at the Clubhouse. It boots. It joins their WiFi. And now
 you have no idea what its address is, so you cannot open the Launcher page and
-you cannot SSH in. Asking the network to tell you (pibot.local, scanning, etc.)
+you cannot SSH in. Asking the network to tell you (yobot1.local, scanning, etc.)
 often fails on venue networks, which block exactly that kind of lookup.
 
 So instead of asking the network, we make the Pi TELL YOU. Three ways at once,
@@ -17,7 +17,7 @@ because any one of them can fail:
      own address through its speaker. You write it down. Done. This works even
      if the WiFi blocks everything else, because it uses no network at all.
 
-  2. IT WRITES IT ON THE SD CARD.  A file called PIBOT_IP.txt is saved to the
+  2. IT WRITES IT ON THE SD CARD.  A file called YOBOT_IP.txt is saved to the
      card's boot partition. If the robot is unplugged, pull the SD card, put it
      in your Mac, and open the file. That partition is readable by Macs and PCs.
 
@@ -192,7 +192,7 @@ def find_audio_player():
 
 def say(text):
     """Speak text out loud. Returns True if it probably worked."""
-    wav_path = Path(tempfile.gettempdir()) / "pibot_announce.wav"
+    wav_path = Path(tempfile.gettempdir()) / "yobot_announce.wav"
 
     # Step 1 — turn the words into a WAV file. The -w flag means "write to a
     # file instead of playing", which sidesteps espeak's broken audio output.
@@ -245,7 +245,7 @@ def write_everywhere(ip, wifi_name):
     stamp = time.strftime("%Y-%m-%d %H:%M:%S")
 
     contents = (
-        f"Pibot network address\n"
+        f"Yobot network address\n"
         f"=====================\n\n"
         f"IP address : {ip}\n"
         f"Hostname   : {hostname}\n"
@@ -264,8 +264,8 @@ def write_everywhere(ip, wifi_name):
     for boot in BOOT_PARTITIONS:
         if boot.is_dir():
             try:
-                (boot / "PIBOT_IP.txt").write_text(contents)
-                written_to.append(str(boot / "PIBOT_IP.txt"))
+                (boot / "YOBOT_IP.txt").write_text(contents)
+                written_to.append(str(boot / "YOBOT_IP.txt"))
             except OSError:
                 # Usually means the partition is read-only or we lack
                 # permission. Not fatal — we still have the other copies.
@@ -282,8 +282,8 @@ def write_everywhere(ip, wifi_name):
 
     # The home folder — always writable, last resort.
     try:
-        (Path.home() / "PIBOT_IP.txt").write_text(contents)
-        written_to.append(str(Path.home() / "PIBOT_IP.txt"))
+        (Path.home() / "YOBOT_IP.txt").write_text(contents)
+        written_to.append(str(Path.home() / "YOBOT_IP.txt"))
     except OSError:
         pass
 

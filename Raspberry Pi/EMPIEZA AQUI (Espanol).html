@@ -121,14 +121,14 @@ los guiones y los puntos.</blockquote>
 </p>
 <h3 class="western">El nombre de tu robot</h3>
 <p>Cada Pi necesita un <b>nombre único</b> en la red. Ya existe uno
-llamado&nbsp;<font face="Liberation Mono, monospace">pibot1</font>.
+llamado&nbsp;<font face="Liberation Mono, monospace">yobot1</font>.
 Los siguientes son:</p>
 <ul>
-	<li><p><font face="Liberation Mono, monospace">pibot2</font></p></li>
-	<li><p><font face="Liberation Mono, monospace">pibot3</font></p></li>
+	<li><p><font face="Liberation Mono, monospace">yobot2</font></p></li>
+	<li><p><font face="Liberation Mono, monospace">yobot3</font></p></li>
 </ul>
-<p><b>Escoge el tuyo ahora y anótalo aquí:</b> <font face="Liberation Mono, monospace">pibot____</font></p>
-<p>Cada vez que veas <font face="Liberation Mono, monospace">pibot2</font>
+<p><b>Escoge el tuyo ahora y anótalo aquí:</b> <font face="Liberation Mono, monospace">yobot____</font></p>
+<p>Cada vez que veas <font face="Liberation Mono, monospace">yobot2</font>
 en esta guía, escribe el tuyo en su lugar.</p>
 <blockquote><b>¿Por qué importa?</b> Si dos Pi tienen el mismo
 nombre, la red se confunde y&nbsp;no puedes conectarte a ninguno de
@@ -196,7 +196,7 @@ you like to apply OS customisation settings?&quot;</i></p>
 				Set hostname</p>
 			</td>
 			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">pibot2</font> ← <b>tu
+				<font face="Liberation Mono, monospace">yobot2</font> ← <b>tu
 				nombre, sin </b><font face="Liberation Mono, monospace"><b>.local</b></font></p>
 			</td>
 		</tr>
@@ -278,7 +278,7 @@ borrar la tarjeta.</p>
 Cuando diga&nbsp;<b>&quot;Write Successful&quot;</b>, saca la
 tarjeta.</p>
 <ul>
-	<li><p>☐ Tarjeta grabada con el nombre <font face="Liberation Mono, monospace">pibot____</font></p></li>
+	<li><p>☐ Tarjeta grabada con el nombre <font face="Liberation Mono, monospace">yobot____</font></p></li>
 </ul>
 <hr/>
 
@@ -303,9 +303,9 @@ hace una vez.</p>
 Utilidades →&nbsp;Terminal. En Windows: busca &quot;Terminal&quot;
 o &quot;PowerShell&quot;).</p>
 <p>Escribe esto y presiona Enter:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">ssh yobot@pibot2.local</pre><p>
+<pre style="margin-bottom: 0.2in; background: #e1e1e1">ssh yobot@yobot2.local</pre><p>
 La primera vez te va a decir algo así:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">The authenticity of host 'pibot2.local' can't be established.<br/>
+<pre style="margin-bottom: 0.2in; background: #e1e1e1">The authenticity of host 'yobot2.local' can't be established.<br/>
 ED25519 key fingerprint is SHA256:xxxxxxxxxxxx<br/>
 Are you sure you want to continue connecting (yes/no/[fingerprint])?</pre><p>
 Escribe <font face="Liberation Mono, monospace">yes</font> y presiona
@@ -314,7 +314,7 @@ Enter. Después te pide la contraseña.</p>
 aparecen ni asteriscos.&nbsp;Es normal en Linux — escríbela
 completa a ciegas y presiona Enter.</blockquote>
 <p>Cuando funcione verás algo como:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">yobot@pibot2:~ $</pre><p>
+<pre style="margin-bottom: 0.2in; background: #e1e1e1">yobot@yobot2:~ $</pre><p>
 Eso significa: <i>estás dentro del Pi</i>. Todo lo que escribas de
 ahora en&nbsp;adelante le habla al Pi, no a tu computadora.</p>
 <ul>
@@ -361,7 +361,7 @@ ahora en&nbsp;adelante le habla al Pi, no a tu computadora.</p>
 			</td>
 			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
 				Tu computadora recuerda otro Pi con ese nombre. Corre <font face="Liberation Mono, monospace">ssh-keygen
-				-R pibot2.local</font> y vuelve a intentar.</p>
+				-R yobot2.local</font> y vuelve a intentar.</p>
 			</td>
 		</tr>
 	</tbody>
@@ -401,7 +401,7 @@ en la respuesta. Si <b>está</b>, sigue adelante.</p>
 <pre style="margin-bottom: 0.2in; background: #e1e1e1">sudo usermod -aG dialout $USER</pre><p>
 ...y después <b>cierra la sesión y vuelve a entrar</b> (escribe
 <font face="Liberation Mono, monospace">exit</font>, y luego&nbsp;otra
-vez <font face="Liberation Mono, monospace">ssh yobot@pibot2.local</font>).
+vez <font face="Liberation Mono, monospace">ssh yobot@yobot2.local</font>).
 El permiso solo se activa al volver a&nbsp;entrar.</p>
 <h3 class="western">3.4 Confirma que el Pi ve la cabeza Ohbot</h3>
 <pre style="margin-bottom: 0.2in; background: #e1e1e1">ls /dev/ttyACM*</pre><p>
@@ -553,7 +553,7 @@ mover un parlante pasivo.</blockquote>
 <p>El Launcher es una página web que corre <b>dentro del Pi</b>.
 Desde ahí manejas&nbsp;todo el robot sin escribir comandos.</p>
 <p>En tu computadora, abre el navegador y ve a:</p>
-<pre style="margin-bottom: 0.2in; background: #e1e1e1">http://pibot2.local:5000</pre><p>
+<pre style="margin-bottom: 0.2in; background: #e1e1e1">http://yobot2.local:5000</pre><p>
 <i>(con tu nombre, y sin olvidar los </i><font face="Liberation Mono, monospace"><i>:5000</i></font><i>
 al final)</i></p>
 <p>Debe aparecer la página del Launcher con botones para escoger qué
@@ -611,7 +611,7 @@ que ya&nbsp;existen:</p>
 				<font face="Liberation Mono, monospace">Rubia</font></p>
 			</td>
 			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				La hermana de Lester — la de <font face="Liberation Mono, monospace">pibot1</font></p>
+				La hermana de Lester — la de <font face="Liberation Mono, monospace">yobot1</font></p>
 			</td>
 		</tr>
 		<tr valign="top">
@@ -721,7 +721,7 @@ Guarda con <b>Ctrl-O</b>, Enter, y sale con <b>Ctrl-X</b>.</p>
 <p>Lo último: comprueba que el robot arranca solo después de un
 apagón.</p>
 <pre style="margin-bottom: 0.2in; background: #e1e1e1">sudo reboot</pre><p>
-Espera 2 minutos y vuelve a abrir <font face="Liberation Mono, monospace">http://pibot2.local:5000</font>.
+Espera 2 minutos y vuelve a abrir <font face="Liberation Mono, monospace">http://yobot2.local:5000</font>.
 Si la página&nbsp;carga sin que nadie haya iniciado sesión en el
 Pi, quedó bien.</p>
 <ul>
@@ -808,7 +808,7 @@ hacerlo.</b></p>
 				Entrar al Pi</p>
 			</td>
 			<td width="50%" style="border-top: none; border-bottom: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000; padding-top: 0in; padding-bottom: 0.04in; padding-left: 0.04in; padding-right: 0.04in"><p>
-				<font face="Liberation Mono, monospace">ssh yobot@pibot2.local</font></p>
+				<font face="Liberation Mono, monospace">ssh yobot@yobot2.local</font></p>
 			</td>
 		</tr>
 		<tr valign="top">

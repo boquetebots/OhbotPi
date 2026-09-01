@@ -147,7 +147,7 @@ def main():
         print("Nothing was generated — see the errors above.")
         sys.exit(1)
 
-    # Pibot runs PiOS Lite, which has no sound server, so plain ALSA aplay
+    # Yobot runs PiOS Lite, which has no sound server, so plain ALSA aplay
     # works. (The OLD Pi needed pw-play — PipeWire was holding the device and
     # aplay failed with error 524. Not an issue on this build.)
     player = "aplay" if sys.platform.startswith("linux") else "afplay"

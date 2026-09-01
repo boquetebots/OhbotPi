@@ -48,7 +48,7 @@ hdr()  { echo -e "\n${BOLD}${CYAN}━━━  $1  ━━━━━━━━━━�
 
 MACDIR="/Users/michael/Projects/OhbotPi2"
 PIUSER="yobot"
-DEFAULT_PIHOST="pibot.local"
+DEFAULT_PIHOST="yobot1.local"
 
 clear
 echo ""

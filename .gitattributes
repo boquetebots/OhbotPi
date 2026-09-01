@@ -108,7 +108,7 @@ setup-github-login.bat             export-ignore
 # --- Planning notes, reviews, venue-specific docs -------------------------
 PORTING_mac_windows.md    export-ignore
 CODE_REVIEW_pre_port.md   export-ignore
-PIBOT_BUILD_CHECKLIST.md  export-ignore
+YOBOT_BUILD_CHECKLIST.md  export-ignore
 CLUBHOUSE_DAY_PLAN.md     export-ignore
 ROUTER_SETUP_RINCON.md    export-ignore
 Clubhouse?info.rtf        export-ignore

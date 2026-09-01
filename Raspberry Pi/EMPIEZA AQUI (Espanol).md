@@ -30,14 +30,14 @@ orden y lee lo que aparece en la pantalla.
 ### El nombre de tu robot
 
 Cada Pi necesita un **nombre único** en la red. Ya existe uno llamado
-`pibot1`. Los siguientes son:
+`yobot1`. Los siguientes son:
 
-- `pibot2`
-- `pibot3`
+- `yobot2`
+- `yobot3`
 
-**Escoge el tuyo ahora y anótalo aquí:** `pibot____`
+**Escoge el tuyo ahora y anótalo aquí:** `yobot____`
 
-Cada vez que veas `pibot2` en esta guía, escribe el tuyo en su lugar.
+Cada vez que veas `yobot2` en esta guía, escribe el tuyo en su lugar.
 
 > **¿Por qué importa?** Si dos Pi tienen el mismo nombre, la red se confunde y
 > no puedes conectarte a ninguno de los dos. Es como dos personas con el mismo
@@ -97,7 +97,7 @@ Haz clic en **EDIT SETTINGS**.
 
 | Campo | Qué escribir |
 |---|---|
-| Set hostname | `pibot2` ← **tu nombre, sin `.local`** |
+| Set hostname | `yobot2` ← **tu nombre, sin `.local`** |
 | Set username | `yobot` |
 | Password | La que te dé Michael (la misma en los tres Pi) |
 | Configure wireless LAN → SSID | El nombre del WiFi del Clubhouse |
@@ -123,7 +123,7 @@ vez **YES** para confirmar que quieres borrar la tarjeta.
 El Imager escribe y después verifica. Toma entre 5 y 15 minutos. Cuando diga
 **"Write Successful"**, saca la tarjeta.
 
-- [ ] Tarjeta grabada con el nombre `pibot____`
+- [ ] Tarjeta grabada con el nombre `yobot____`
 
 ---
 
@@ -149,13 +149,13 @@ Terminal. En Windows: busca "Terminal" o "PowerShell").
 Escribe esto y presiona Enter:
 
 ```
-ssh yobot@pibot2.local
+ssh yobot@yobot2.local
 ```
 
 La primera vez te va a decir algo así:
 
 ```
-The authenticity of host 'pibot2.local' can't be established.
+The authenticity of host 'yobot2.local' can't be established.
 ED25519 key fingerprint is SHA256:xxxxxxxxxxxx
 Are you sure you want to continue connecting (yes/no/[fingerprint])?
 ```
@@ -168,7 +168,7 @@ Escribe `yes` y presiona Enter. Después te pide la contraseña.
 Cuando funcione verás algo como:
 
 ```
-yobot@pibot2:~ $
+yobot@yobot2:~ $
 ```
 
 Eso significa: *estás dentro del Pi*. Todo lo que escribas de ahora en
@@ -182,7 +182,7 @@ adelante le habla al Pi, no a tu computadora.
 |---|---|
 | `ssh: Could not resolve hostname` | El Pi no está en la red todavía. Espera 2 minutos más e intenta de nuevo. Revisa que escribiste bien el WiFi en el Imager. |
 | `Permission denied` | Contraseña equivocada. Cuidado con las mayúsculas. |
-| `REMOTE HOST IDENTIFICATION HAS CHANGED` | Tu computadora recuerda otro Pi con ese nombre. Corre `ssh-keygen -R pibot2.local` y vuelve a intentar. |
+| `REMOTE HOST IDENTIFICATION HAS CHANGED` | Tu computadora recuerda otro Pi con ese nombre. Corre `ssh-keygen -R yobot2.local` y vuelve a intentar. |
 
 ---
 
@@ -230,7 +230,7 @@ sudo usermod -aG dialout $USER
 ```
 
 ...y después **cierra la sesión y vuelve a entrar** (escribe `exit`, y luego
-otra vez `ssh yobot@pibot2.local`). El permiso solo se activa al volver a
+otra vez `ssh yobot@yobot2.local`). El permiso solo se activa al volver a
 entrar.
 
 ### 3.4 Confirma que el Pi ve la cabeza Ohbot
@@ -442,7 +442,7 @@ todo el robot sin escribir comandos.
 En tu computadora, abre el navegador y ve a:
 
 ```
-http://pibot2.local:5000
+http://yobot2.local:5000
 ```
 
 *(con tu nombre, y sin olvidar los `:5000` al final)*
@@ -478,7 +478,7 @@ existen:
 | Robot | Quién es |
 |---|---|
 | `Lester` | |
-| `Rubia` | La hermana de Lester — la de `pibot1` |
+| `Rubia` | La hermana de Lester — la de `yobot1` |
 | `TallMan` | El del Clubhouse |
 | `BlueBoy` | |
 | `Goldie` | |
@@ -561,7 +561,7 @@ Lo último: comprueba que el robot arranca solo después de un apagón.
 sudo reboot
 ```
 
-Espera 2 minutos y vuelve a abrir `http://pibot2.local:5000`. Si la página
+Espera 2 minutos y vuelve a abrir `http://yobot2.local:5000`. Si la página
 carga sin que nadie haya iniciado sesión en el Pi, quedó bien.
 
 - [ ] Prueba de reinicio pasada
@@ -653,7 +653,7 @@ Todos se corren dentro del Pi, después de entrar por SSH.
 
 | Para qué | Comando |
 |---|---|
-| Entrar al Pi | `ssh yobot@pibot2.local` |
+| Entrar al Pi | `ssh yobot@yobot2.local` |
 | Salir del Pi | `exit` |
 | Ir a la carpeta del proyecto | `cd ~/Projects/Ohbot` |
 | Ver si el Launcher está vivo | `systemctl --user status ohbot-launcher` |
