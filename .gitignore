@@ -144,3 +144,29 @@ docs/Flask GPT SETUP_GUIDE.md
 # Half guide, half migration note, and it assumes copying files off the Mac.
 # The START HERE guides cover the launcher for a new person.
 LAUNCHER_SETUP.md
+
+# ============================================================================
+#  Michael's own workshop scripts — NOT for the public
+#  Added 2026-09-01. These are the tools he runs on HIS Mac and HIS PC to
+#  publish, sync and unstick this project. They are useless to anyone else:
+#  nobody but him can push to this repo, and several have his Mac's folder
+#  path and his home Pi address baked in. They stay in this folder; they just
+#  stop going up to GitHub. Nothing published links to any of them.
+# ============================================================================
+
+# Publishing to GitHub, and the one-time login setup for it.
+push_to_github.command
+push-to-github.bat
+setup-github-login.bat
+
+# Git housekeeping for his two machines.
+catch_up_with_github.command
+unstick_git.command
+sync_pi_from_github.command
+
+# Mac -> his Pi shortcuts. Hardcoded to /Users/michael and the home Pi.
+deploy_gui_page.command
+deploy_local_files.command
+deploy_pronunciation_fix.command
+deploy_test_bench.command
+restart_gui_mac.command
