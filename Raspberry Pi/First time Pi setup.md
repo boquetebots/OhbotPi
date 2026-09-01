@@ -75,8 +75,13 @@ In the settings window, fill in the following:
 
 | Setting | What to enter |
 |---------|--------------|
-| **Set hostname** | A name for your Pi on the network, like `ohbot` |
+| **Set hostname** | A name for your Pi on the network. Use `yobot` |
 | **Set username and password** | Pick a username (e.g. `pi`) and a strong password. **Write these down.** |
+> **Name it `yobot`.** If there will be more than one Pi on the network, number
+> them: `yobot1`, `yobot2`, `yobot3`. Every Pi needs a name of its own, or they
+> cannot both be found. Whatever you choose, use it everywhere this guide says
+> `yobot`.
+
 | **Configure wireless LAN** | Enter your WiFi network name (SSID) and password |
 | **Wireless LAN country** | Set this to your country |
 | **Set locale settings** | Set your timezone and keyboard layout |
@@ -113,10 +118,10 @@ You need the Pi's IP address to connect to it.
 
 **Option A — Try the hostname first (easiest)**
 
-If you set the hostname to `ohbot`, try connecting by name:
+If you set the hostname to `yobot`, try connecting by name:
 
 ```bash
-ssh YOUR_USERNAME@ohbot.local
+ssh YOUR_USERNAME@yobot.local
 ```
 
 This works on most home networks without needing to look up the IP address.
@@ -125,7 +130,7 @@ This works on most home networks without needing to look up the IP address.
 
 1. Log into your router's admin page (usually at `192.168.1.1` or `192.168.0.1` in a browser)
 2. Look for a "Connected Devices" or "DHCP Clients" list
-3. Find the device named `ohbot` (or whatever hostname you set)
+3. Find the device named `yobot` (or whatever hostname you set)
 4. Note the IP address — it will look like `192.168.1.42`
 
 **Option C — Use a network scanner app**
@@ -143,7 +148,7 @@ Once you have the IP address or hostname:
 Open Terminal and type:
 
 ```bash
-ssh YOUR_USERNAME@ohbot.local
+ssh YOUR_USERNAME@yobot.local
 ```
 
 or
@@ -157,7 +162,7 @@ ssh YOUR_USERNAME@192.168.1.42
 The first time you connect, you'll see a message like:
 
 ```
-The authenticity of host 'ohbot.local' can't be established.
+The authenticity of host 'yobot.local' can't be established.
 Are you sure you want to continue connecting? (yes/no)?
 ```
 
@@ -167,7 +172,7 @@ Enter your password when prompted. You won't see anything typed — that's also 
 
 **On Windows:**
 
-Use PuTTY (see the API Keys Setup guide for PuTTY instructions). Enter `ohbot.local` or the IP address as the hostname.
+Use PuTTY (see the API Keys Setup guide for PuTTY instructions). Enter `yobot.local` or the IP address as the hostname.
 
 ---
 

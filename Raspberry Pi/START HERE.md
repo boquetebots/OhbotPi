@@ -64,12 +64,12 @@ Every device on your WiFi network has a unique address — like a house number. 
 ### Finding the IP Address
 
 **Easiest way — use the hostname:**
-If you set the hostname to `ohbot` during imaging, you can often just use `ohbot.local` instead of a number and the Pi will be found on your local network. Try this first.
+If you set the hostname to `yobot` during imaging, you can often just use `yobot.local` instead of a number and the Pi will be found on your local network. Try this first.
 
 **If that doesn't work — check your router:**
 1. Open a browser and go to your router's admin page. This is usually `192.168.1.1` or `192.168.0.1` — it's often printed on the bottom of your router.
 2. Log in and look for a section called **Connected Devices**, **DHCP Clients**, or **Device List**
-3. Find your Pi by the hostname you gave it (e.g. `ohbot`)
+3. Find your Pi by the hostname you gave it (e.g. `yobot`)
 4. The number next to it (like `192.168.1.42`) is its IP address — write it down
 
 ---
@@ -100,15 +100,15 @@ That's it. It's a remote control for the command line.
 In your terminal, type this command or copy and paste it- then press Enter:
 
 ```
-ssh username@ohbot.local
+ssh username@yobot.local
 ```
 
-Replace `username` with the username you chose, and `ohbot.local` with your Pi's hostname or IP address. For example:
+Replace `username` with the username you chose, and `yobot.local` with your Pi's hostname or IP address. For example:
 
 ```
 ssh username@192.168.xxx.xxx
 Or
-ssh username@ohbot.local
+ssh username@yobot.local
 ```
 
 **First time only:** It will ask you to confirm a security key fingerprint. Type `yes` and press Enter. You'll only see this once.
@@ -214,7 +214,7 @@ systemctl --user restart ohbot-launcher
 
 On any computer connected to the same WiFi, open a browser and go to:
 ```
-http://ohbot.local:5000
+http://yobot.local:5000
 ```
 Or use the IP address:
 ```

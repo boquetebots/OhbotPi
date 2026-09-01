@@ -23,7 +23,8 @@ This guide walks through rebuilding the Ohbot project on a brand-new Raspberry P
 4. Click **Choose Storage** → select your MicroSD card
 5. Click **Next**, then click **Edit Settings** when it asks about OS customisation
 6. Fill in:
-   - **Hostname:** `ohbot` (makes it easier to find on the network)
+   - **Hostname:** `yobot` — or `yobot1`, `yobot2`, `yobot3` if there will be
+     more than one Pi on the network. Each needs a name of its own.
    - **Username:** `YOUR_USERNAME`
    - **Password:** (set something you'll remember)
    - **WiFi:** your network name and password
@@ -39,11 +40,11 @@ This guide walks through rebuilding the Ohbot project on a brand-new Raspberry P
 The Pi will connect to your WiFi and get an IP address automatically. You need to find out what that address is.
 
 **Option A — Check your router (easiest)**
-Log into your router's admin page (usually `http://192.168.50.1` or similar in a browser). Look for "Connected Devices" or "DHCP Clients" and find a device named `ohbot`.
+Log into your router's admin page (usually `http://192.168.50.1` or similar in a browser). Look for "Connected Devices" or "DHCP Clients" and find a device named `yobot`.
 
 **Option B — Use your Mac's Terminal**
 ```bash
-ping ohbot.local
+ping yobot.local
 ```
 If the Pi is on the network, this will show its IP address. Press Ctrl-C to stop.
 
@@ -329,7 +330,7 @@ ssh-keygen -R <your-pi-address>
 Then retry your SSH or SCP command and type `yes` when asked to confirm the new fingerprint.
 
 **Can't find the Pi on the network**
-Make sure the Pi is powered on and the WiFi credentials were entered correctly in the Imager. Try `ping ohbot.local` from your Mac. If that fails, connect a keyboard and monitor to the Pi to check its status.
+Make sure the Pi is powered on and the WiFi credentials were entered correctly in the Imager. Try `ping yobot.local` from your Mac. If that fails, connect a keyboard and monitor to the Pi to check its status.
 
 **SAMBA connection refused from Mac**
 Run `sudo systemctl status smbd` on the Pi to confirm SAMBA is running. Make sure your Mac and Pi are on the same WiFi network.
