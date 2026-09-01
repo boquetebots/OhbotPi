@@ -1,8 +1,10 @@
-# Getting Your API Keys — Azure Speech & OpenAI
+# Getting Your API Keys
 
 > **¿Prefieres español?** Lee **`Obtener tus llaves API (Espanol).md`**.
 
-This guide walks you through getting the two API keys Ohbot needs for speech and AI chat.
+This guide walks you through getting the keys Yobot needs. **One is required
+and one is optional**, so read the next section before you sign up for
+anything.
 
 **You do NOT need to be a programmer to do this.** Just follow the steps.
 
@@ -10,14 +12,22 @@ This guide walks you through getting the two API keys Ohbot needs for speech and
 
 ## What Are API Keys and Why Do You Need Them?
 
-An API key is like a password that lets Ohbot talk to an outside service.
+An API key is like a password that lets Yobot talk to an outside service.
 
-- **Azure Speech key** — lets Ohbot speak out loud (text-to-speech) and understand what you say (microphone input)
-- **OpenAI key** — lets Ohbot have AI-powered conversations using ChatGPT
+**You need one: Microsoft Azure.** That is the voice — speaking out loud, and
+hearing you through the microphone. Without it Yobot still moves, but in
+silence, and the chess show has nothing to speak with either. **Part 1** below.
 
-Both services have free tiers or very low cost for personal/hobby use.
+**The second one is optional and can wait.** It is the brain: what lets Yobot
+hold a conversation with somebody. Nothing else touches it — not the motors,
+not the control panel, not chess. And it does not have to be OpenAI; several
+companies work, and one of them runs on your own machine for nothing.
+**Part 2** below.
 
-> **Without these keys:** The motor controls, sliders, LED picker, and sequence builder all still work fine. You only need the keys if you want speech or AI chat.
+Do Part 1 now. Part 2 can be another day, without redoing anything.
+
+> **With no keys at all:** the motor controls, sliders, LED picker and sequence
+> builder all still work fine. Keys are only for speech and conversation.
 
 ---
 
@@ -27,7 +37,7 @@ Microsoft's Azure website is designed for big corporate IT departments. It is **
 
 ---
 
-## Part 1 — Azure Speech Key
+## Part 1 — Azure Speech Key *(required — this is the voice)*
 
 ### Step 1 — Create a free Azure account
 
@@ -90,7 +100,23 @@ You're now on your Speech resource page. Still confusing-looking — here's wher
 
 ---
 
-## Part 2 — OpenAI Key
+## Part 2 — The brain *(optional — skip it if you only want speech and chess)*
+
+Yobot is not tied to one AI company. All of these speak the same language to
+it, so switching between them is a setting, not a rebuild. **Pick one:**
+
+| Company | Where the key comes from | Worth knowing |
+|---|---|---|
+| **OpenAI** | [platform.openai.com](https://platform.openai.com) → API keys | The default, and what Yobot has always used. Walked through below. |
+| **Anthropic** | [console.anthropic.com](https://console.anthropic.com) → API keys | Claude. |
+| **Google Gemini** | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | Has a free tier. |
+| **Groq** | [console.groq.com](https://console.groq.com) → API keys | Runs open models on its own hardware — fast, and very cheap. |
+| **Ollama** | nothing to sign up for | Runs on your own computer or network. No account, no bill, and nothing you say leaves the building. |
+
+The steps below are for OpenAI, because it is the most common starting point.
+**The other sites work the same way**: make an account, find the API keys page,
+create a key, copy it immediately. Then tell Yobot which company you picked —
+that is the `LLM_PROVIDER` line in Part 3.
 
 OpenAI's website is much friendlier than Azure.
 
@@ -134,7 +160,23 @@ The OpenAI API is **not free**, but it's very cheap for hobby use. A few dollars
 
 ---
 
-## Part 3 — Put the Keys on Your Pi
+## Part 3 — Put the Keys In
+
+### The easy way — the Settings page
+
+Once Yobot is running, open the Launcher page in a browser and click
+**`⚙ Settings & Keys`**. Paste your Azure key there, choose which AI company
+the brain uses if you got one, and press the button that tests each key and
+tells you whether it actually answers. It writes the same file the hard way
+below writes, without a terminal and without hunting for hidden file
+extensions.
+
+Anyone on the same WiFi can open the Launcher, so the first time you use
+Settings it offers to set a password. Until you set one it stays unlocked, so
+a fresh install cannot lock you out of the page you need to set it from.
+
+The rest of this Part is the other way — editing the file by hand. It still
+works and it is worth knowing.
 
 ### Log into your Pi
 
@@ -168,13 +210,29 @@ cd ~/Projects/Ohbot
 nano .env
 ```
 
-Type (or paste) the following, replacing the placeholder text with your actual keys:
+Type (or paste) the following, replacing the placeholder text with your real
+key and region:
 
 ```
 AZURE_SPEECH_KEY=paste_your_azure_key_here
 AZURE_SPEECH_REGION=paste_your_region_here
+```
+
+**Those two lines are a complete, working file.** With them Yobot moves,
+speaks, and plays chess.
+
+If you did Part 2 and want the conversation as well, add two more lines —
+which company, and its key:
+
+```
+LLM_PROVIDER=openai
 OPENAI_API_KEY=paste_your_openai_key_here
 ```
+
+Use whichever you picked: `anthropic` with `ANTHROPIC_API_KEY`, `gemini` with
+`GEMINI_API_KEY`, `groq` with `GROQ_API_KEY`, or `ollama`, which needs no key
+at all. Leave `LLM_PROVIDER` out entirely and Yobot assumes OpenAI, exactly as
+it always did.
 
 Save and exit nano: press **Ctrl+X**, then **Y**, then **Enter**.
 
@@ -192,7 +250,12 @@ python3 gui_server.py
 
 Open the GUI in your browser. If the keys are correct:
 - The **Text-to-Speech** box should work — type something and click Speak
-- The **AI Chat** panel should respond when you send a message
+- The **AI Chat** panel should respond when you send a message, *if* you set
+  up a brain in Part 2. With no brain key, the rest still works and only the
+  chat panel stays quiet — that is not a fault.
+
+Quicker still: the **`⚙ Settings & Keys`** page has a test button for each
+key, and it says what is wrong rather than just failing.
 
 If something isn't working, double-check:
 1. The `.env` file is in the right folder (`~/Projects/Ohbot/.env`)
@@ -216,4 +279,8 @@ If something isn't working, double-check:
 |---|---|---|
 | `AZURE_SPEECH_KEY` | portal.azure.com → your Speech resource → Keys and Endpoint | Free tier available (5hrs STT + 500K chars TTS/month) |
 | `AZURE_SPEECH_REGION` | Same page — the Location/Region field | — |
-| `OPENAI_API_KEY` | platform.openai.com → API keys | Pay-as-you-go, ~$1–3/month for hobby use |
+| `LLM_PROVIDER` | Not a key — the name of the company you picked: `openai`, `anthropic`, `gemini`, `groq` or `ollama` | — |
+| the brain's key | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY` or `GROQ_API_KEY`, from that company's own site | Pay-as-you-go, roughly $1–3/month for hobby use. Ollama needs no key and costs nothing. |
+
+**Only the two Azure rows are required.** Everything below them is the
+conversation, and the conversation is optional.
