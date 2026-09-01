@@ -54,11 +54,6 @@ the folder from `OhbotPi-main` to `OhbotPi2`.
 > means there is nothing to configure. Even if you never add chess, putting it
 > there costs nothing and saves moving it later.
 
-**Michael's own Mac is the exception** — it reads the code straight off the
-Pi's shared folder at `/Volumes/Projects/Ohbot` instead of keeping a copy.
-That setup is described at the end of this page. If that is you, skip this
-step.
-
 ---
 
 ## Step 2 — One-time Mac setup
@@ -132,14 +127,11 @@ always did.
 **Or skip the file entirely** and use the Launcher's Settings page instead —
 see below. It is the easier way, and it can test each key for you.
 
-**On Michael's Mac none of this applies:** the `.env` already lives in the
-Pi's shared folder and the code finds it there.
-
 ---
 
 ## The Web Pages on the Mac
 
-Each page is served by its own program. Start the one you want, then open the address in the Mac's browser. `localhost` just means "this computer" — it replaces the Pi's `192.168.50.155`.
+Each page is served by its own program. Start the one you want, then open the address in the Mac's browser. `localhost` just means "this computer" — on the Pi you would use the Pi's own address instead.
 
 | Page | Start it with | Then open |
 |------|--------------|-----------|
@@ -148,7 +140,7 @@ Each page is served by its own program. Start the one you want, then open the ad
 | **Timeline** | (same server as above) | http://localhost:5001/timeline |
 | **Calibration** | `~/yobot-venv/bin/python3 calibration_server.py` | http://localhost:5003/calibration |
 
-Run them from the project folder: `cd /Volumes/Projects/Ohbot` first. Ctrl-C stops a server.
+Run them from the project folder: `cd ~/Projects/OhbotPi2` first. Ctrl-C stops a server.
 
 **The Launcher page is the easy way** — start just that one, and its buttons start and stop the others for you.
 
@@ -207,7 +199,7 @@ it uses the Azure voice from Step 3, and it never touches the conversation key.
 
 **Bot doesn't hear you** — almost always the microphone permission (see one-time setup above), or the wrong input device selected in System Settings → Sound → Input.
 
-**"AZURE_SPEECH_KEY not found"** — the Mac can't see the shared folder's .env file. Make sure you're running from `/Volumes/Projects/Ohbot` and the Pi is on.
+**"AZURE_SPEECH_KEY not found"** — there is no `.env` file where the program is looking. Make sure you are running from the project folder (`cd ~/Projects/OhbotPi2`), that `.env` is in it, and that the name is exactly `.env` — the Finder hides extensions, so a file made in TextEdit can quietly be `.env.txt`. Step 3 covers making it.
 
 **Brain server didn't start** — run it by hand to see the real error: `~/yobot-venv/bin/python3 ohbotchat_server.py`
 
@@ -215,10 +207,12 @@ it uses the Azure voice from Step 3, and it never touches the conversation key.
 
 ---
 
-## What's NOT Ported Yet
+## What the Mac does not do
 
-- Windows (`yobot_win.py`) — waits until a real PC is available for testing
-- Auto-start on boot (that's a Pi thing; on the Mac you just run it when you want it)
+- **Auto-start on boot.** That is a Pi thing. On the Mac you start Yobot when
+  you want it.
+
+Windows is supported as well — its guide is in the `Windows` folder.
 
 ## Background — what got built for the Mac
 
@@ -233,34 +227,33 @@ it uses the Azure voice from Step 3, and it never touches the conversation key.
 | `ohbot_chat.py` | Updated: on a Mac, **press Enter to wake** a sleeping Yobot (replaces the GPIO button). Chime plays through the cross-platform player. |
 | `ohbotchat_server.py` | Updated: loads the API keys from .env itself, so it runs by hand on any machine. |
 
-All files live in the Pi project folder as always — the Mac runs them straight off the shared folder (`/Volumes/Projects/Ohbot`). One copy of the code, both machines use it.
-
-**Important:** the Pi must stay powered on (its services stopped, but the Pi itself on), because the Mac reads the files from the Pi's shared folder.
+The Mac and the Pi run the same files. Most people keep a copy on each machine and `git pull` to stay in step; it is also possible to point the Mac at a project folder shared from the Pi over the network, in which case the Pi has to stay switched on for the Mac to read it.
 
 ---
 
-## Michael's setup — handing Yobot between the Pi and the Mac
+## Moving Yobot between a Pi and the Mac
 
-*Only relevant if this Mac shares the Pi's project folder.*
+*Only if you have both. Only one computer can hold the robot's cable.*
 
-1. Stop the Pi's services (paste in Terminal):
+1. Stop whatever the Pi is running, so it lets go of the cable. If the Pi runs
+   Yobot as a service, that is:
    ```
-   ssh michael@192.168.50.155 "sudo systemctl stop ohbot-server ohbot-conversation"
+   ssh <your-user>@<your-pi-address> "sudo systemctl stop ohbot-server ohbot-conversation"
    ```
 2. Unplug Yobot's **USB cable from the Pi** and plug it into the **Mac**.
 3. Run the hardware test (first time, or any time something seems off):
    ```
-   cd /Volumes/Projects/Ohbot && ~/yobot-venv/bin/python3 yobot_mac.py test
+   cd ~/Projects/OhbotPi2 && ~/yobot-venv/bin/python3 yobot_mac.py test
    ```
-   Head moves + eye colors change = success.
+   Head moves and eye colours change = success.
 
-## Handing Yobot Back to the Pi
+## Handing Yobot back to the Pi
 
 1. Quit the bot on the Mac (Ctrl-C).
 2. Plug the USB cable back into the Pi.
-3. Restart the services:
+3. Start its services again:
    ```
-   ssh michael@192.168.50.155 "sudo systemctl start ohbot-server ohbot-conversation"
+   ssh <your-user>@<your-pi-address> "sudo systemctl start ohbot-server ohbot-conversation"
    ```
 
 ---
