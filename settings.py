@@ -66,7 +66,7 @@ FIELDS = {
     'OPENAI_API_KEY':      {'secret': True,  'group': 'brain'},
     'ANTHROPIC_API_KEY':   {'secret': True,  'group': 'brain'},
     'GEMINI_API_KEY':      {'secret': True,  'group': 'brain'},
-    'XAI_API_KEY':         {'secret': True,  'group': 'brain'},
+    'GROQ_API_KEY':        {'secret': True,  'group': 'brain'},
     'OLLAMA_API_KEY':      {'secret': True,  'group': 'brain'},
     'LLM_API_KEY':         {'secret': True,  'group': 'brain'},
 

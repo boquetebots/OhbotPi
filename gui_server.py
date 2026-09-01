@@ -96,7 +96,7 @@ def _lang_from(data=None):
 # ── The AI (for the GUI chat panel) ────────────────────────────────────────
 # Which company answers is decided in llm.py from the .env settings, and is
 # changed from the Launcher's Settings page. See the note at the top of
-# llm.py — OpenAI, Anthropic, Gemini, Grok and Ollama all speak the same
+# llm.py — OpenAI, Anthropic, Gemini, Groq and Ollama all speak the same
 # format, so there is only one piece of code here.
 import llm
 _ai_ready, _ai_problem = llm.is_ready()

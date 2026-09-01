@@ -8,9 +8,32 @@ You need:
 - A Windows laptop
 - Yobot, its power supply, and its USB cable
 - Internet — Yobot's voice and brain live online
-- Free accounts with **Microsoft Azure** and **OpenAI** — see Step 4
+- A free **Microsoft Azure** account, for the voice — see Step 4
+- An account with **one** AI company, *only* if you want Yobot to hold a
+  conversation. Several will do, and Step 4 lists them
 
 Nothing here needs the Raspberry Pi, and you don't need to know any code.
+
+---
+
+## What you are setting up
+
+**One installation.** This project is Yobot itself — the motors, the voice, the
+moving mouth, and a control panel you drive from a web browser. Everything
+below sets that up, and it is the same for everybody.
+
+Two things sit on top of it. Neither changes the install:
+
+- **Chess.** A second project that borrows this one's voice and motors so
+  Yobot can play a game out loud against a guest. Add it whenever you like —
+  there is a short section near the end of this page. It asks for no account
+  of its own.
+- **Conversation.** Yobot listening and talking back. The code is already
+  here; it needs one AI account to switch on, and Step 4 says how. You can add
+  that later without redoing anything.
+
+**Azure is the one account you actually need**, because Azure is the voice.
+Without it Yobot still moves — it just does it in silence.
 
 ---
 
@@ -23,12 +46,19 @@ Two ways. Either is fine.
 1. Go to **https://github.com/boquetebots/OhbotPi**
 2. Click the green **Code** button, then **Download ZIP**
 3. Find the ZIP in your Downloads, right-click it → **Extract All**
-4. Move the extracted folder somewhere sensible, like `C:\Yobot`
+4. Put it at **`C:\Projects\OhbotPi2`** — make the `C:\Projects` folder
+   first if it is not there, then **rename** the extracted folder from
+   `OhbotPi-main` to `OhbotPi2`
 
 No account needed, and nothing to install.
 
+> **Why that exact place?** The chess project finds this one by looking in the
+> folder next door, so `C:\Projects\OhbotPi2` sitting beside
+> `C:\Projects\Chess` means there is nothing to configure. Even if you never
+> add chess, putting it there costs nothing and saves moving it later.
+
 **From the ZIP Michael sent you** — download it, right-click → **Extract All**,
-and put the folder somewhere sensible.
+and put the folder at `C:\Projects\OhbotPi2` in the same way.
 
 > ⚠️ **Extract the ZIP properly.** Windows lets you peek inside a ZIP as
 > though it were a folder, and things half-work if you run Yobot from in
@@ -73,7 +103,14 @@ say `.env` is missing — that's Step 4.
 Yobot's voice and its brain are online services. They need your own accounts —
 the files you downloaded deliberately don't include anybody's keys.
 
-Both have free or very cheap tiers. Light use costs pennies.
+They have free or very cheap tiers. Light use costs pennies.
+
+**You need the Azure one.** It is the voice. Without it Yobot moves in
+silence, and chess has nothing to speak with either.
+
+**The brain is optional, and it can wait.** It is what lets Yobot hold a
+conversation. Nothing else uses it — not the motors, not the control panel,
+not chess.
 
 **Microsoft Azure — the voice and the listening**
 
@@ -83,27 +120,54 @@ Both have free or very cheap tiers. Light use costs pennies.
 3. Once it's made, open it and find **Keys and Endpoint**
 4. Copy **KEY 1** and note the **Location/Region** (something like `eastus`)
 
-**OpenAI — the conversation**
+**The brain — the conversation** *(optional; the one that can wait)*
 
-1. Sign up at **https://platform.openai.com**
-2. Go to **API keys** and click **Create new secret key**
-3. Copy it immediately — it's only shown once
-4. You'll need to add a small amount of credit for it to work
+Yobot is not tied to one AI company. Pick **one** of these, get a key from it,
+and that is the whole job:
+
+| Company | Where the key comes from | Worth knowing |
+|---|---|---|
+| **OpenAI** | platform.openai.com → API keys | The default, and what Yobot has always used. |
+| **Anthropic** | console.anthropic.com → API keys | Claude. |
+| **Google Gemini** | aistudio.google.com/apikey | Has a free tier. |
+| **Groq** | console.groq.com → API keys | Runs open models on its own hardware — fast, and very cheap. |
+| **Ollama** | nothing to sign up for | Runs on your own computer or network. No account, no bill, and the thinking never leaves the building. |
+
+Whichever you pick: copy the key the moment it appears — most are shown once —
+and expect to put a small amount of credit on the account.
 
 **Put them in the file**
 
 In the **main** Yobot folder — one level up from `Windows` — there's a file
 called **`.env.example`**. Make a copy of
 it, and rename the copy to exactly **`.env`** — no `.example`, no `.txt`.
-Open it in Notepad and fill in your three values:
+Open it in Notepad and fill in your two Azure values:
 
 ```
 AZURE_SPEECH_KEY=the key you copied from Azure
 AZURE_SPEECH_REGION=eastus
-OPENAI_API_KEY=the key you copied from OpenAI
 ```
 
-Save it.
+Save it. **That is a complete, working file.** With those two lines Yobot
+moves, speaks, and plays chess.
+
+**Switching the conversation on** is two more lines — which company, and its
+key:
+
+```
+LLM_PROVIDER=openai
+OPENAI_API_KEY=the key you copied
+```
+
+Swap in whichever you chose: `anthropic` with `ANTHROPIC_API_KEY`, `gemini`
+with `GEMINI_API_KEY`, `groq` with `GROQ_API_KEY`, or `ollama`, which needs no
+key at all. Leave `LLM_PROVIDER` out and Yobot assumes OpenAI, exactly as it
+always did. `.env.example` lists every one of them with its web address.
+
+**Or skip this file entirely.** The Launcher page has a **Settings & Keys**
+link that does all of the above in the browser, and can test each key for you.
+It is described under *Using Yobot* below. Editing `.env` by hand still works
+and is how it has always been done.
 
 > ⚠️ **Windows hides file extensions**, and this is exactly where it bites.
 > A file that shows as `.env` may really be `.env.txt`, and Yobot won't find
@@ -163,6 +227,18 @@ all share the single USB cable:
 Press **Stop** before switching to a different one — or just press the one you
 want and it'll swap over for you.
 
+### The Settings page
+
+There is a **`⚙ Settings & Keys`** link on that same page, and it is the easy
+way to handle everything in Step 4. It lets you paste your Azure key, choose
+which AI company the brain uses, pick a model, and press a button that checks
+each one actually answers — all in the browser, with no Notepad and no hunting
+for hidden file extensions.
+
+Anyone on the same WiFi can open the Launcher, so the first time you use
+Settings it offers to set a password. Until you set one it stays unlocked, so
+that a fresh install cannot lock you out of the page you need to set it from.
+
 ### Talking to Yobot
 
 Start the **Greeter** and a second black window opens. That's Yobot's own
@@ -193,6 +269,22 @@ All four are in the **`Windows`** folder.
 | `yobot-test.bat` | Check the robot moves. Any time something seems off. |
 | `yobot-launcher.bat` | **Use Yobot.** This is the everyday one. |
 | `yobot-stop.bat` | Shut everything down if it gets stuck. |
+
+---
+
+## Adding chess
+
+The chess show is a second project that borrows this one's voice and motors.
+Once `yobot-test.bat` works, it is a short hop:
+
+1. Go to **https://github.com/boquetebots/YobotChess**
+2. Green **Code** button, then **Download ZIP**, and extract into `C:\Projects`
+3. **Rename** the folder from `YobotChess-main` to `Chess`, so you have
+   `C:\Projects\Chess` sitting beside `C:\Projects\OhbotPi2`
+4. Open **`START HERE - Windows.md`** inside it and follow that
+
+It asks for no keys of its own. It uses the Azure voice you set up in Step 4,
+and it never touches the conversation key.
 
 ---
 

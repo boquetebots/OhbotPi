@@ -106,3 +106,7 @@ _to_delete/
 # The *key* / *keys* rules above are a deliberately wide net for secrets.
 # This one file is a GUIDE about getting keys, not a key. Let it through.
 !Getting your API keys.md
+
+# Files left over from the 2026-09-01 update, kept on this PC only.
+# Safe to delete; never wanted in the repo.
+_superseded_*/

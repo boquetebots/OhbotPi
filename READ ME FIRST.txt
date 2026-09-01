@@ -24,14 +24,25 @@
   TWO THINGS YOU WILL NEED WHATEVER YOU ARE ON
 ---------------------------------------------------------------------------
 
-  1. TWO FREE-ISH ACCOUNTS - one with Microsoft Azure for the voice
-     and the listening, one with OpenAI for the conversation. Light
-     use costs pennies. See "Getting your API keys.md" in this folder.
+  1. ONE FREE-ISH ACCOUNT - Microsoft Azure, for the voice and the
+     listening. Light use costs pennies, and it is the only account
+     Yobot cannot do without. See "Getting your API keys.md" here.
+
+     A SECOND ACCOUNT IS OPTIONAL, and only if you want Yobot to
+     hold a conversation. Any one of OpenAI, Anthropic, Google
+     Gemini or Groq will do - or Ollama running on your own machine,
+     which needs no account at all. Your START HERE file lists them.
+     The chess game needs none of this.
 
   2. A FILE CALLED .env - it holds those keys. It is deliberately NOT
      in this download, because publishing keys is how people wake up
      to a large bill. There is a template called .env.example here;
      copy it, rename the copy to .env, and paste your keys in.
+
+     OR DON'T. Once Yobot is running, the Launcher page in your
+     browser has a "Settings & Keys" link that does the same job
+     without editing a file, and can test each key for you. Your
+     START HERE file shows you where it is.
 
 
 ---------------------------------------------------------------------------

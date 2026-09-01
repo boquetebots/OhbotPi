@@ -14,7 +14,7 @@ Windows has **two** command windows, and they don't speak quite the same languag
 
 | | **PowerShell** (blue window) | **Command Prompt** (black window) |
 |---|---|---|
-| Change folder | `cd D:\Projects\OhbotPi2` | `cd /d D:\Projects\OhbotPi2` |
+| Change folder | `cd C:\Projects\OhbotPi2` | `cd /d C:\Projects\OhbotPi2` |
 | Your home folder | `$HOME` | `%USERPROFILE%` |
 | Run a file in this folder | `.\yobot.bat` | `yobot.bat` |
 
@@ -140,7 +140,7 @@ so clearly on startup rather than doing it silently.
 
 ---
 
-The project lives at **`D:\Projects\OhbotPi2`** on this PC. It needs two things that are not
+The project lives at **`C:\Projects\OhbotPi2`** on this PC. It needs two things that are not
 optional:
 
 - **`.env`** — the API keys (Azure speech + OpenAI)
@@ -158,7 +158,7 @@ Both should already be there. If you ever rebuild the folder from GitHub, rememb
 Plug Yobot's USB cable into the PC, turn Yobot's power supply on, then run:
 
 ```
-cd D:\Projects\OhbotPi2
+cd C:\Projects\OhbotPi2
 .\yobot.bat ports
 ```
 
@@ -194,7 +194,7 @@ Only one computer can drive Yobot at a time — they'd fight over the one USB ca
 2. Unplug Yobot's **USB cable from the Pi** and plug it into the **PC**.
 3. Run the hardware test — first time, or any time something seems off:
    ```
-   cd D:\Projects\OhbotPi2
+   cd C:\Projects\OhbotPi2
    .\yobot.bat test
    ```
    Head moves + eye colours change = success.
@@ -204,7 +204,7 @@ Only one computer can drive Yobot at a time — they'd fight over the one USB ca
 ## The Four Ways to Run It
 
 Do these in order on the first day — each one tests a little more than the last.
-Always `cd D:\Projects\OhbotPi2` first.
+Always `cd C:\Projects\OhbotPi2` first.
 
 ```
 .\yobot.bat ports
@@ -230,7 +230,7 @@ In the full bot: talk to Yobot normally. When it falls asleep, **press Enter** t
 **The easy way — start the Launcher and let it do the rest:**
 
 ```
-cd D:\Projects\OhbotPi2
+cd C:\Projects\OhbotPi2
 .\yobot-launcher.bat
 ```
 
@@ -319,7 +319,7 @@ and speak a little; the level bar should move. Also check
 **Settings → Privacy & security → Microphone** and make sure desktop apps are allowed.
 
 **"AZURE_SPEECH_KEY not found"** — the `.env` file isn't being found. Check it's in
-`D:\Projects\OhbotPi2` and is really called `.env` and not `.env.txt` (see Step 3).
+`C:\Projects\OhbotPi2` and is really called `.env` and not `.env.txt` (see Step 3).
 
 **Brain server didn't start** — run it by hand to see the real error:
 `& "$HOME\yobot-venv\Scripts\python.exe" ohbotchat_server.py`.
@@ -361,21 +361,21 @@ The batch files are only a convenience. If you'd rather type it all out, this is
 what `.\yobot.bat test` does:
 
 ```
-cd D:\Projects\OhbotPi2
+cd C:\Projects\OhbotPi2
 & "$HOME\yobot-venv\Scripts\python.exe" yobot_win.py test
 ```
 
 And `.\yobot-launcher.bat`:
 
 ```
-cd D:\Projects\OhbotPi2
+cd C:\Projects\OhbotPi2
 & "$HOME\yobot-venv\Scripts\python.exe" launcher_server.py
 ```
 
 In **Command Prompt** rather than PowerShell, the same two would be:
 
 ```
-cd /d D:\Projects\OhbotPi2
+cd /d C:\Projects\OhbotPi2
 %USERPROFILE%\yobot-venv\Scripts\python.exe yobot_win.py test
 ```
 

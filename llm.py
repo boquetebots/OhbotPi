@@ -14,7 +14,7 @@ Launcher's Settings page possible.
 
 THE USEFUL SURPRISE
 -------------------
-OpenAI, Anthropic, Google Gemini, xAI's Grok and Ollama all understand the
+OpenAI, Anthropic, Google Gemini, Groq and Ollama all understand the
 same request format — the one OpenAI published. So switching between them
 is not five different pieces of code. It is one piece of code and a
 different web address.
@@ -27,7 +27,7 @@ WHAT DECIDES WHICH ONE IS USED
 ------------------------------
 Three settings in .env, all editable from the Launcher's Settings page:
 
-    LLM_PROVIDER   openai | anthropic | gemini | grok | ollama | custom
+    LLM_PROVIDER   openai | anthropic | gemini | groq | ollama | custom
     LLM_MODEL      which model to ask for. Blank = the provider's default.
     LLM_BASE_URL   the web address. Blank = the provider's usual one.
                    Only really needed for Ollama and Custom.
@@ -35,7 +35,7 @@ Three settings in .env, all editable from the Launcher's Settings page:
 Plus one key per provider, so you can keep several set up and flip between
 them without re-pasting anything:
 
-    OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, XAI_API_KEY,
+    OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, GROQ_API_KEY,
     OLLAMA_API_KEY (rarely needed), LLM_API_KEY (for Custom)
 
 Nothing is set? It behaves exactly as it always did: OpenAI, using
@@ -117,14 +117,18 @@ PROVIDERS = {
         'needs_key': True,
         'where':    'aistudio.google.com/apikey',
     },
-    'grok': {
-        'label':    'Grok (xAI)',
-        'base_url': 'https://api.x.ai/v1',
-        'key_env':  'XAI_API_KEY',
-        'model':    'grok-3-mini',
-        'models':   ['grok-3-mini', 'grok-3', 'grok-4'],
+    'groq': {
+        # Not a typo for Grok, and not the same company. Groq runs open
+        # models (Llama and friends) on its own hardware, very fast and
+        # very cheap, which suits a robot that answers a visitor.
+        'label':    'Groq (fast open models)',
+        'base_url': 'https://api.groq.com/openai/v1',
+        'key_env':  'GROQ_API_KEY',
+        'model':    'llama-3.1-8b-instant',
+        'models':   ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile',
+                     'openai/gpt-oss-20b'],
         'needs_key': True,
-        'where':    'console.x.ai',
+        'where':    'console.groq.com → API keys',
     },
     'ollama': {
         'label':    'Ollama (this machine or your network)',

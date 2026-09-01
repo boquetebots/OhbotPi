@@ -14,23 +14,37 @@ This guide walks you through everything from setting up a brand-new Raspberry Pi
 - Your WiFi network name and password
 - Your API keys (see below)
 
-### API Keys — Get These First before installing this software 
+### API Keys — get these before you install
 
-Ohbot needs two AI accounts before the installer can finish:
+**One account is required. A second is optional.**
 
-**OpenAI** (for the AI brain)
-1. Go to [platform.openai.com](https://platform.openai.com)
-2. Create an account or log in
-3. Go to **API Keys** → **Create new secret key**
-4. Copy it and save it somewhere safe — you only see it once
-
-**Microsoft Azure** (for voice — speaking and listening)
+**Microsoft Azure — the voice** *(you need this one)*
 1. Go to [portal.azure.com](https://portal.azure.com) and create a free account
 2. Search for **Speech** and create a new **Speech** resource
 3. Choose any region (e.g. `eastus`) — write it down
 4. Go to **Keys and Endpoint** — copy **Key 1**
 
-You'll paste both of these in during the install. If you skip them, Ohbot's motor controls and sequences still work — just not the voice or AI features.
+Without Azure the robot still moves; it just does it in silence.
+
+**The brain — the conversation** *(optional, and it can wait)*
+
+This is what lets Yobot talk back to somebody. Nothing else uses it — not the
+motors, not the sequences, not the chess game. Pick **one** company, get a key,
+and that is the whole job:
+
+| Company | Where the key comes from | Worth knowing |
+|---|---|---|
+| **OpenAI** | [platform.openai.com](https://platform.openai.com) → API keys | The default, and what Ohbot has always used. |
+| **Anthropic** | [console.anthropic.com](https://console.anthropic.com) → API keys | Claude. |
+| **Google Gemini** | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | Has a free tier. |
+| **Groq** | [console.groq.com](https://console.groq.com) → API keys | Runs open models on its own hardware — fast, and very cheap. |
+| **Ollama** | nothing to sign up for | Runs on the Pi's own network. No account, no bill, and the thinking never leaves the building. |
+
+Copy whichever key you get the moment it appears — most are shown once.
+
+You can paste all of this in during the install, or later from the Launcher's
+**Settings** page without touching a terminal. Skip it entirely and the motors,
+the sequences and the chess game all still work.
 
 ---
 
@@ -142,7 +156,13 @@ Now download the Ohbot files:
 git clone https://github.com/boquetebots/OhbotPi.git .
 ```
 
-> Replace the URL with the actual GitHub address for this project. The dot at the end is important — it puts the files directly in the current folder.
+> The dot at the end is important — it puts the files directly in the current
+> folder rather than making another folder inside it.
+
+> **If you are going to add the chess game**, this is the layout that makes it
+> work with nothing to configure: `~/Projects/Ohbot` and `~/Projects/Chess`,
+> side by side. Chess finds the robot code by looking in the folder next door.
+> There is a section about it at the end of this guide.
 
 You'll see a list of files downloading. When it finishes, you're ready for the final step.
 
@@ -202,6 +222,37 @@ http://192.168.xxx.xxx:5000
 ```
 
 This opens the launcher page where you can start the Greeter Bot or the GUI tool.
+
+**There is a `⚙ Settings & Keys` link on that page**, and it is the easy way to
+deal with everything above. It lets you paste your Azure key, choose which AI
+company the brain uses, pick a model, and check that each one answers — all
+from the browser, with no SSH and no editing files by hand. Anyone on the same
+WiFi can open the Launcher, so it offers to set a password the first time you
+use Settings; until you set one it stays open, so that a fresh install cannot
+lock you out of the page you need.
+
+---
+
+## Adding chess
+
+The chess show is a second project that borrows this one's voice and motors so
+Yobot can play a game out loud. A Pi usually drives one robot while another
+machine runs the game, but a Pi can run the whole thing on its own — and it
+does not need a screen, because the board is a web page you open from a laptop
+or a tablet.
+
+Once the robot can say hello, it is a short hop:
+
+```
+cd ~/Projects
+git clone https://github.com/boquetebots/YobotChess.git Chess
+cd Chess
+bash install.sh
+```
+
+Then open **`START HERE - Raspberry Pi.md`** inside it. It asks for no keys of
+its own — it uses the Azure voice you set up above, and it never touches the
+conversation key.
 
 ---
 

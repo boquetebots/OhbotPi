@@ -47,7 +47,7 @@ naming already makes it obvious which is which — `yobot_win.py`, `yobot_mac.py
 
 ### On Windows
 
-Double-click **`push-to-github.bat`** in `D:\Projects\OhbotPi2`.
+Double-click **`push-to-github.bat`** in `C:\Projects\OhbotPi2`.
 
 It checks you're on the right branch, checks nobody else pushed first, scans
 everything for API keys, asks what you changed, then sends it. If anything
@@ -56,7 +56,7 @@ looks wrong it stops and puts things back.
 If you'd rather type it, the long way is:
 
 ```
-cd /d D:\Projects\OhbotPi2
+cd /d C:\Projects\OhbotPi2
 git pull origin main
 git add -A
 git commit -m "what I changed"
@@ -124,7 +124,7 @@ need them.
 command that tried to write would have failed with *"Another git process seems
 to be running"*. Removed. (Your `unstick_git.command` on the Mac does the same
 job; there's no Windows equivalent yet — if it happens again, just delete
-`D:\Projects\OhbotPi2\.git\index.lock`.)
+`C:\Projects\OhbotPi2\.git\index.lock`.)
 
 **4. Added `push-to-github.bat`** — the Windows twin of your Mac push script.
 
@@ -169,7 +169,7 @@ git status --ignored
 ## When something goes wrong
 
 **"Another git process seems to be running"**
-Delete `D:\Projects\OhbotPi2\.git\index.lock` and try again.
+Delete `C:\Projects\OhbotPi2\.git\index.lock` and try again.
 
 **"Updates were rejected because the remote contains work you do not have"**
 Someone pushed from the Mac or Pi first. Run `git pull origin main`, then push.

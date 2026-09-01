@@ -36,7 +36,7 @@ except ImportError:
 app = Flask(__name__)
 
 # ── The AI ─────────────────────────────────────────────────────────────────
-# WHICH company answers — OpenAI, Anthropic, Gemini, Grok, an Ollama server on
+# WHICH company answers — OpenAI, Anthropic, Gemini, Groq, an Ollama server on
 # your own network, or anything else that speaks the same format — is decided
 # in llm.py from the .env settings, and is changed from the Launcher's
 # Settings page. Nothing in this file needs to know which one it is.
