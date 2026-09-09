@@ -10,6 +10,9 @@ Yobot's facts live in three plain-text JSON files that sit next to this one:
     knowledge.json             Who Yobot is. Travels with the robot.
     library_knowledge.json     The Biblioteca de Boquete and the Library Park.
     clubhouse_knowledge.json   The Rincón Clubhouse — here, and worldwide.
+    event_knowledge.json       OPTIONAL. A one-off event (a fundraiser, an
+                               open day). Loaded last if present, so it wins.
+                               Delete the file and everything is as it was.
 
 This file is the part that reads them. You should almost never need to edit it.
 To change what Yobot says, edit the JSON files. To teach Yobot a brand new
@@ -56,6 +59,28 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 
 IDENTITY_FILE = "knowledge.json"
 VENUE_FILES = ["library_knowledge.json", "clubhouse_knowledge.json"]
+
+# ── Temporary event overlay (added 2026-09-02) ─────────────────────────────
+# An OPTIONAL extra file for a one-off event — a fundraiser, an open day, a
+# school visit. It is loaded LAST, so anything in it wins over everything
+# above, exactly the way library_knowledge.json already overrides the generic
+# greeting in knowledge.json.
+#
+# The point of doing it this way: to switch the event on you add the file, and
+# to switch it off you delete or rename it. There is no backup to restore and
+# no edit to undo, so the vetted answers in the other three files are never
+# touched and cannot be lost.
+#
+# It is genuinely optional — no file, no warning, no change in behaviour. That
+# is why this checks for the file itself instead of letting _read_one() print
+# its "not found" warning on every startup for the rest of the year.
+EVENT_FILE = "event_knowledge.json"
+
+if os.path.exists(os.path.join(_HERE, EVENT_FILE)):
+    VENUE_FILES = VENUE_FILES + [EVENT_FILE]
+    print(f"📣 Event overlay active: {EVENT_FILE} "
+          f"(delete or rename it to go back to normal)")
+
 ALL_FILES = [IDENTITY_FILE] + VENUE_FILES
 
 # ── The Clubhouse opening date ─────────────────────────────────────────────

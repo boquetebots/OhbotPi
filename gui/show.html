@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Yobot Show</title>
+<script src="/i18n.js"></script>
+<!-- Everything is inline on purpose. This page must work with the WiFi
+     switched off, so it loads no fonts, no icons and no libraries. -->
+<style>
+  :root{
+    --bg:#12141a; --panel:#1c1f28; --panel2:#232733; --edge:#2c313d;
+    --ink:#eef1f6; --dim:#98a1b3; --faint:#5d6675;
+    --go:#2f9e5f; --gogl:rgba(47,158,95,.45);
+    --star:#c98a1e; --warn:#d0453f;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  .wrap{max-width:900px; margin:0 auto; padding:0 16px 96px;}
+
+  /* ── header ─────────────────────────────────────────────── */
+  header{
+    position:sticky; top:0; z-index:5; background:rgba(18,20,26,.97);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--edge);
+  }
+  /* The right padding is not decoration: i18n.js fixes a 🌐 language
+     picker to the top-right corner of every page at z-index 99999. Anything
+     of ours that reaches that corner is invisible, not missing. */
+  .hin{max-width:900px; margin:0 auto; padding:12px 16px 0; padding-right:150px;}
+  .row{display:flex; align-items:center; gap:11px;}
+  h1{font-size:17px; margin:0; font-weight:650;}
+  .dot{width:10px; height:10px; border-radius:50%; background:var(--warn); flex:none;}
+  .dot.ok{background:var(--go);}
+  .langwrap{margin-left:auto; display:flex; align-items:center; gap:8px;}
+  .langwrap .cap{font-size:11px; font-weight:650; color:var(--faint);
+                 letter-spacing:.4px; white-space:nowrap;}
+  .lang{display:flex; border:1px solid var(--edge);
+        border-radius:9px; overflow:hidden;}
+  .lang button{background:transparent; color:var(--dim); border:0; font:inherit;
+               font-weight:650; padding:7px 16px; cursor:pointer;}
+  .lang button.on{background:var(--ink); color:#12141a;}
+  #state{font-size:13px; color:var(--dim); margin:8px 0 0; min-height:19px;}
+  #state.live{color:var(--go); font-weight:600;}
+  #state.bad{color:var(--warn); font-weight:600;}
+  .tabs{display:flex; gap:26px; margin-top:9px;}
+  .tabs button{
+    background:none; border:0; border-bottom:2.5px solid transparent;
+    color:var(--faint); font:inherit; font-weight:700; font-size:14px;
+    letter-spacing:.8px; text-transform:uppercase;
+    padding:7px 1px 9px; cursor:pointer;
+  }
+  .tabs button.on{color:var(--ink); border-bottom-color:var(--go);}
+  .tabs .k{color:var(--faint); font-weight:600; font-size:11px; margin-left:5px;}
+  #calib{
+    font-size:11.5px; font-weight:650; letter-spacing:.4px; color:var(--dim);
+    background:var(--panel2); border:1px solid var(--edge);
+    border-radius:7px; padding:4px 9px; white-space:nowrap;
+  }
+  #banner{
+    display:none; margin:16px 0 0; padding:14px 16px; border-radius:12px;
+    background:#3a1714; border:1px solid #6d2a25; color:#ffd9d6;
+    font-size:14px; line-height:1.5;
+  }
+  #banner b{color:#fff;}
+  #banner.show{display:block;}
+
+  /* ── the big NEXT button ────────────────────────────────── */
+  #next{
+    display:block; width:100%; margin:18px 0 6px; cursor:pointer;
+    background:linear-gradient(#2f9e5f,#25804c); color:#fff;
+    border:0; border-radius:16px; padding:24px 22px; text-align:left;
+    font:inherit; box-shadow:0 6px 22px -8px var(--gogl);
+    transition:transform .06s ease, filter .15s ease;
+  }
+  #next:active{transform:scale(.99);}
+  #next[disabled]{background:var(--panel); color:var(--faint);
+                  box-shadow:none; cursor:default;}
+  #next .kicker{font-size:12px; font-weight:750; letter-spacing:1.6px;
+                text-transform:uppercase; opacity:.72;}
+  #next .big{font-size:27px; font-weight:700; margin-top:5px; line-height:1.2;}
+  #prog{display:flex; align-items:center; gap:10px; margin:0 0 16px;
+        font-size:12.5px; color:var(--dim);}
+  #bar{flex:1; height:4px; background:var(--panel2); border-radius:3px;
+       overflow:hidden;}
+  #bar i{display:block; height:100%; background:var(--go); width:0; transition:width .3s;}
+  .mini{background:none; border:1px solid var(--edge); color:var(--dim);
+        border-radius:8px; font:inherit; font-size:12px; font-weight:600;
+        padding:5px 11px; cursor:pointer;}
+
+  /* ── cue rows / grid ────────────────────────────────────── */
+  .list{display:grid; gap:8px;}
+  .qgrid{display:grid; gap:8px; grid-template-columns:1fr;}
+  .cue{
+    display:flex; align-items:flex-start; gap:13px; width:100%;
+    text-align:left; cursor:pointer; font:inherit;
+    background:var(--panel); color:var(--ink);
+    border:1px solid var(--edge); border-left:4px solid var(--edge);
+    border-radius:12px; padding:13px 15px;
+    transition:transform .06s ease, opacity .15s;
+  }
+  .cue:active{transform:scale(.99);}
+  .num{
+    flex:none; width:27px; height:27px; border-radius:7px;
+    background:var(--panel2); color:var(--dim);
+    font-size:13px; font-weight:750; display:flex;
+    align-items:center; justify-content:center;
+  }
+  .cue .body{min-width:0; flex:1;}
+  .cue .lab{display:block; font-size:17px; font-weight:650; line-height:1.25;}
+  .cue .say{display:block; font-size:12.5px; color:var(--dim); margin-top:3px;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .cue.done{opacity:.5;}
+  .cue.done .num{background:var(--go); color:#fff;}
+  .cue.up{border-left-color:var(--go); background:var(--panel2);}
+  .cue.up .num{background:var(--go); color:#fff;}
+  .cue.star{border-left-color:var(--star);}
+  .cue.on{border-color:var(--go); box-shadow:0 0 0 2px var(--gogl);}
+  .cue.missing{border-left-color:var(--warn); opacity:.5;}
+  .cue.missing .say::after{content:"  ← " attr(data-nr); color:var(--warn);
+                           font-weight:700;}
+  .cue[disabled]{opacity:.3; cursor:default;}
+
+  /* ── footer ─────────────────────────────────────────────── */
+  footer{
+    position:fixed; left:0; right:0; bottom:0; z-index:5;
+    background:rgba(18,20,26,.97); backdrop-filter:blur(10px);
+    border-top:1px solid var(--edge);
+  }
+  .fin{max-width:900px; margin:0 auto; padding:10px 16px;
+       display:flex; gap:10px; align-items:center;}
+  .fin button{
+    font:inherit; font-weight:650; font-size:14px; padding:11px 18px;
+    border-radius:10px; border:1px solid var(--edge);
+    background:var(--panel); color:var(--ink); cursor:pointer;
+  }
+  kbd{
+    background:var(--panel2); border:1px solid var(--edge); border-radius:5px;
+    padding:1.5px 6px; font:600 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+    color:var(--dim);
+  }
+  .keys{margin-left:auto; font-size:11.5px; color:var(--faint);
+        display:flex; gap:13px; flex-wrap:wrap;}
+  @media(max-width:640px){ .keys{display:none;} }
+</style>
+</head>
+<body data-i18n-pagetitle="show.title">
+
+<header><div class="hin">
+  <div class="row">
+    <span class="dot" id="dot"></span>
+    <h1 data-i18n="show.title">Yobot — Show</h1>
+    <span id="calib">—</span>
+    <!-- Two different language controls live on this page and they must not
+         be confused: the 🌐 pill changes the words YOU read, this one changes
+         the language YOBOT SPEAKS. Hence the caption. -->
+    <div class="langwrap">
+      <span class="cap" data-i18n="show.speaks">Yobot speaks</span>
+      <div class="lang">
+        <button id="b-en" class="on" onclick="setSpeech('en')">EN</button>
+        <button id="b-es" onclick="setSpeech('es')">ES</button>
+      </div>
+    </div>
+  </div>
+  <div id="state" data-i18n="show.loading">Loading…</div>
+  <div class="tabs">
+    <button id="t-speech" class="on" onclick="setTab('speech')"><span data-i18n="show.tab.speech">Speech</span><span class="k" id="n-speech"></span></button>
+    <button id="t-qa" onclick="setTab('qa')"><span data-i18n="show.tab.qa">Q &amp; A</span><span class="k" id="n-qa"></span></button>
+  </div>
+</div></header>
+
+<div class="wrap">
+  <div id="banner"></div>
+  <div id="pane-speech">
+    <button id="next" onclick="fireNext()">
+      <div class="kicker" data-i18n="show.next.press">Press Return</div>
+      <div class="big" id="next-label">—</div>
+    </button>
+    <div id="prog">
+      <span id="count">0 of 0</span>
+      <span id="bar"><i></i></span>
+      <button class="mini" onclick="resetProgress()" data-i18n="show.startover">↺ Start over</button>
+    </div>
+    <div class="list" id="speech-list"></div>
+  </div>
+
+  <div id="pane-qa" style="display:none">
+    <div class="qgrid" id="qa-list"></div>
+  </div>
+</div>
+
+<footer><div class="fin">
+  <button onclick="neutral()" data-i18n="show.rest">↩ Rest position</button>
+  <button onclick="load()" data-i18n="show.refresh">⟳ Refresh</button>
+  <button onclick="location.href='/editor'" data-i18n="show.edit">✎ Edit the cues</button>
+  <div class="keys">
+    <span><kbd>return</kbd> <span data-i18n="show.k.next">next</span></span>
+    <span><kbd>1</kbd>–<kbd>9</kbd> <span data-i18n="show.k.jump">jump</span></span>
+    <span><kbd>R</kbd> <span data-i18n="show.k.rest">rest</span></span>
+    <span><kbd>S</kbd>/<kbd>Q</kbd> <span data-i18n="show.k.tabs">tabs</span></span>
+  </div>
+</div></footer>
+
+<script>
+// No frameworks and no network calls off this machine. Everything below
+// talks only to show_server.py on this same computer.
+let speechLang = 'en', tab = 'speech';
+let speech = [], qa = [], busy = false;
+let fired = new Set();          // which speech parts have been played
+
+const isSpeech = c => (c.group || '').toLowerCase().indexOf('speech') >= 0;
+
+function firstSentence(text){
+  for(let i = 0; i < text.length - 1; i++){
+    if('.!?'.indexOf(text[i]) >= 0 && text[i+1] === ' '){
+      return text.slice(0, i + 1);
+    }
+  }
+  return text;
+}
+
+function setSpeech(l){
+  speechLang = l;
+  document.getElementById('b-en').className = (l === 'en' ? 'on' : '');
+  document.getElementById('b-es').className = (l === 'es' ? 'on' : '');
+  render();
+}
+
+function setTab(t){
+  tab = t;
+  document.getElementById('t-speech').className = (t === 'speech' ? 'on' : '');
+  document.getElementById('t-qa').className     = (t === 'qa' ? 'on' : '');
+  document.getElementById('pane-speech').style.display = (t === 'speech' ? '' : 'none');
+  document.getElementById('pane-qa').style.display     = (t === 'qa' ? '' : 'none');
+}
+
+// The live motor file is shared by every program and read once at startup.
+// If it changes while we're running, this robot is moving on the previous
+// robot's numbers — which at a demo looks like the robot has gone mad.
+function showCalib(c){
+  if(!c) return;
+  const chip = document.getElementById('calib');
+  const ban  = document.getElementById('banner');
+  chip.textContent = t('show.calib', {name: c.name || '?'});
+
+  if(c.missing){
+    ban.className = 'show';
+    ban.textContent = t('show.calib.none');
+  } else if(c.stale){
+    ban.className = 'show';
+    ban.textContent = t('show.calib.stale', {name: c.name || '?'});
+  } else {
+    ban.className = '';
+  }
+}
+
+function say(msg, kind){
+  const el = document.getElementById('state');
+  el.textContent = msg;
+  el.className = kind || '';
+}
+
+async function load(){
+  try{
+    const d = await (await fetch('/api/cues')).json();
+    showCalib(d.calib);
+    const all = d.cues || [];
+    speech = all.filter(isSpeech);
+    qa     = all.filter(c => !isSpeech(c));
+    if(speech.length === 0 && qa.length && tab === 'speech'){ setTab('qa'); }
+    document.getElementById('dot').className = 'dot' + (d.robot ? ' ok' : '');
+    if(!d.robot){
+      say(d.error || t('show.norobot'), 'bad');
+    } else {
+      const miss = all.filter(c => !c['ready_' + speechLang]).length;
+      say(miss ? t('show.missing', {n: miss}) : t('show.ready'), miss ? 'bad' : '');
+    }
+    render();
+  }catch(e){
+    say(t('show.noserver'), 'bad');
+  }
+}
+
+// The next part that hasn't been fired yet. Null once you're through.
+function nextCue(){ return speech.find(c => !fired.has(c.id)) || null; }
+
+function row(c, n, opts){
+  const shown = c.lang_lock ? c.lang_lock : speechLang;
+  const ready = c['ready_' + speechLang];
+  const b = document.createElement('button');
+  b.className = 'cue'
+    + (opts.done ? ' done' : '')
+    + (opts.up ? ' up' : '')
+    + (['thanks','s5'].includes(c.id) ? ' star' : '')
+    + (ready ? '' : ' missing');
+  b.id = 'cue-' + c.id;
+  b.disabled = busy;
+  b.innerHTML = '<span class="num"></span><span class="body">'
+              + '<span class="lab"></span><span class="say"></span></span>';
+  b.querySelector('.num').textContent = opts.done ? '✓' : n;
+  b.querySelector('.lab').textContent = c['label_' + speechLang] || c.id;
+  // First line only — enough to recognise the cue without a wall of text.
+  // Written the long way on purpose: a regex lookbehind would be neater but
+  // throws a syntax error on older Safari, and a syntax error anywhere in
+  // this script kills the whole page. Not on demo day.
+  b.querySelector('.say').textContent = firstSentence(c['text_' + shown] || '');
+  b.querySelector('.say').setAttribute('data-nr', t('show.notrec'));
+  b.onclick = () => play(c);
+  return b;
+}
+
+function render(){
+  // ── speech ──
+  const list = document.getElementById('speech-list');
+  list.innerHTML = '';
+  const up = nextCue();
+  speech.forEach((c, i) => list.appendChild(row(c, i + 1, {
+    done: fired.has(c.id),
+    up:   up && c.id === up.id
+  })));
+
+  // With no speech cues at all (the fundraiser ones were retired), an empty
+  // tab and a dead green button look like a fault. Say what to do instead.
+  if(speech.length === 0){
+    const note = document.createElement('div');
+    note.className = 'cue';
+    note.style.cursor = 'default';
+    note.style.color = 'var(--dim)';
+    note.textContent = t('show.nospeech');
+    list.appendChild(note);
+  }
+
+  const btn = document.getElementById('next');
+  btn.disabled = busy || !up;
+  btn.style.display = speech.length ? '' : 'none';
+  document.getElementById('prog').style.display = speech.length ? '' : 'none';
+  document.getElementById('next-label').textContent =
+    up ? (up['label_' + speechLang] || up.id) : t('show.next.done');
+  btn.querySelector('.kicker').textContent =
+    busy ? t('show.next.speaking')
+         : (up ? t('show.next.press') : t('show.next.again'));
+
+  document.getElementById('count').textContent =
+    t('show.of', {done: fired.size, total: speech.length});
+  document.getElementById('bar').firstElementChild.style.width =
+    (speech.length ? (fired.size / speech.length * 100) : 0) + '%';
+
+  // ── Q & A ──
+  const g = document.getElementById('qa-list');
+  g.innerHTML = '';
+  qa.forEach((c, i) => g.appendChild(row(c, i + 1, {})));
+
+  document.getElementById('n-speech').textContent = speech.length;
+  document.getElementById('n-qa').textContent     = qa.length;
+}
+
+function resetProgress(){ fired.clear(); render(); say(t('show.top'), ''); }
+
+async function play(c){
+  if(busy) return;
+  busy = true; render();
+  const el = document.getElementById('cue-' + c.id);
+  if(el) el.className += ' on';
+  say('🔊 ' + (c['label_' + speechLang] || c.id), 'live');
+  try{
+    const d = await (await fetch('/api/play', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({id: c.id, lang: speechLang})
+    })).json();
+    if(!d.ok){ say('⚠ ' + (d.error || t('show.failed')), 'bad'); }
+    else {
+      // Only tick it off if it actually played. A failed cue stays "next"
+      // so Return retries it rather than silently skipping it.
+      if(isSpeech(c)) fired.add(c.id);
+      say(t('show.ready'), '');
+    }
+  }catch(e){
+    say('⚠ ' + t('show.lost'), 'bad');
+  }
+  busy = false; render();
+}
+
+function fireNext(){ const c = nextCue(); if(c) play(c); }
+
+async function neutral(){
+  try{ await fetch('/api/neutral', {method:'POST'}); say(t('show.rested'), ''); }
+  catch(e){ say('⚠ ' + t('show.lost'), 'bad'); }
+}
+
+// ── Keyboard. This is the real interface when the Mac is on the table. ──
+document.addEventListener('keydown', e => {
+  if(e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+
+  if(e.key === 'Enter' || e.key === 'ArrowRight'){
+    e.preventDefault(); if(tab === 'speech') fireNext(); return;
+  }
+  if(k === 'r'){ e.preventDefault(); neutral(); return; }
+  if(k === 's'){ setTab('speech'); return; }
+  if(k === 'q'){ setTab('qa');     return; }
+
+  // Number keys jump straight to a part, in whichever tab you're looking at.
+  const n = '123456789'.indexOf(e.key);
+  if(n >= 0){
+    const pool = (tab === 'speech') ? speech : qa;
+    if(pool[n]) play(pool[n]);
+  }
+});
+
+// i18n.js tells us when it is ready and whenever the 🌐 picker changes the
+// page language. Waiting for it means the first paint is already translated,
+// rather than flashing English at a Spanish-speaking user.
+window.addEventListener('ohbot-lang-ready',  function(){ load(); });
+window.addEventListener('ohbot-lang-change', function(){ render(); });
+if(window.OhbotI18n === undefined){ load(); }   // i18n.js failed — carry on
+
+// Cheap heartbeat: catches somebody loading a different robot in the
+// Launcher mid-event. Only touches the calibration banner, so it can never
+// disturb the buttons while you're mid-speech.
+setInterval(function(){
+  if(busy) return;
+  fetch('/api/status')
+    .then(function(r){ return r.json(); })
+    .then(function(d){ showCalib(d.calib); })
+    .catch(function(){});
+}, 5000);
+</script>
+</body>
+</html>

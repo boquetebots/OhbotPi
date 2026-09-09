@@ -21,6 +21,9 @@ __pycache__/
 *.backup
 *.orig
 *.rej
+# Dated safety copies like show_server.py.bak_speeds_2026-09-02 — the
+# plain *.bak rule above misses these because the date comes after it.
+*.bak_*
 
 # --- SAMBA leftovers + cleanup quarantine ---
 .smbdelete*
@@ -145,14 +148,14 @@ docs/Flask GPT SETUP_GUIDE.md
 # The START HERE guides cover the launcher for a new person.
 LAUNCHER_SETUP.md
 
-# ============================================================================
+
 #  Michael's own workshop scripts — NOT for the public
 #  Added 2026-09-01. These are the tools he runs on HIS Mac and HIS PC to
 #  publish, sync and unstick this project. They are useless to anyone else:
 #  nobody but him can push to this repo, and several have his Mac's folder
 #  path and his home Pi address baked in. They stay in this folder; they just
 #  stop going up to GitHub. Nothing published links to any of them.
-# ============================================================================
+
 
 # Publishing to GitHub, and the one-time login setup for it.
 push_to_github.command
@@ -170,3 +173,16 @@ deploy_local_files.command
 deploy_pronunciation_fix.command
 deploy_test_bench.command
 restart_gui_mac.command
+=======
+# --- Pre-recorded demo audio (voice_cache/) ---
+# Made by prerender_cues.py from demo_cues.json. These are tens of MB of
+# .wav and they can be rebuilt in a couple of minutes from the cue file,
+# so they travel with the machine, not with the repo. The cue TEXT
+# (demo_cues.json) IS committed - that is the part worth keeping.
+voice_cache/
+
+# --- Cue editor safety copies (cue_backups/) ---
+# Written automatically every time the director saves from the editor page.
+# They are snapshots of one machine's edits, not something to share.
+cue_backups/
+>>>>>>> 7486f424dad0dcd50f66e361bd46343fbad3eb89

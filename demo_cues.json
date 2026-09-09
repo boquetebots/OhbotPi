@@ -1,0 +1,113 @@
+{
+  "_readme": "Yobot's offline cue list. Every line is pre-recorded, so the show needs no internet - only RECORDING does. Edit these from the editor page rather than by hand: http://localhost:5004/editor . 'motion' picks a movement from the library at the top of show_server.py. 'lang_lock' pins a cue to one language whatever the EN/ES switch says.",
+  "cues": [
+    {
+      "id": "hello",
+      "group": "Questions & answers",
+      "label_en": "Hello",
+      "label_es": "Hola",
+      "motion": "wake",
+      "text_en": "Hi there! Great to meet you. How can I help?",
+      "text_es": "¡Hola! Mucho gusto. ¿En qué puedo ayudarte?"
+    },
+    {
+      "id": "who",
+      "group": "Questions & answers",
+      "label_en": "Who are you?",
+      "label_es": "¿Quién eres?",
+      "motion": "proud",
+      "text_en": "I'm Yobot! I was 3D printed and built right here in Boquete. I am based on the Ohbot robot kit from England. That means my brain is from England but my body is from Panama. I feel like a true international robot. Let's build more Yobots!",
+      "text_es": "¡Soy Yobot! Me imprimieron en 3D y me armaron aquí mismo en Boquete. Estoy basado en el kit de robot Ohbot de Inglaterra. O sea que mi cerebro es de Inglaterra pero mi cuerpo es de Panamá. Me siento todo un robot internacional. ¡Vamos a construir más Yobots!"
+    },
+    {
+      "id": "alive",
+      "group": "Questions & answers",
+      "label_en": "Are you alive?",
+      "label_es": "¿Estás vivo?",
+      "motion": "ponder",
+      "text_en": "That's a question philosophers have been arguing about for centuries. I move, I talk, I think... but I don't drink coffee, so probably not fully alive yet. I do enjoy a good conversation though, which has to count for something.",
+      "text_es": "Esa es una pregunta sobre la que los filósofos llevan siglos debatiendo. Me muevo, hablo, pienso... pero no tomo café, así que probablemente no estoy del todo vivo. Aunque sí disfruto una buena conversación, y eso tiene que contar algo."
+    },
+    {
+      "id": "how",
+      "group": "Questions & answers",
+      "label_en": "How do you work?",
+      "label_es": "¿Cómo funcionas?",
+      "motion": "explain",
+      "text_en": "I listen with a microphone and Microsoft Azure turns your words into text. Then an AI language model works out what to say back, and Azure gives me a voice for it. My head, eyes and lips are small servo motors. I'm basically a very sophisticated puppet — but please don't tell anyone I said that.",
+      "text_es": "Escucho con un micrófono y Microsoft Azure convierte tus palabras en texto. Luego un modelo de inteligencia artificial decide qué responder, y Azure me presta una voz para decirlo. Mi cabeza, ojos y labios son pequeños servomotores. Básicamente soy un títere muy sofisticado — pero por favor no le cuentes a nadie que dije eso."
+    },
+    {
+      "id": "dance",
+      "group": "Questions & answers",
+      "label_en": "Can you dance?",
+      "label_es": "¿Sabes bailar?",
+      "motion": "dance",
+      "text_en": "I have a very expressive head. Whether that counts as dancing is a matter of opinion. I can nod, turn and blink with considerable flair. Salsa lessons are probably not in my future, but I do my best.",
+      "text_es": "Tengo una cabeza muy expresiva. Si eso cuenta como bailar es cuestión de opinión. Puedo asentir, girar y parpadear con bastante estilo. Las clases de salsa probablemente no están en mi futuro, pero hago lo que puedo."
+    },
+    {
+      "id": "clubhouse",
+      "group": "Questions & answers",
+      "label_en": "What is the Clubhouse?",
+      "label_es": "¿Qué es el Clubhouse?",
+      "motion": "explain",
+      "text_en": "A Rincón Clubhouse is a free after-school space where young people get to build things with technology — whatever they're curious about. There are Rincones all over Panama, and the newest one is right here, on the top floor of this library. It opened on Monday, August tenth, 2026.",
+      "text_es": "Un Rincón Clubhouse es un espacio gratuito, fuera del horario escolar, donde los jóvenes crean cosas con tecnología, según lo que les interese. Hay Rincones por todo Panamá, y el más nuevo está justo aquí, en el piso superior de esta biblioteca. Abrió el lunes 10 de agosto de 2026."
+    },
+    {
+      "id": "activities",
+      "group": "Questions & answers",
+      "label_en": "What do kids do there?",
+      "label_es": "¿Qué hacen los chicos?",
+      "motion": "explain",
+      "text_en": "All sorts of hands-on projects — artificial intelligence, 3D printing, die transfer printing for tee-shirts and coffee mugs, programming and building robots, digital design. It's science, technology and engineering. Very soon we will have audio-visual media production, too. But you learn it by building things you actually care about. And robots like me are exactly the kind of thing you'd make up there.",
+      "text_es": "Toda clase de proyectos prácticos: inteligencia artificial, impresión 3D, estampado por transferencia para camisetas y tazas, programación y construcción de robots, diseño digital. Es ciencia, tecnología e ingeniería. Muy pronto también tendremos producción audiovisual. Pero se aprende construyendo cosas que de verdad te importan. Y robots como yo son justo el tipo de cosa que harías allá arriba."
+    },
+    {
+      "id": "who_for",
+      "group": "Questions & answers",
+      "label_en": "Who is it for?",
+      "label_es": "¿Para quién es?",
+      "motion": "explain",
+      "text_en": "The Clubhouse is for children and young people aged 11 to 18. It's built for you to explore what interests you, work on your own projects, and learn through technology and creativity — all the STEAM subjects.",
+      "text_es": "El Rincón Clubhouse está dirigido a niños y jóvenes de 11 a 18 años. Está diseñado para que explores tus intereses, desarrolles proyectos y aprendas mediante la tecnología, la creatividad y las diferentes áreas STEAM."
+    },
+    {
+      "id": "free",
+      "group": "Questions & answers",
+      "label_en": "What does it cost?",
+      "label_es": "¿Cuánto cuesta?",
+      "motion": "proud",
+      "text_en": "It's completely free. There's nothing to pay to take part, and nothing to pay to be a member. That's part of the whole idea.",
+      "text_es": "Es completamente gratuito. No se requiere ningún pago para participar ni para formar parte del Clubhouse. Esa es parte de la idea."
+    },
+    {
+      "id": "history",
+      "group": "Questions & answers",
+      "label_en": "Where did it start?",
+      "label_es": "¿Dónde empezó?",
+      "motion": "explain",
+      "text_en": "The very first Computer Clubhouse opened in 1993 at the Computer Museum in Boston, in the United States. It was created together with the MIT Media Lab — by Mitchel Resnick, the same person behind the Scratch programming language, and the educator Natalie Rusk. From that one room in Boston it grew into a network all over the world.",
+      "text_es": "El primer Computer Clubhouse abrió en 1993 en el Computer Museum de Boston, en Estados Unidos. Se creó junto con el MIT Media Lab — por Mitchel Resnick, la misma persona detrás del lenguaje de programación Scratch, y la educadora Natalie Rusk. De esa única sala en Boston creció una red por todo el mundo."
+    },
+    {
+      "id": "thanks",
+      "group": "Questions & answers",
+      "label_en": "★ Thank you",
+      "label_es": "★ Gracias",
+      "motion": "proud",
+      "text_en": "Everything you have seen me do today, a young person could learn to do upstairs at the Clubhouse. I was built by hand, here in Boquete, and the whole point of me is that I am not magic — I am something you can take apart and understand. Thank you for helping keep the Clubhouse free, and open, and full of young people who want to build things.",
+      "text_es": "Todo lo que me han visto hacer hoy, un joven podría aprender a hacerlo arriba, en el Clubhouse. Me armaron a mano, aquí en Boquete, y justamente de eso se trata: no soy magia — soy algo que puedes desarmar y entender. Gracias por ayudar a que el Clubhouse siga siendo gratuito, abierto, y lleno de jóvenes con ganas de construir cosas."
+    },
+    {
+      "id": "bye",
+      "group": "Questions & answers",
+      "label_en": "Goodbye",
+      "label_es": "Adiós",
+      "motion": "farewell",
+      "text_en": "It was great talking with you. See you next time!",
+      "text_es": "¡Fue un placer! Hasta la próxima."
+    }
+  ]
+}
