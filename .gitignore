@@ -173,7 +173,7 @@ deploy_local_files.command
 deploy_pronunciation_fix.command
 deploy_test_bench.command
 restart_gui_mac.command
-=======
+
 # --- Pre-recorded demo audio (voice_cache/) ---
 # Made by prerender_cues.py from demo_cues.json. These are tens of MB of
 # .wav and they can be rebuilt in a couple of minutes from the cue file,
@@ -185,4 +185,3 @@ voice_cache/
 # Written automatically every time the director saves from the editor page.
 # They are snapshots of one machine's edits, not something to share.
 cue_backups/
->>>>>>> 7486f424dad0dcd50f66e361bd46343fbad3eb89
