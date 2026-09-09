@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yobot — Editor</title>
+<script src="/i18n.js"></script>
+<!-- No fonts, no libraries, no CDN. This page has to open on a laptop with
+     the wifi switched off, the same as the show page. -->
+<style>
+  :root{
+    --bg:#12141a; --panel:#1c1f28; --panel2:#232733; --edge:#2c313d;
+    --ink:#eef1f6; --dim:#98a1b3; --faint:#5d6675;
+    --go:#2f9e5f; --go2:#25804c; --star:#c98a1e; --warn:#d0453f;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink);
+       font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  .wrap{max-width:1000px; margin:0 auto; padding:0 16px 120px;}
+
+  /* The 🌐 language picker i18n.js adds is fixed to the top-right of every
+     page at a very high z-index. Nothing of ours goes in that corner. */
+  header{position:sticky; top:0; z-index:5; background:rgba(18,20,26,.97);
+         backdrop-filter:blur(10px); border-bottom:1px solid var(--edge);}
+  .hin{max-width:1000px; margin:0 auto; padding:13px 16px; padding-right:150px;}
+  h1{font-size:19px; margin:0 0 3px; font-weight:650;}
+  .sub{font-size:13px; color:var(--dim);}
+  a.back{color:var(--dim); text-decoration:none; font-size:13px; font-weight:600;}
+  a.back:hover{color:var(--ink);}
+  #msg{font-size:13.5px; margin-top:8px; min-height:19px; color:var(--dim);}
+  #msg.ok{color:var(--go); font-weight:600;}
+  #msg.bad{color:var(--warn); font-weight:600;}
+
+  .card{background:var(--panel); border:1px solid var(--edge);
+        border-left:4px solid var(--edge); border-radius:12px;
+        padding:14px 16px; margin:10px 0;}
+  .card.dirty{border-left-color:var(--star);}
+  .cardtop{display:flex; align-items:center; gap:10px; margin-bottom:11px;}
+  .idx{width:26px; height:26px; border-radius:7px; background:var(--panel2);
+       color:var(--dim); font-size:13px; font-weight:750; flex:none;
+       display:flex; align-items:center; justify-content:center;}
+  .badges{margin-left:auto; display:flex; gap:6px; align-items:center;}
+  .badge{font-size:10.5px; font-weight:750; letter-spacing:.5px;
+         text-transform:uppercase; padding:3px 8px; border-radius:6px;
+         background:var(--panel2); color:var(--faint);}
+  .badge.on{background:#16351f; color:#6fd095;}
+  .badge.off{background:#3a1714; color:#ff9a94;}
+  .rowbtns{display:flex; gap:5px;}
+  .rowbtns button{background:var(--panel2); border:1px solid var(--edge);
+    color:var(--dim); border-radius:7px; font:inherit; font-size:13px;
+    padding:4px 9px; cursor:pointer;}
+  .rowbtns button:hover{color:var(--ink);}
+  .rowbtns button.del:hover{color:#ff9a94; border-color:#6d2a25;}
+
+  .cols{display:grid; gap:14px; grid-template-columns:1fr;}
+  @media(min-width:820px){ .cols{grid-template-columns:1fr 1fr;} }
+  .lang h3{font-size:11px; font-weight:750; letter-spacing:1.2px;
+           text-transform:uppercase; color:var(--faint); margin:0 0 7px;}
+  label{display:block; font-size:11.5px; font-weight:600; color:var(--dim);
+        margin:8px 0 4px;}
+  input[type=text], textarea, select{
+    width:100%; background:var(--bg); color:var(--ink);
+    border:1px solid var(--edge); border-radius:8px; padding:9px 11px;
+    font:inherit; resize:vertical;}
+  input[type=text]:focus, textarea:focus, select:focus{
+    outline:none; border-color:var(--go);}
+  textarea{min-height:74px; line-height:1.45;}
+
+  .meta{display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;
+        margin-top:13px; padding-top:13px; border-top:1px solid var(--edge);}
+  .meta > div{flex:1 1 170px;}
+  .check{display:flex; align-items:center; gap:8px; font-size:13px;
+         color:var(--dim); flex:0 0 auto; padding-bottom:9px;}
+  .check input{width:16px; height:16px;}
+
+  #add{width:100%; background:var(--panel); border:1.5px dashed var(--edge);
+       color:var(--dim); border-radius:12px; padding:16px; font:inherit;
+       font-weight:650; font-size:15px; cursor:pointer; margin-top:12px;}
+  #add:hover{color:var(--ink); border-color:var(--go);}
+
+  footer{position:fixed; left:0; right:0; bottom:0; z-index:6;
+    background:rgba(18,20,26,.98); backdrop-filter:blur(10px);
+    border-top:1px solid var(--edge);}
+  .fin{max-width:1000px; margin:0 auto; padding:11px 16px;
+       display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .fin button{font:inherit; font-weight:650; font-size:15px; padding:12px 20px;
+    border-radius:10px; border:1px solid var(--edge);
+    background:var(--panel); color:var(--ink); cursor:pointer;}
+  .fin button.primary{background:linear-gradient(var(--go),var(--go2));
+    border:0; color:#fff;}
+  .fin button[disabled]{opacity:.45; cursor:default;}
+  .hint{font-size:12px; color:var(--faint); flex:1 1 240px; min-width:0;}
+
+  #log{display:none; background:#0d0f14; border:1px solid var(--edge);
+       border-radius:10px; padding:12px 14px; margin-top:12px;
+       font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+       color:var(--dim); max-height:230px; overflow:auto; white-space:pre-wrap;}
+  #log.show{display:block;}
+  #errbox{display:none; background:#3a1714; border:1px solid #6d2a25;
+    color:#ffd9d6; border-radius:12px; padding:14px 16px; margin:12px 0;
+    font-size:14px;}
+  #errbox.show{display:block;}
+  #errbox b{color:#fff; display:block; margin-bottom:6px;}
+  #errbox ul{margin:0; padding-left:20px;}
+</style>
+</head>
+<body data-i18n-pagetitle="editor.title">
+
+<header><div class="hin">
+  <a class="back" href="/" data-i18n="editor.back">← Back to the show</a>
+  <h1 data-i18n="editor.title">Edit what Yobot says</h1>
+  <div class="sub" data-i18n="editor.intro">Change the words, add a new one, or remove one you no longer need.</div>
+  <div id="msg"></div>
+</div></header>
+
+<div class="wrap">
+  <div id="errbox"></div>
+  <div id="list"></div>
+  <button id="add" onclick="addCue()" data-i18n="editor.add">+ Add</button>
+  <pre id="log"></pre>
+</div>
+
+<footer><div class="fin">
+  <button class="primary" id="save" onclick="save()" data-i18n="editor.save">Save</button>
+  <button id="rec" onclick="record()" data-i18n="editor.record">🎙 Record the new lines</button>
+  <span class="hint" data-i18n="editor.record.need">Recording needs the internet.</span>
+  <span class="hint" id="count"></span>
+</div></footer>
+
+<script>
+var cues = [], motions = ['explain'], dirty = false, saving = false;
+
+function msg(text, kind){
+  var el = document.getElementById('msg');
+  el.textContent = text || '';
+  el.className = kind || '';
+}
+
+function setDirty(v){
+  dirty = v;
+  document.getElementById('save').disabled = saving;
+  document.getElementById('count').textContent =
+    t('editor.count', {n: cues.length}) + (v ? ' · ' + t('editor.unsaved') : '');
+}
+
+// A misclick on the back link after twenty minutes of typing would be a
+// miserable way to lose the work.
+window.addEventListener('beforeunload', function(e){
+  if(dirty){ e.preventDefault(); e.returnValue = ''; }
+});
+
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function render(){
+  var box = document.getElementById('list');
+  box.innerHTML = '';
+
+  cues.forEach(function(c, i){
+    var d = document.createElement('div');
+    d.className = 'card';
+
+    var opts = motions.map(function(m){
+      return '<option value="' + esc(m) + '"' +
+             (c.motion === m ? ' selected' : '') + '>' + esc(m) + '</option>';
+    }).join('');
+
+    d.innerHTML =
+      '<div class="cardtop">' +
+        '<span class="idx">' + (i + 1) + '</span>' +
+        '<strong class="ttl"></strong>' +
+        '<span class="badges">' +
+          '<span class="badge b-es"></span><span class="badge b-en"></span>' +
+          '<span class="rowbtns">' +
+            '<button class="up" title="' + esc(t('editor.up')) + '">↑</button>' +
+            '<button class="dn" title="' + esc(t('editor.down')) + '">↓</button>' +
+            '<button class="del" title="' + esc(t('editor.del')) + '">✕</button>' +
+          '</span>' +
+        '</span>' +
+      '</div>' +
+
+      '<div class="cols">' +
+        '<div class="lang"><h3>Español</h3>' +
+          '<label>' + esc(t('editor.f.label')) + '</label>' +
+          '<input type="text" class="f-label_es" placeholder="' + esc(t('editor.ph.label')) + '">' +
+          '<label>' + esc(t('editor.f.says')) + '</label>' +
+          '<textarea class="f-text_es" placeholder="' + esc(t('editor.ph.says')) + '"></textarea>' +
+        '</div>' +
+        '<div class="lang"><h3>English</h3>' +
+          '<label>' + esc(t('editor.f.label')) + '</label>' +
+          '<input type="text" class="f-label_en" placeholder="' + esc(t('editor.ph.label')) + '">' +
+          '<label>' + esc(t('editor.f.says')) + '</label>' +
+          '<textarea class="f-text_en" placeholder="' + esc(t('editor.ph.says')) + '"></textarea>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="meta">' +
+        '<div><label>' + esc(t('editor.f.motion')) + '</label>' +
+          '<select class="f-motion">' + opts + '</select></div>' +
+        '<div><label>' + esc(t('editor.f.group')) + '</label>' +
+          '<input type="text" class="f-group"></div>' +
+        '<label class="check" title="' + esc(t('editor.f.lock.tip')) + '">' +
+          '<input type="checkbox" class="f-lock">' +
+          '<span>' + esc(t('editor.f.lock')) + '</span></label>' +
+      '</div>';
+
+    // Values are set as properties, never interpolated into HTML — so an
+    // apostrophe or an accent in Guillermo's text can never break the page.
+    d.querySelector('.f-label_es').value = c.label_es || '';
+    d.querySelector('.f-label_en').value = c.label_en || '';
+    d.querySelector('.f-text_es').value  = c.text_es  || '';
+    d.querySelector('.f-text_en').value  = c.text_en  || '';
+    d.querySelector('.f-group').value    = c.group    || '';
+    d.querySelector('.f-lock').checked   = (c.lang_lock === 'es');
+    d.querySelector('.ttl').textContent  = c.label_es || c.label_en || t('editor.newcue');
+
+    function badge(el, ok){
+      el.className = 'badge ' + (ok ? 'on' : 'off');
+      el.textContent = (ok ? t('editor.recorded') : t('editor.notrecorded'));
+    }
+    badge(d.querySelector('.b-es'), c.ready_es);
+    badge(d.querySelector('.b-en'), c.ready_en);
+
+    function bind(cls, key){
+      var el = d.querySelector(cls);
+      el.addEventListener('input', function(){
+        c[key] = el.value;
+        if(key === 'label_es' || key === 'label_en'){
+          d.querySelector('.ttl').textContent =
+            c.label_es || c.label_en || t('editor.newcue');
+        }
+        // Editing the words means the old recording no longer matches.
+        if(key === 'text_es'){ c.ready_es = false; badge(d.querySelector('.b-es'), false); }
+        if(key === 'text_en'){ c.ready_en = false; badge(d.querySelector('.b-en'), false); }
+        d.className = 'card dirty';
+        setDirty(true);
+      });
+    }
+    bind('.f-label_es','label_es'); bind('.f-label_en','label_en');
+    bind('.f-text_es','text_es');   bind('.f-text_en','text_en');
+    bind('.f-group','group');
+
+    d.querySelector('.f-motion').addEventListener('change', function(e){
+      c.motion = e.target.value; d.className = 'card dirty'; setDirty(true);
+    });
+    d.querySelector('.f-lock').addEventListener('change', function(e){
+      c.lang_lock = e.target.checked ? 'es' : ''; d.className = 'card dirty'; setDirty(true);
+    });
+
+    d.querySelector('.up').onclick = function(){ move(i, -1); };
+    d.querySelector('.dn').onclick = function(){ move(i,  1); };
+    d.querySelector('.del').onclick = function(){ del(i); };
+
+    box.appendChild(d);
+  });
+
+  setDirty(dirty);
+}
+
+function move(i, by){
+  var j = i + by;
+  if(j < 0 || j >= cues.length) return;
+  var tmp = cues[i]; cues[i] = cues[j]; cues[j] = tmp;
+  setDirty(true); render();
+}
+
+function del(i){
+  var name = cues[i].label_es || cues[i].label_en || t('editor.newcue');
+  if(!confirm(t('editor.del.sure', {name: name}))) return;
+  cues.splice(i, 1);
+  setDirty(true); render();
+}
+
+function addCue(){
+  cues.push({id:'', group: (cues.length ? cues[cues.length-1].group : ''),
+             label_es:'', label_en:'', motion:'explain', lang_lock:'',
+             text_es:'', text_en:'', ready_es:false, ready_en:false});
+  setDirty(true); render();
+  var cards = document.querySelectorAll('.card');
+  var last = cards[cards.length - 1];
+  if(last){ last.scrollIntoView({behavior:'smooth', block:'center'});
+            last.querySelector('.f-label_es').focus(); }
+}
+
+function showErrors(problems){
+  var box = document.getElementById('errbox');
+  var html = '<b>' + esc(t('editor.err.title')) + '</b><ul>';
+  problems.forEach(function(p){
+    var where = (p.index >= 0) ? esc(t('editor.err.row', {n: p.index + 1})) : '';
+    html += '<li>' + where + esc(t(p.key, {extra: p.extra || ''})) + '</li>';
+  });
+  box.innerHTML = html + '</ul>';
+  box.className = 'show';
+  box.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function load(){
+  fetch('/api/editor/load').then(function(r){ return r.json(); }).then(function(d){
+    if(!d.ok){ msg(t('editor.loadfail'), 'bad'); return; }
+    cues = d.cues; motions = d.motions || motions;
+    dirty = false; render();
+  }).catch(function(){ msg(t('editor.loadfail'), 'bad'); });
+}
+
+function save(){
+  if(saving) return;
+  saving = true; setDirty(dirty); msg(t('editor.saving'));
+  document.getElementById('errbox').className = '';
+
+  fetch('/api/editor/save', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({cues: cues})
+  }).then(function(r){
+    return r.json().then(function(d){ return {status:r.status, d:d}; });
+  }).then(function(res){
+    saving = false;
+    if(res.status === 409){ msg(t('editor.busy'), 'bad'); setDirty(dirty); return; }
+    if(!res.d.ok){
+      msg('', ''); showErrors(res.d.problems || [{index:-1, key:'editor.err.shape'}]);
+      setDirty(dirty); return;
+    }
+    msg(t('editor.saved', {count: res.d.count}), 'ok');
+    setDirty(false);
+    load();                       // pull back the ids the server assigned
+  }).catch(function(){
+    saving = false; msg(t('show.lost'), 'bad'); setDirty(dirty);
+  });
+}
+
+function record(){
+  if(dirty){ msg(t('editor.record.save1'), 'bad'); return; }
+  var log = document.getElementById('log');
+  log.className = 'show'; log.textContent = '';
+  document.getElementById('rec').disabled = true;
+  msg(t('editor.record.busy'));
+
+  fetch('/api/editor/record', {method:'POST'}).then(function(){ poll(); })
+    .catch(function(){ msg(t('show.lost'), 'bad');
+                       document.getElementById('rec').disabled = false; });
+
+  function poll(){
+    fetch('/api/editor/record/status').then(function(r){ return r.json(); })
+      .then(function(s){
+        log.textContent = (s.lines || []).join('\n');
+        log.scrollTop = log.scrollHeight;
+        if(s.running){ setTimeout(poll, 700); return; }
+        document.getElementById('rec').disabled = false;
+        msg(s.ok ? t('editor.record.ok') : t('editor.record.fail'),
+            s.ok ? 'ok' : 'bad');
+        load();
+      })
+      .catch(function(){ document.getElementById('rec').disabled = false; });
+  }
+}
+
+// i18n.js fires this once it knows the language, and again whenever the 🌐
+// picker changes it — so the whole page re-renders in the new language.
+window.addEventListener('ohbot-lang-ready', function(){ load(); });
+window.addEventListener('ohbot-lang-change', function(){ render(); });
+</script>
+</body>
+</html>
