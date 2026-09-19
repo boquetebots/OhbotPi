@@ -146,7 +146,20 @@ Run them from the project folder: `cd ~/Projects/OhbotPi2` first. Ctrl-C stops a
 
 **The Launcher page is the easy way** — start just that one, and its buttons start and stop the others for you.
 
-**It also has a `⚙ Settings & Keys` link**, which is where the keys from Step 3
+It has four cards, and only one can run at a time because they all share the single USB cable:
+
+| Card | What it does |
+|------|-------------|
+| **Greeter Bot** | The conversation. Yobot listens, replies out loud, and moves as it talks. |
+| **Chess** | Yobot plays a game and talks it through — against another robot, or against you. Opens a short setup screen first. |
+| **Sequence Builder** | Design your own movements and play them back. |
+| **Offline Show** | The pre-recorded talk. Every line is already on the drive, so it runs with no internet at all. |
+
+Underneath them sits a quieter row: **Motor Calibration** and **Settings & Keys**. Each card has its own **Stop**, and **Stop everything** stops the lot.
+
+**Chess lives in a folder of its own**, `~/Projects/Chess`, beside `~/Projects/OhbotPi2`. The Launcher looks for it there. If the Chess card says it can't find it, that's the thing to check.
+
+**It also has a "Settings & Keys" link** — the one with the little gear — which is where the keys from Step 3
 really belong. It lets you paste your Azure key, choose which AI company the
 brain uses, pick a model, and press a button that checks each one actually
 answers — all in the browser, no file editing. Anyone on the same WiFi can open

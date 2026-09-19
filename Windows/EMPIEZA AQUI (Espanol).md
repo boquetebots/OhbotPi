@@ -174,7 +174,7 @@ como siempre lo hizo. `.env.example` las lista todas con su dirección de
 internet.
 
 **O sáltate este archivo por completo.** La página del Launcher tiene un
-enlace **Settings & Keys** (Ajustes y llaves) que hace todo lo anterior desde
+enlace **Ajustes y claves** (*Settings & Keys*) que hace todo lo anterior desde
 el navegador, y puede probarte cada llave. Está descrito más abajo, en *Cómo
 usar a Yobot*. Editar el `.env` a mano sigue funcionando y es como siempre se
 ha hecho.
@@ -230,21 +230,43 @@ Se abre una ventana negra y tu navegador abre una página con botones. Esa
 página es el control remoto. No toques la ventana negra — si la cierras,
 apagas a Yobot.
 
-La página ofrece tres cosas, y **solo una puede correr a la vez**, porque
-todas comparten el único cable USB:
+Arriba a la derecha hay un **🌐** que cambia el idioma de la página. Ponlo en
+español y todos los botones salen en español. Esta guía usa los nombres en
+español, con el inglés al lado por si dejas la página en inglés.
 
-| Botón | Qué hace |
+La página tiene **cuatro tarjetas**, y **solo una puede correr a la vez**,
+porque todas comparten el único cable USB:
+
+| Tarjeta | Qué hace |
 |--------|-------------|
-| **Greeter** | La conversación. Yobot escucha, contesta en voz alta y se mueve mientras habla. |
-| **Sequence Builder** | Diseña tus propios movimientos y reprodúcelos. |
-| **Motor Calibration** | Ajusta con precisión los límites de cada motor. Solo se necesita de vez en cuando. |
+| **Robot Recepcionista** (*Greeter Bot*) | La conversación. Yobot escucha, contesta en voz alta y se mueve mientras habla. |
+| **Ajedrez** (*Chess*) | Yobot juega una partida y la va comentando — contra otro robot, o contra ti. Primero se abre una pantalla corta para preparar el juego. |
+| **Creador de Secuencias** (*Sequence Builder*) | Diseña tus propios movimientos y reprodúcelos. |
+| **Espectáculo sin internet** (*Offline Show*) | La charla ya grabada. Cada frase está en la unidad, así que funciona sin nada de internet. |
 
-Presiona **Stop** (Detener) antes de cambiarte a otro — o simplemente presiona
-el que quieres y él se cambia solo.
+Debajo de las tarjetas hay una fila más discreta con dos cosas más:
+**Calibración de motores** (*Motor Calibration*), que solo se necesita de vez
+en cuando, y **Ajustes y claves** (*Settings & Keys*).
+
+Cada tarjeta tiene su propio botón **Detener** (*Stop*), y hay un botón
+**Detener todo** (*Stop everything*) para cuando quieres que se pare todo.
+No tienes que detener una antes de arrancar otra — presiona la que quieres y
+se cambia sola.
+
+**Dos cosas que conviene saber de esta página:**
+
+- Solo funciona en **http://localhost:5000**. Si abres `launcher/index.html`
+  desde el Explorador de archivos, sale una página que se ve bien y no hace
+  absolutamente nada — no hay ningún programa detrás para contestarle a los
+  botones.
+- Si pierde el contacto con la ventana negra, la barra de estado se pone
+  **ámbar** y te lo dice. Antes se quedaba ahí como si nada, y la única pista
+  era un error confuso la próxima vez que apretabas algo.
 
 ### La página de ajustes
 
-En esa misma página hay un enlace **`⚙ Settings & Keys`** (Ajustes y llaves),
+En esa misma página hay un enlace **Ajustes y claves** (*Settings & Keys*) —
+tiene un engranaje pequeño —
 y es la manera fácil de hacer todo lo del Paso 4. Te deja pegar tu llave de
 Azure, escoger cuál empresa de inteligencia artificial usa el cerebro, elegir
 un modelo, y presionar un botón que revisa que cada una de verdad responda —
@@ -258,18 +280,18 @@ misma página donde tienes que ponerla.
 
 ### Hablar con Yobot
 
-Arranca el **Greeter** y se abre una segunda ventana negra. Esa es la ventana
+Arranca el **Robot Recepcionista** (*Greeter Bot*) y se abre una segunda ventana negra. Esa es la ventana
 propia de Yobot — muestra lo que escuchó y lo que está diciendo.
 
 Simplemente háblale. Te contesta.
 
 Si nadie habla por un rato, Yobot se queda dormido para ahorrar dinero en el
-servicio de voz. Para despertarlo: haz clic en **Wake** (Despertar) en la
+servicio de voz. Para despertarlo: haz clic en **Despertar a Yobot** (*Wake Yobot*) en la
 página web, o presiona **Enter** en la ventana propia de Yobot.
 
 ### Para terminar
 
-Presiona **Stop** (Detener) en la página web, y después cierra las ventanas
+Presiona **Detener todo** (*Stop everything*) en la página web, y después cierra las ventanas
 negras.
 
 Si una ventana no cierra o algo parece trabado, **haz doble clic en

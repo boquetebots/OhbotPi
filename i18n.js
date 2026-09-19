@@ -43,7 +43,97 @@
   // ==========================================================================
   // ENGLISH
   // ==========================================================================
+  // ══════════════════════════════════════════════════════════════════════════
+  //  THE LANGUAGE THIS DRIVE STARTS IN  —  change these two lines per stick
+  // ══════════════════════════════════════════════════════════════════════════
+  //
+  //  DEFAULT_LANG  'en' or 'es'. What a browser shows the FIRST time it ever
+  //                opens one of Yobot's pages on that computer. Once somebody
+  //                uses the language pill, that browser remembers their choice
+  //                and this is ignored from then on.
+  //
+  //  FORCE_LANG    true ignores what the browser remembers as well, so every
+  //                visit starts in DEFAULT_LANG. That is what you want on a
+  //                machine the public touches: a visitor switching to English
+  //                should not leave the Clubhouse robot in English tomorrow.
+  //                The pill still works — the change just does not stick.
+  //
+  //  Nothing else needs changing. The stored choice lives in the browser
+  //  under 'ohbot_lang', not on this drive, which is why a stick taken to a
+  //  new computer used to open in English however it was built.
+  //
+  const DEFAULT_LANG = 'en';
+  const FORCE_LANG   = false;
+
   const EN = {
+    'chess.mode.robots.needs'       : "Needs a SECOND robot on another computer, with the listener from the Chess folder running on it. On its own, White starts and Black never does.",
+    'chess.mac'                     : "The other computer",
+    'chess.mac.label'               : "Address of the machine with the second robot",
+    'chess.mac.hint'                : "Leave it empty and you start the second robot by hand over there, as before. Port 8090 is assumed.",
+
+    // ── chess setup screen, 2026-09-18 ──
+    'chess.title'                   : "Set up a chess game",
+    'chess.intro'                   : "Chess opens in its own page once it has started. The robots need their speech key; the demo needs nothing at all.",
+    'chess.kind'                    : "What kind of game?",
+    'chess.mode.robots'             : "Two robots play each other, and talk about it",
+    'chess.mode.human'              : "A person plays against one robot",
+    'chess.mode.demo'               : "Demo \u2014 no robots, board on screen only",
+    'chess.person'                  : "The person playing",
+    'chess.colour'                  : "Which colour do they play?",
+    'chess.colour.white'            : "White \u2014 they move first",
+    'chess.colour.black'            : "Black \u2014 the robot opens",
+    'chess.polite'                  : "Leave out the cheekiest lines",
+    'chess.strength'                : "How well should the robot play?",
+    'chess.strength.hint.robots'    : "Club is a lively game. Expert and Max get quiet and long.",
+    'chess.strength.hint.human'     : "A guest who never wins does not ask for a second game.",
+    'chess.str.beginner'            : "Beginner \u2014 blunders freely",
+    'chess.str.club'                : "Club player \u2014 lively games",
+    'chess.str.strong'              : "Strong \u2014 few mistakes",
+    'chess.str.expert'              : "Expert \u2014 near master",
+    'chess.str.max'                 : "No limit \u2014 beautiful, and dull",
+    'chess.str.gentle'              : "Gentle \u2014 a beatable first game",
+    'chess.str.friendly'            : "Friendly \u2014 punishes a free piece",
+    'chess.str.easy'                : "Easy \u2014 a decent casual player",
+    'chess.cancel'                  : "Cancel",
+    'chess.start'                   : "Start the game",
+    'chess.starting'                : "Starting\u2026",
+    'chess.starting.hint'           : "Starting the board and the engine. This can take a few seconds.",
+
+    'launcher.lost'                       : "Lost contact with the Launcher. Check that its black window is still open.",
+    'launcher.settings.clearkeys'         : "Clear all keys from this drive",
+    'launcher.settings.clearkeys.confirm' : "Clear every saved key from this drive?\n\nThe Azure speech key and every AI key are erased from the .env file on this drive. Your region, your choice of provider and the settings password are kept.\n\nThe Offline Show carries on working — it needs no keys. The Greeter and Chess will not run until you type the keys back in.",
+    'launcher.settings.clearkeys.done'    : "All keys cleared from this drive.",
+    'launcher.settings.clearkeys.failed'  : "Could not clear the keys.",
+
+    'launcher.footer.line1'   : 'Yobot Web Launcher. Hecho en Panamá.',
+    'launcher.footer.based'   : 'Based on Ohbot Python by',
+
+    // ── added with the launcher redesign, 2026-09-18 ──
+    'launcher.running.none'     : "Nothing is running. Pick what you want to do.",
+    'launcher.robot.label'      : "Robot",
+    'launcher.greeter.start'    : "Start the Greeter",
+    'launcher.gui.start'        : "Open the Builder",
+    'launcher.show.name'        : "Offline Show",
+    'launcher.show.desc'        : "The pre-recorded cue stack. Every line is already on the drive, so it runs with no internet at all.",
+    'launcher.show.start'       : "Start the Show",
+    'launcher.show.open'        : "Open the Show \u2197",
+    'launcher.status.show'      : "The Offline Show is running",
+    'launcher.chess.name'       : "Chess",
+    'launcher.chess.desc'       : "Two robots play each other and talk it through, or you play one of them yourself.",
+    'launcher.chess.start'      : "Set up a game",
+    'launcher.chess.open'       : "Open Chess \u2197",
+    'launcher.status.chess'     : "Chess is running",
+    'launcher.blocked'          : "Stop what's running first",
+    'launcher.stop.short'       : "Stop",
+    'launcher.stopall'          : "Stop everything",
+    'launcher.stopall.arm'      : "Really stop everything?",
+    'launcher.stopall.fail'     : "Could not stop everything. Use STOP YOBOT.bat on the drive.",
+    'launcher.toolnote'         : "One thing at a time \u2014 they all share the one serial cable",
+    'launcher.noroute'          : "This Launcher does not know how to start {name} yet \u2014 the copy on this drive is running older code.",
+    'launcher.start.fail'       : "Could not reach the Launcher to start that.",
+    'launcher.name.show'        : "Offline Show",
+    'launcher.name.chess'       : "Chess",
+
 
     // ── Shared across pages ────────────────────────────────────────────────
     'lang.label'            : 'Language',
@@ -102,15 +192,15 @@
 
     'launcher.stop'         : '⏹ Stop Current Service',
     'launcher.opengui'      : 'Open GUI ↗',
-    'launcher.wake'         : '⏰ Wake Yobot',
+    'launcher.wake'         : 'Wake Yobot',
     'launcher.wake.sent'    : '✓ Waking…',
     'launcher.wake.fail'    : '✕ Could not wake',
     'launcher.wake.oldcode' : '✕ Restart the Launcher service',
     'launcher.wake.noserver': '✕ Greeter server not answering',
-    'launcher.restart'      : '↺ Restart Pi',
-    'launcher.shutdown'     : '⏻ Shut Down Pi',
+    'launcher.restart'      : 'Restart Pi',
+    'launcher.shutdown'     : 'Shut Down Pi',
 
-    'launcher.calib'        : '🔧 Motor Calibration',
+    'launcher.calib'        : 'Motor Calibration',
     'launcher.calib.tip'    : 'Stop the current service first',
     'launcher.calib.failed' : 'Could not start calibration.',
     'launcher.calib.starting': 'Starting motor calibration…',
@@ -121,7 +211,7 @@
     'launcher.robot.hint'   : 'Load its calibration here before starting the Greeter or the GUI.<br>Robots are saved by name when you finish a motor calibration.',
     'launcher.robot.hint.none': 'Nothing saved yet. Run <strong>Motor Calibration</strong>, and when you save it will ask for a robot name.<br>That robot will then appear here.',
     'launcher.robot.load'   : 'Load calibration',
-    'launcher.robot.savecur': '💾 Save current calibration as a robot…',
+    'launcher.robot.savecur': 'Save current calibration as a robot…',
     'launcher.robot.none'   : 'No robots saved yet',
     'launcher.robot.readfail': 'Could not read the saved robots.',
     'launcher.robot.active' : 'Currently loaded: <strong>{name}</strong>',
@@ -163,7 +253,7 @@
     'launcher.power.restart.msg'     : 'The page will reload when the Pi is back online.',
     'launcher.footer'                : 'Ohbot Web Launcher — ',
     // ── SETTINGS PANEL (keys & accounts) ───────────────────────────────────
-    'launcher.settings.link'         : '⚙️ Settings & Keys',
+    'launcher.settings.link'         : 'Settings & Keys',
     'launcher.settings.title'        : '⚙️ Settings — Keys and Accounts',
     'launcher.settings.intro'        : 'These are the accounts Yobot uses to hear, speak and think. What you type here is written to the .env file on this machine and sent nowhere else.',
     'launcher.settings.firstrun'     : 'Welcome! Yobot needs two accounts before it can talk. Fill these in, press Test on each one, then Save.',
@@ -556,6 +646,72 @@
   // SPANISH
   // ==========================================================================
   const ES = {
+    'chess.mode.robots.needs'       : "Necesita un SEGUNDO robot en otro ordenador, con el pequeño escucha de la carpeta Chess funcionando allí. Por sí solo, las blancas arrancan y las negras nunca.",
+    'chess.mac'                     : "El otro ordenador",
+    'chess.mac.label'               : "Dirección de la máquina con el segundo robot",
+    'chess.mac.hint'                : "Déjalo vacío y arrancas el segundo robot a mano allí, como antes. Se asume el puerto 8090.",
+
+    // ── Spanish for the launcher redesign ──
+    'launcher.footer.line1'               : "Lanzador web de Yobot. Hecho en Panamá.",
+    'launcher.footer.based'               : "Basado en Ohbot Python de",
+    'launcher.lost'                       : "Se perdió la conexión con el lanzador. Comprueba que su ventana negra siga abierta.",
+    'launcher.settings.clearkeys'         : "Borrar todas las claves de esta unidad",
+    'launcher.settings.clearkeys.confirm' : "¿Borrar todas las claves guardadas en esta unidad?\n\nSe borran del archivo .env la clave de voz de Azure y todas las claves de IA. Se conservan la región, el proveedor elegido y la contraseña de ajustes.\n\nEl espectáculo sin internet sigue funcionando: no necesita claves. El Robot Recepcionista y el ajedrez no funcionarán hasta que vuelvas a escribirlas.",
+    'launcher.settings.clearkeys.done'    : "Se borraron todas las claves de esta unidad.",
+    'launcher.settings.clearkeys.failed'  : "No se pudieron borrar las claves.",
+    'chess.title'                         : "Preparar una partida de ajedrez",
+    'chess.intro'                         : "El ajedrez se abre en su propia página al arrancar. Los robots necesitan su clave de voz; la demostración no necesita nada.",
+    'chess.kind'                          : "¿Qué tipo de partida?",
+    'chess.mode.robots'                   : "Dos robots juegan entre sí y lo comentan",
+    'chess.mode.human'                    : "Una persona juega contra un robot",
+    'chess.mode.demo'                     : "Demostración — sin robots, solo el tablero en pantalla",
+    'chess.person'                        : "La persona que juega",
+    'chess.colour'                        : "¿De qué color juega?",
+    'chess.colour.white'                  : "Blancas — mueve primero",
+    'chess.colour.black'                  : "Negras — abre el robot",
+    'chess.polite'                        : "Omitir las frases más descaradas",
+    'chess.strength'                      : "¿Cuán bien debe jugar el robot?",
+    'chess.strength.hint.robots'          : "Club da partidas animadas. Experto y Sin límite se vuelven largas y calladas.",
+    'chess.strength.hint.human'           : "Un invitado que nunca gana no pide una segunda partida.",
+    'chess.str.beginner'                  : "Principiante — comete errores a menudo",
+    'chess.str.club'                      : "Jugador de club — partidas animadas",
+    'chess.str.strong'                    : "Fuerte — pocos errores",
+    'chess.str.expert'                    : "Experto — casi maestro",
+    'chess.str.max'                       : "Sin límite — precioso y aburrido",
+    'chess.str.gentle'                    : "Suave — una primera partida ganable",
+    'chess.str.friendly'                  : "Amable — castiga una pieza regalada",
+    'chess.str.easy'                      : "Fácil — un buen jugador aficionado",
+    'chess.cancel'                        : "Cancelar",
+    'chess.start'                         : "Empezar la partida",
+    'chess.starting'                      : "Arrancando…",
+    'chess.starting.hint'                 : "Arrancando el tablero y el motor. Puede tardar unos segundos.",
+
+    // ── added with the launcher redesign, 2026-09-18 ──
+    'launcher.running.none'     : "No hay nada en marcha. Elige qu\u00e9 quieres hacer.",
+    'launcher.robot.label'      : "Robot",
+    'launcher.greeter.start'    : "Iniciar el Robot Recepcionista",
+    'launcher.gui.start'        : "Abrir el Creador de Secuencias",
+    'launcher.show.name'        : "Espect\u00e1culo sin internet",
+    'launcher.show.desc'        : "La lista de se\u00f1ales pregrabada. Cada frase ya est\u00e1 en la unidad, as\u00ed que funciona sin internet.",
+    'launcher.show.start'       : "Iniciar el espect\u00e1culo",
+    'launcher.show.open'        : "Abrir el espect\u00e1culo \u2197",
+    'launcher.status.show'      : "El espect\u00e1culo sin internet est\u00e1 en marcha",
+    'launcher.chess.name'       : "Ajedrez",
+    'launcher.chess.desc'       : "Dos robots juegan entre s\u00ed y lo comentan, o juegas t\u00fa contra uno de ellos.",
+    'launcher.chess.start'      : "Preparar una partida",
+    'launcher.chess.open'       : "Abrir el ajedrez \u2197",
+    'launcher.status.chess'     : "El ajedrez est\u00e1 en marcha",
+    'launcher.blocked'          : "Det\u00e9n primero lo que est\u00e1 en marcha",
+    'launcher.stop.short'       : "Detener",
+    'launcher.stopall'          : "Detener todo",
+    'launcher.stopall.arm'      : "\u00bfDetener todo de verdad?",
+    'launcher.stopall.fail'     : "No se pudo detener todo. Usa STOP YOBOT.bat en la unidad.",
+    'launcher.toolnote'         : "Una cosa a la vez \u2014 todas comparten el mismo cable serie",
+    'launcher.noroute'          : "Este lanzador todav\u00eda no sabe iniciar {name} \u2014 la copia de esta unidad tiene c\u00f3digo antiguo.",
+    'launcher.start.fail'       : "No se pudo contactar con el lanzador para iniciarlo.",
+    'launcher.name.show'        : "el Espect\u00e1culo sin internet",
+    'launcher.name.chess'       : "el Ajedrez",
+
 
     // ── Shared across pages ────────────────────────────────────────────────
     'lang.label'            : 'Idioma',
@@ -614,15 +770,15 @@
 
     'launcher.stop'         : '⏹ Detener el servicio actual',
     'launcher.opengui'      : 'Abrir la interfaz ↗',
-    'launcher.wake'         : '⏰ Despertar a Yobot',
+    'launcher.wake'         : 'Despertar a Yobot',
     'launcher.wake.sent'    : '✓ Despertando…',
     'launcher.wake.fail'    : '✕ No se pudo despertar',
     'launcher.wake.oldcode' : '✕ Reinicia el servicio del Lanzador',
     'launcher.wake.noserver': '✕ El servidor del Greeter no responde',
-    'launcher.restart'      : '↺ Reiniciar la Pi',
-    'launcher.shutdown'     : '⏻ Apagar la Pi',
+    'launcher.restart'      : 'Reiniciar la Pi',
+    'launcher.shutdown'     : 'Apagar la Pi',
 
-    'launcher.calib'        : '🔧 Calibración de motores',
+    'launcher.calib'        : 'Calibración de motores',
     'launcher.calib.tip'    : 'Detén primero el servicio actual',
     'launcher.calib.failed' : 'No se pudo iniciar la calibración.',
     'launcher.calib.starting': 'Iniciando la calibración de motores…',
@@ -633,7 +789,7 @@
     'launcher.robot.hint'   : 'Carga su calibración aquí antes de iniciar el Recepcionista o la interfaz.<br>Los robots se guardan por nombre cuando terminas una calibración de motores.',
     'launcher.robot.hint.none': 'Todavía no hay nada guardado. Ejecuta la <strong>Calibración de motores</strong> y, al guardar, te pedirá un nombre de robot.<br>Ese robot aparecerá aquí después.',
     'launcher.robot.load'   : 'Cargar calibración',
-    'launcher.robot.savecur': '💾 Guardar la calibración actual como un robot…',
+    'launcher.robot.savecur': 'Guardar la calibración actual como un robot…',
     'launcher.robot.none'   : 'Todavía no hay robots guardados',
     'launcher.robot.readfail': 'No se pudieron leer los robots guardados.',
     'launcher.robot.active' : 'Cargado ahora: <strong>{name}</strong>',
@@ -675,7 +831,7 @@
     'launcher.power.restart.msg'     : 'La página se recargará cuando la Pi vuelva a estar en línea.',
     'launcher.footer'                : 'Lanzador web de Ohbot — ',
     // ── PANEL DE AJUSTES (claves y cuentas) ────────────────────────────────
-    'launcher.settings.link'         : '⚙️ Ajustes y claves',
+    'launcher.settings.link'         : 'Ajustes y claves',
     'launcher.settings.title'        : '⚙️ Ajustes — Claves y cuentas',
     'launcher.settings.intro'        : 'Estas son las cuentas que Yobot usa para oír, hablar y pensar. Lo que escribas aquí se guarda en el archivo .env de esta máquina y no se envía a ningún otro sitio.',
     'launcher.settings.firstrun'     : '¡Bienvenido! Yobot necesita dos cuentas antes de poder hablar. Rellénalas, pulsa Probar en cada una y luego Guardar.',
@@ -1072,11 +1228,29 @@
   const STORAGE = 'ohbot_lang';
   const missing = new Set();
 
-  let lang = 'en';
-  try {
-    const saved = localStorage.getItem(STORAGE);
-    if (saved && DICTS[saved]) lang = saved;
-  } catch (e) { /* private browsing — just stay on English */ }
+  let lang = DICTS[DEFAULT_LANG] ? DEFAULT_LANG : 'en';
+  let savedLang = null;
+  if (!FORCE_LANG) {
+    try {
+      savedLang = localStorage.getItem(STORAGE);
+      if (savedLang && DICTS[savedLang]) lang = savedLang;
+    } catch (e) { /* private browsing — just use the drive's default */ }
+  }
+
+  // Tell the server once when this browser has never chosen, or when the
+  // drive is forcing a language. Without it the page can be in Spanish while
+  // the robot still speaks English: language.txt on the Python side is only
+  // ever written when somebody actually uses the dropdown, so on a fresh
+  // computer it keeps whatever the last person set, anywhere.
+  if (FORCE_LANG || !savedLang) {
+    try {
+      fetch('/lang', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ lang })
+      }).catch(() => {});
+    } catch (e) {}
+  }
 
   /** Look up a phrase. `vars` fills in any {placeholders}. */
   function t(key, vars) {

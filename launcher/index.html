@@ -6,633 +6,714 @@
 <title>🤖 Ohbot Launcher</title>
 <script src="/i18n.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ===================================================================
+   Ohbot / Yobot Launcher — redesigned 2026-09-18
+   Dark "show console" look. Four equal cards, each owning its own
+   state and its own buttons, so nothing floats in and out of the
+   layout the way the old action row did.
+   =================================================================== */
 
-  :root {
-    --bg:      #1a1a2e;
-    --panel:   #16213e;
-    --card:    #0f3460;
-    --accent:  #e94560;
-    --accent2: #0f9b8e;
-    --text:    #eaeaea;
-    --muted:   #8892a4;
-    --border:  #2a3a5c;
-    --success: #2ecc71;
-    --warn:    #f39c12;
-    --danger:  #e74c3c;
-  }
+*, *::before, *::after { box-sizing: border-box; }
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
+:root {
+  --bg:      #14161A;
+  --panel:   #1A1D23;
+  --card:    #1C1F25;
+  --card-off:#17191E;
+  --line:    #2E333C;
+  --line-soft:#23272F;
+  --text:    #E8E6E1;
+  --muted:   #9AA0A9;
+  --faint:   #6E747D;
+  --dim:     #565D66;
+  --accent:  #E09B4A;
+  --accent-d:#C97F2E;
+  --live:    #4FB79E;
+  --live-bg: #16251F;
+  --live-ln: #2A4A3F;
+  --live-tx: #BFD9D0;
+  --danger:  #E8B5A8;
+  --danger-ln:#7A4438;
+  --danger-f:#A33B28;
+  --success: #4FB79E;
+  --warn:    #E09B4A;
+  --radius:  14px;
+  --font-d:  Archivo, 'Segoe UI', system-ui, sans-serif;
+  --font-b:  'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+}
 
-  /* ── Header ── */
-  .header {
-    text-align: center;
-    margin-bottom: 48px;
-  }
-  .header .robot { font-size: 4rem; margin-bottom: 12px; }
-  .header h1 { font-size: 2rem; font-weight: 700; letter-spacing: 1px; }
-  .header p  { color: var(--muted); margin-top: 8px; font-size: 0.95rem; }
+body {
+  margin: 0;
+  padding: 28px 32px 40px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-b);
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
 
-  /* ── Status badge ── */
-  #status-bar {
-    display: none;
-    align-items: center;
-    gap: 10px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 30px;
-    padding: 8px 20px;
-    margin-bottom: 32px;
-    font-size: 0.85rem;
-  }
-  #status-bar.visible { display: flex; }
-  .status-dot {
-    width: 10px; height: 10px; border-radius: 50%;
-    background: var(--success);
-    animation: pulse 1.5s ease-in-out infinite alternate;
-  }
-  @keyframes pulse { from { opacity: 1; } to { opacity: 0.4; } }
+/* ── Top bar ─────────────────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  min-height: 44px;
+  /* The language pill sits top-right at z-index 99999. Never put
+     anything in that corner. */
+  padding-right: 150px;
+}
+.brand { display: flex; align-items: center; gap: 11px; flex-shrink: 0; }
+.brand svg { stroke: var(--accent); }
+.brand span {
+  font-family: var(--font-d);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.sep { width: 1px; height: 24px; background: var(--line); flex-shrink: 0; }
+.spacer { flex-grow: 1; }
 
-  /* ── Choice cards ── */
-  #choice-screen { width: 100%; max-width: 700px; }
+/* ── Robot picker, collapsed onto one line ───────────────────────── */
+#robot-panel { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+#robot-panel label { font-size: 14px; color: var(--muted); }
+#robot-select {
+  font-family: var(--font-b);
+  font-size: 15px;
+  color: var(--text);
+  background: #23272F;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 150px;
+}
+#robot-select:disabled { opacity: 0.45; cursor: not-allowed; }
+#btn-load-robot, #btn-save-robot {
+  font-family: var(--font-b);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 14px;
+  cursor: pointer;
+}
+#btn-load-robot:hover:not(:disabled),
+#btn-save-robot:hover:not(:disabled) { color: var(--text); border-color: var(--muted); }
+#btn-load-robot:disabled, #btn-save-robot:disabled { opacity: 0.4; cursor: not-allowed; }
+#robot-active { font-size: 13px; color: var(--faint); }
+#robot-active strong { color: var(--text); font-weight: 600; }
+#robot-msg { font-size: 13px; display: none; }
+#robot-msg.show { display: inline; }
+#robot-msg.ok { color: var(--success); }
+#robot-msg.problem { color: #E8B5A8; }
 
-  .cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 32px;
-  }
+/* ── Status bar ──────────────────────────────────────────────────── */
+#status-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  margin: 20px 0 0;
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  padding: 0 12px 0 16px;
+}
+#status-bar.visible { background: var(--live-bg); border-color: var(--live-ln); }
+#status-bar.visible #status-text { color: var(--live-tx); }
+#status-bar.visible .status-dot { background: var(--live); }
+.status-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--dim); flex-shrink: 0; }
+#status-text { font-size: 15px; color: var(--muted); }
 
-  .card {
-    background: var(--card);
-    border: 2px solid var(--border);
-    border-radius: 16px;
-    padding: 32px 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.2s, transform 0.15s, background 0.2s;
-    position: relative;
-  }
-  .card:hover:not(.disabled) {
-    border-color: var(--accent2);
-    transform: translateY(-3px);
-  }
-  .card.active {
-    border-color: var(--success);
-    background: #0d2e1a;
-  }
-  .card.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
+#btn-stop-all {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-b);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--danger);
+  background: transparent;
+  border: 1px solid var(--danger-ln);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+#status-bar.visible #btn-stop-all { display: flex; }
+#btn-stop-all:hover { border-color: var(--danger); }
+#btn-stop-all.armed {
+  color: #FFFFFF;
+  background: var(--danger-f);
+  border-color: var(--danger-f);
+}
 
-  .card .icon    { font-size: 3rem; margin-bottom: 16px; }
-  .card h2       { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
-  .card p        { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
+/* ── The four cards ──────────────────────────────────────────────── */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: 20px;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 236px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.card-head { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; }
+.card-head svg { stroke: var(--accent); flex-shrink: 0; }
+.card h2 {
+  margin: 0;
+  font-family: var(--font-d);
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--text);
+}
+.card p { margin: 0; font-size: 15px; color: var(--muted); flex-grow: 1; }
 
-  .active-badge {
-    display: none;
-    position: absolute;
-    top: 12px; right: 12px;
-    background: var(--success);
-    color: #000;
-    font-size: 0.65rem;
-    font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .card.active .active-badge { display: block; }
+.active-badge {
+  display: none;
+  font-family: var(--font-d);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: var(--bg);
+  background: var(--live);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+.card.active .active-badge { display: inline-block; }
 
-  /* ── Action buttons ── */
-  .actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
+.card.active { background: #1A2621; border-color: var(--live); }
+.card.active .card-head svg { stroke: var(--live); }
 
-  .btn {
-    padding: 10px 22px;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s, transform 0.1s;
-  }
-  .btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.card.disabled { background: var(--card-off); border-color: var(--line-soft); }
+.card.disabled h2 { color: var(--faint); }
+.card.disabled p { color: var(--dim); }
+.card.disabled .card-head svg { stroke: var(--dim); }
 
-  .btn-stop     { background: var(--warn);   color: #000; }
-  .btn-open     { background: var(--accent2); color: #fff; }
-  .btn-wake     { background: var(--accent2); color: #fff; }
-  .btn-shutdown { background: #2a1a1a; color: var(--danger); border: 1px solid var(--danger); }
-  .btn-restart  { background: #1a2a2a; color: var(--muted); border: 1px solid var(--border); }
+/* Card buttons. applyStatus() shows exactly one combination. */
+.card-actions { display: flex; gap: 10px; }
+.card-actions button {
+  flex-grow: 1;
+  font-family: var(--font-d);
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 9px;
+  padding: 12px 16px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.act-start { color: var(--bg); background: var(--accent); }
+.act-start:hover:not(:disabled) { background: #F0B068; }
+.act-open  { color: var(--bg); background: var(--live); }
+.act-open:hover:not(:disabled) { background: #67CFB6; }
+.act-wake  { color: var(--bg); background: var(--live); }
+.act-wake:hover:not(:disabled) { background: #67CFB6; }
+.act-stop  { color: var(--danger); background: transparent; border-color: var(--danger-ln); }
+.act-stop:hover:not(:disabled) { border-color: var(--danger); }
+.act-blocked {
+  color: var(--dim);
+  background: var(--card);
+  border-color: var(--line-soft);
+  cursor: not-allowed;
+}
+.card-actions button:disabled { cursor: not-allowed; }
+.card-actions .hide { display: none; }
 
-  /* ── Shutdown screen ── */
-  #shutdown-screen {
-    display: none;
-    text-align: center;
-  }
-  #shutdown-screen .icon { font-size: 4rem; margin-bottom: 20px; }
-  #shutdown-screen h2    { font-size: 1.6rem; margin-bottom: 12px; }
-  #shutdown-screen p     { color: var(--muted); }
-  #countdown             { font-size: 3rem; font-weight: 700; color: var(--danger); margin: 24px 0; }
+/* ── Utility toolbar ─────────────────────────────────────────────── */
+.toolbar { display: flex; align-items: center; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+.tool {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-b);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 11px 16px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.tool:hover:not(.disabled) { color: var(--text); border-color: var(--muted); }
+.tool.disabled { opacity: 0.45; cursor: not-allowed; }
+.tool.active { color: var(--live); border-color: var(--live-ln); background: var(--live-bg); }
+.tool svg { stroke: currentColor; }
+.toolnote { font-size: 13px; color: var(--dim); }
 
-  /* ── In-page dialog ──────────────────────────────────────────────────────
-     Replaces the browser's own confirm / prompt / alert boxes. See the
-     matching comment in the script below for why those can't be trusted. */
-  #dialog-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.65);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-  #dialog-backdrop.visible { display: flex; }
+/* Pi-only power buttons. applyPlatform() hides the row off the Pi. */
+#power-actions { display: flex; gap: 10px; margin-left: auto; }
+.btn-restart, .btn-shutdown {
+  font-family: var(--font-b);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 9px;
+  padding: 11px 16px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+.btn-shutdown:hover { color: var(--danger); border-color: var(--danger-ln); }
+.btn-restart:hover { color: var(--text); border-color: var(--muted); }
 
-  #dialog-box {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 26px 26px 20px;
-    width: 100%;
-    max-width: 440px;
-    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
-  }
-  #dialog-title   { font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; }
-  #dialog-message { font-size: 0.92rem; line-height: 1.55; white-space: pre-wrap; }
+/* ── Generic button used by dialogs and legacy calls ─────────────── */
+.btn {
+  font-family: var(--font-d);
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 9px;
+  padding: 11px 18px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: var(--panel);
+  color: var(--text);
+}
+.btn:hover:not(:disabled) { border-color: var(--muted); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  #dialog-input {
-    display: none;
-    width: 100%;
-    margin-top: 16px;
-    padding: 10px 12px;
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.95rem;
-  }
-  #dialog-input:focus { outline: none; border-color: var(--accent2); }
+/* ── Shutdown / restart countdown ────────────────────────────────── */
+#shutdown-screen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: var(--bg);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+#shutdown-screen.visible { display: flex; }
+#shutdown-screen .icon { font-size: 54px; }
+#shutdown-screen h2 { font-family: var(--font-d); font-size: 26px; margin: 16px 0 0; }
+#shutdown-screen p { color: var(--muted); max-width: 440px; }
+#countdown { font-family: var(--font-d); font-size: 64px; font-weight: 700; color: var(--accent); }
 
-  #dialog-buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    margin-top: 22px;
-    flex-wrap: wrap;
-  }
-  .btn-dialog-ok     { background: var(--accent2); color: #fff; }
-  .btn-dialog-danger { background: var(--danger);  color: #fff; }
-  .btn-dialog-cancel { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+/* ── In-page dialog ──────────────────────────────────────────────── */
+#dialog-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: rgba(8, 9, 11, 0.72);
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+#dialog-backdrop.visible { display: flex; }
+#dialog-box {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 26px;
+  max-width: 480px;
+  width: 100%;
+}
+#dialog-title { font-family: var(--font-d); font-size: 19px; font-weight: 700; margin-bottom: 10px; }
+#dialog-message { color: var(--muted); white-space: pre-line; }
+#dialog-input {
+  display: none;
+  width: 100%;
+  margin-top: 14px;
+  font-family: var(--font-b);
+  font-size: 15px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px 13px;
+}
+#dialog-input.visible { display: block; }
+#dialog-input:focus { outline: none; border-color: var(--accent); }
+#dialog-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.btn-dialog-ok { background: var(--accent); color: var(--bg); }
+.btn-dialog-ok:hover:not(:disabled) { background: #F0B068; }
+.btn-dialog-danger { background: var(--danger-f); color: #FFFFFF; }
+.btn-dialog-cancel { background: transparent; color: var(--muted); border-color: var(--line); }
 
-  /* ── Spinner ── */
-  .spinner {
-    display: none;
-    width: 18px; height: 18px;
-    border: 2px solid rgba(255,255,255,0.2);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    vertical-align: middle;
-    margin-left: 8px;
-  }
-  .spinner.visible { display: inline-block; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+.spinner { display: none; }
+.spinner.visible { display: inline-block; }
 
-  /* ── Footer ── */
-  .footer { margin-top: 40px; color: var(--muted); font-size: 0.75rem; text-align: center; }
+.footer { margin-top: 28px; font-size: 13px; color: var(--dim); }
+.footer a { color: var(--dim); }
 
-  /* ── Small calibration link ── */
-  .calib-link-wrap {
-    text-align: center;
-    margin-top: 28px;
-  }
-  #calib-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--muted);
-    font-size: 0.75rem;
-    text-decoration: none;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 5px 14px;
-    transition: color 0.15s, border-color 0.15s;
-  }
-  #calib-link:hover:not(.disabled) {
-    color: var(--text);
-    border-color: var(--accent2);
-  }
-  #calib-link.active {
-    color: var(--success);
-    border-color: var(--success);
-  }
-  #calib-link.disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
+/* ── Settings overlay ────────────────────────────────────────────── */
+#settings-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9200;
+  background: rgba(8, 9, 11, 0.78);
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px;
+  overflow-y: auto;
+}
+#settings-overlay.visible { display: flex; }
+#settings-box {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 760px;
+  padding: 26px 28px 28px;
+}
+#settings-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+#settings-head h2 { margin: 0; font-family: var(--font-d); font-size: 22px; font-weight: 700; }
+#settings-x {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 15px;
+  padding: 7px 11px;
+  cursor: pointer;
+}
+#settings-x:hover { color: var(--text); border-color: var(--muted); }
+#settings-box .intro { color: var(--muted); font-size: 15px; }
+.set-section {
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 18px;
+}
+.set-section h3 { margin: 0 0 6px; font-family: var(--font-d); font-size: 17px; font-weight: 600; }
+.set-section .hint, #robot-panel .hint { font-size: 13px; color: var(--faint); }
+.set-section label {
+  display: block;
+  margin: 14px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.set-section input, .set-section select {
+  width: 100%;
+  font-family: var(--font-b);
+  font-size: 15px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px 13px;
+}
+.set-section input:focus, .set-section select:focus { outline: none; border-color: var(--accent); }
+.set-section input::placeholder { color: var(--dim); }
+.btn-test {
+  margin-top: 14px;
+  font-family: var(--font-b);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  background: #23272F;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 15px;
+  cursor: pointer;
+}
+.btn-test:hover:not(:disabled) { border-color: var(--muted); }
+.btn-test:disabled { opacity: 0.5; cursor: not-allowed; }
+.set-msg { display: none; margin-top: 10px; font-size: 14px; }
+.set-msg.show { display: block; }
+.set-msg.ok { color: var(--success); }
+.set-msg.problem { color: #E8B5A8; }
+.set-msg.info { color: var(--muted); }
+#settings-advanced summary {
+  margin-top: 18px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+#settings-advanced summary:hover { color: var(--text); }
+#settings-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+#btn-settings-save {
+  font-family: var(--font-d);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--bg);
+  background: var(--accent);
+  border: none;
+  border-radius: 9px;
+  padding: 12px 22px;
+  cursor: pointer;
+}
+#btn-settings-save:hover:not(:disabled) { background: #F0B068; }
+#btn-settings-save:disabled { opacity: 0.5; cursor: not-allowed; }
+#btn-settings-cancel {
+  font-family: var(--font-d);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 12px 22px;
+  cursor: pointer;
+}
+#btn-settings-cancel:hover { color: var(--text); border-color: var(--muted); }
+#settings-lock { display: none; }
+#settings-lock.visible { display: block; }
+#settings-body.hidden { display: none; }
+#settings-skip {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+  text-decoration: underline;
+}
+#settings-skip:hover { color: var(--text); }
 
-  /* ── Robot picker (bottom of the page) ── */
-  #robot-panel {
-    margin-top: 34px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 18px 22px;
-    text-align: center;
-  }
-  #robot-panel h3 {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-  #robot-panel .hint {
-    color: var(--muted);
-    font-size: 0.75rem;
-    margin-bottom: 14px;
-    line-height: 1.5;
-  }
-  .robot-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  #robot-select {
-    background: var(--card);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 9px 12px;
-    font-size: 0.85rem;
-    font-family: inherit;
-    min-width: 190px;
-  }
-  #robot-select:disabled { opacity: 0.45; cursor: not-allowed; }
-  #btn-load-robot {
-    background: var(--accent2);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 9px 18px;
-    font-size: 0.85rem;
-    font-family: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s;
-  }
-  #btn-load-robot:hover:not(:disabled) { opacity: 0.85; }
-  #btn-load-robot:disabled { opacity: 0.35; cursor: not-allowed; }
-  #btn-save-robot {
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-size: 0.78rem;
-    font-family: inherit;
-    cursor: pointer;
-    transition: color 0.15s, border-color 0.15s;
-  }
-  #btn-save-robot:hover:not(:disabled) {
-    color: var(--text);
-    border-color: var(--accent2);
-  }
-  #btn-save-robot:disabled { opacity: 0.35; cursor: not-allowed; }
-  #robot-active {
-    margin-top: 12px;
-    font-size: 0.78rem;
-    color: var(--muted);
-  }
-  #robot-active strong { color: var(--success); }
-  #robot-msg {
-    display: none;
-    margin-top: 12px;
-    font-size: 0.78rem;
-    border-radius: 8px;
-    padding: 9px 12px;
-    line-height: 1.5;
-  }
-  #robot-msg.show    { display: block; }
-  #robot-msg.ok      { background: #0d2e1a; border: 1px solid var(--success); color: var(--success); }
-  #robot-msg.problem { background: #2e1414; border: 1px solid var(--danger);  color: var(--danger); }
+/* ── The chess setup screen ─────────────────────────────────────── */
+#chess-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9300;
+  background: rgba(8, 9, 11, 0.78);
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px;
+  overflow-y: auto;
+}
+#chess-overlay.visible { display: flex; }
+#chess-box {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 620px;
+  padding: 26px 28px 28px;
+}
+#chess-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+#chess-head h2 { margin: 0; font-family: var(--font-d); font-size: 22px; font-weight: 700; }
+#chess-x {
+  background: transparent; border: 1px solid var(--line); border-radius: 8px;
+  color: var(--muted); font-size: 15px; padding: 7px 11px; cursor: pointer;
+}
+#chess-x:hover { color: var(--text); border-color: var(--muted); }
+#chess-box .intro { color: var(--muted); font-size: 15px; }
+.chess-opt {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin: 10px 0 0; font-size: 15px; color: var(--text); cursor: pointer;
+}
+.chess-sub { margin: 4px 0 0 27px; }
+.chess-opt input { margin: 3px 0 0; width: 17px; height: 17px; accent-color: var(--accent); flex-shrink: 0; }
+#chess-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+#btn-chess-start {
+  font-family: var(--font-d); font-size: 15px; font-weight: 600;
+  color: var(--bg); background: var(--accent); border: none;
+  border-radius: 9px; padding: 12px 22px; cursor: pointer;
+}
+#btn-chess-start:hover:not(:disabled) { background: #F0B068; }
+#btn-chess-start:disabled { opacity: 0.5; cursor: not-allowed; }
+#btn-chess-cancel {
+  font-family: var(--font-d); font-size: 15px; font-weight: 600;
+  color: var(--muted); background: transparent; border: 1px solid var(--line);
+  border-radius: 9px; padding: 12px 22px; cursor: pointer;
+}
+#btn-chess-cancel:hover { color: var(--text); border-color: var(--muted); }
 
-  @media (max-width: 500px) {
-    .cards { grid-template-columns: 1fr; }
-    .robot-row { flex-direction: column; }
-    #robot-select, #btn-load-robot { width: 100%; }
-  }
+/* Lost contact with the Launcher. Amber: nothing is broken, we just
+   cannot see it any more. */
+#status-bar.offline { background: #241E17; border-color: #5A4632; }
+#status-bar.offline #status-text { color: #E3C394; }
+#status-bar.offline .status-dot { background: var(--accent); }
+#status-bar.offline #btn-stop-all { display: none; }
 
-  /* ── Settings (keys & accounts) ─────────────────────────────────────────
-     A full-page panel rather than a browser pop-up, for the same reason as
-     the dialog above: browsers are allowed to switch pop-ups off, and then
-     the button looks broken. z-index 900 keeps it under the dialog (1000)
-     and under the language pill, so both still work on top of it. */
-  #settings-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.75);
-    z-index: 900;
-    overflow-y: auto;
-    padding: 24px 14px 60px;
-  }
-  #settings-overlay.visible { display: block; }
-  #settings-box {
-    max-width: 620px;
-    margin: 0 auto;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 22px 24px 26px;
-  }
-  #settings-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 6px;
-  }
-  #settings-head h2 { font-size: 1.05rem; font-weight: 700; }
-  #settings-x {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    border-radius: 8px;
-    width: 32px; height: 32px;
-    font-size: 1rem;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  #settings-x:hover { color: var(--text); border-color: var(--accent); }
-  #settings-box .intro {
-    color: var(--muted);
-    font-size: 0.78rem;
-    line-height: 1.55;
-    margin-bottom: 16px;
-  }
-  .set-section {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 15px 16px;
-    margin-bottom: 14px;
-  }
-  .set-section h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 5px; }
-  .set-section .hint {
-    color: var(--muted);
-    font-size: 0.74rem;
-    line-height: 1.55;
-    margin-bottom: 12px;
-  }
-  .set-section label {
-    display: block;
-    font-size: 0.74rem;
-    color: var(--muted);
-    margin: 10px 0 4px;
-  }
-  .set-section input {
-    width: 100%;
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 9px 11px;
-    font-size: 0.82rem;
-    font-family: inherit;
-  }
-  .set-section input:focus { outline: none; border-color: var(--accent2); }
-  .set-section input::placeholder { color: #5c6780; }
-  .btn-test {
-    margin-top: 12px;
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 15px;
-    font-size: 0.78rem;
-    font-family: inherit;
-    cursor: pointer;
-  }
-  .btn-test:hover:not(:disabled) { color: var(--text); border-color: var(--accent2); }
-  .btn-test:disabled { opacity: 0.4; cursor: wait; }
-  .set-msg {
-    display: none;
-    margin-top: 11px;
-    font-size: 0.76rem;
-    border-radius: 8px;
-    padding: 9px 12px;
-    line-height: 1.5;
-  }
-  .set-msg.show    { display: block; }
-  .set-msg.ok      { background: #0d2e1a; border: 1px solid var(--success); color: var(--success); }
-  .set-msg.problem { background: #2e1414; border: 1px solid var(--danger);  color: var(--danger); }
-  .set-msg.info    { background: #12233f; border: 1px solid var(--accent2); color: var(--accent2); }
-  #settings-advanced summary {
-    cursor: pointer;
-    color: var(--muted);
-    font-size: 0.78rem;
-    padding: 6px 0;
-  }
-  #settings-advanced summary:hover { color: var(--text); }
-  #settings-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    margin-top: 18px;
-  }
-  #btn-settings-save {
-    background: var(--accent2);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 22px;
-    font-size: 0.85rem;
-    font-family: inherit;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  #btn-settings-save:hover:not(:disabled) { opacity: 0.85; }
-  #btn-settings-save:disabled { opacity: 0.4; cursor: wait; }
-  #btn-settings-cancel {
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 20px;
-    font-size: 0.85rem;
-    font-family: inherit;
-    cursor: pointer;
-  }
-  #btn-settings-cancel:hover { color: var(--text); }
-  #settings-lock { display: none; }
-  #settings-lock.visible { display: block; }
-  #settings-body.hidden { display: none; }
-  #settings-skip {
-    display: inline-block;
-    margin-top: 12px;
-    color: var(--muted);
-    font-size: 0.75rem;
-    text-decoration: underline;
-    cursor: pointer;
-  }
-  #settings-skip:hover { color: var(--text); }
-  #settings-link { margin-left: 18px; }
+/* A test result belongs next to the button you just pressed, not in small
+   print below it where it goes unread. */
+.test-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+.test-row .btn-test { margin-top: 0; }
+.test-row .set-msg { margin-top: 0; }
 
-  @media (max-width: 500px) {
-    #settings-box { padding: 18px 15px 22px; }
-    #settings-link { margin-left: 0; display: block; margin-top: 12px; }
-    #settings-actions { flex-direction: column-reverse; }
-    #btn-settings-save, #btn-settings-cancel { width: 100%; }
-  }
+#btn-clear-keys {
+  font-family: var(--font-b);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 11px 16px;
+  cursor: pointer;
+}
+#btn-clear-keys:hover:not(:disabled) { color: var(--danger); border-color: var(--danger-ln); }
+#btn-clear-keys:disabled { opacity: 0.5; cursor: not-allowed; }
+#settings-actions .spacer { flex-grow: 1; }
 
-  /* The AI provider dropdown, styled to match the text boxes next to it. */
-  .set-section select {
-    width: 100%;
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 9px 11px;
-    font-size: 0.82rem;
-    font-family: inherit;
-  }
-  .set-section select:focus { outline: none; border-color: var(--accent2); }
+/* The warning about keys on a drive that travels. */
+#key-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  background: #1F1A18;
+  border: 1px solid #4A3A34;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 18px;
+}
+#key-warning svg { stroke: var(--accent); flex-shrink: 0; margin-top: 2px; }
+#key-warning p { margin: 0; font-size: 14px; color: #D8C3B4; }
+
+/* ── Narrower windows ────────────────────────────────────────────── */
+@media (max-width: 980px) {
+  .cards { grid-template-columns: minmax(0, 1fr); }
+  .topbar { padding-right: 0; }
+  body { padding: 20px 18px 32px; }
+}
 </style>
 </head>
 <body data-i18n-pagetitle="launcher.pagetitle">
+<!-- ═══════════════════════════════════════════════════════════════════
+     Top bar: who we are, and which robot is loaded.
+     The robot picker used to be a whole panel below the cards. It is one
+     line now, because loading a calibration is a once-per-session thing
+     and the programs only read that file at startup anyway.
+     The top-RIGHT corner belongs to the i18n language pill (z-index
+     99999). Never put anything there — see ohbot_top_right_corner.
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="topbar">
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4"/><path d="M9 13h.01"/><path d="M15 13h.01"/><path d="M9.5 16.5h5"/></svg>
+    <span>Yobot</span>
+  </div>
 
-<div class="header">
-  <div class="robot">🤖</div>
-  <h1 data-i18n="launcher.title">Ohbot Launcher</h1>
-  <p data-i18n="launcher.subtitle">Choose what you'd like to do</p>
+  <div class="sep"></div>
+
+  <div id="robot-panel">
+    <label for="robot-select" data-i18n="launcher.robot.label">Robot</label>
+    <select id="robot-select">
+      <option value="" data-i18n="common.loading">Loading…</option>
+    </select>
+    <button id="btn-load-robot" onclick="loadRobot()" data-i18n="launcher.robot.load">Load calibration</button>
+    <button id="btn-save-robot" onclick="saveCurrentRobot()" data-i18n="launcher.robot.savecur">Save current…</button>
+    <span id="robot-active" data-i18n-html="launcher.robot.active.none">Currently loaded: <strong>—</strong></span>
+    <span id="robot-msg"></span>
+    <!-- Kept because setHint() writes into it. Hidden by CSS: the long
+         explanation does not belong in a one-line bar. -->
+    <span class="hint" data-i18n-html="launcher.robot.hint"></span>
+  </div>
 </div>
 
-<!-- Status bar — shown when a service is running -->
+<!-- Status bar. Always present at a fixed height, so the Stop everything
+     button appearing inside it never moves anything below. -->
 <div id="status-bar">
-  <div class="status-dot"></div>
-  <span id="status-text" data-i18n="launcher.running.some">Something is running</span>
+  <span class="status-dot"></span>
+  <span id="status-text" data-i18n="launcher.running.none">Nothing is running. Pick what you want to do.</span>
+  <span class="spacer"></span>
+  <button id="btn-stop-all" onclick="stopAll()" data-i18n="launcher.stopall">Stop everything</button>
 </div>
 
-<!-- Main choice screen -->
 <div id="choice-screen">
 
-  <div class="cards">
+<div class="cards">
 
-    <!-- Greeter Bot card -->
-    <div class="card" id="card-greeter" onclick="startService('greeter')">
-      <div class="active-badge" data-i18n="launcher.badge.running">Running</div>
-      <div class="icon">🎙️</div>
+  <!-- ── Greeter Bot ─────────────────────────────────────────────── -->
+  <div class="card" id="card-greeter">
+    <div class="card-head">
+      <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1"/><path d="M12 18v4"/><path d="M8 22h8"/></svg>
       <h2 data-i18n="launcher.greeter.name">Greeter Bot</h2>
-      <p data-i18n="launcher.greeter.desc">Voice-activated conversation mode. Ohbot listens, talks, and chats with visitors.</p>
+      <span class="active-badge" data-i18n="launcher.badge.running">Running</span>
     </div>
+    <p data-i18n="launcher.greeter.desc">Voice-activated conversation mode. Ohbot listens, talks, and chats with visitors.</p>
+    <div class="card-actions">
+      <button class="act-start"   onclick="startService('greeter')" data-i18n="launcher.greeter.start">Start the Greeter</button>
+      <button class="act-wake hide" id="btn-wake" onclick="wakeGreeter()" data-i18n="launcher.wake">Wake Yobot</button>
+      <button class="act-stop hide"    onclick="stopService()"  data-i18n="launcher.stop.short">Stop</button>
+      <button class="act-blocked hide" disabled data-i18n="launcher.blocked">Stop what's running first</button>
+    </div>
+  </div>
 
-    <!-- Sequence Builder card -->
-    <div class="card" id="card-gui" onclick="startService('gui')">
-      <div class="active-badge" data-i18n="launcher.badge.running">Running</div>
-      <div class="icon">🎛️</div>
+  <!-- ── Chess ───────────────────────────────────────────────────── -->
+  <div class="card" id="card-chess">
+    <div class="card-head">
+      <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.5" r="2.5"/><path d="M9.5 9.5h5l1 5h-7z"/><path d="M8.5 14.5h7"/><path d="M7 19h10l1 2H6z"/></svg>
+      <h2 data-i18n="launcher.chess.name">Chess</h2>
+      <span class="active-badge" data-i18n="launcher.badge.running">Running</span>
+    </div>
+    <p data-i18n="launcher.chess.desc">Two robots play each other and talk it through, or you play one of them yourself.</p>
+    <div class="card-actions">
+      <button class="act-start"   onclick="openChessSetup()" data-i18n="launcher.chess.start">Set up a game</button>
+      <button class="act-open hide" onclick="openChess()"  data-i18n="launcher.chess.open">Open Chess ↗</button>
+      <button class="act-stop hide"    onclick="stopService()" data-i18n="launcher.stop.short">Stop</button>
+      <button class="act-blocked hide" disabled data-i18n="launcher.blocked">Stop what's running first</button>
+    </div>
+  </div>
+
+  <!-- ── Sequence Builder ────────────────────────────────────────── -->
+  <div class="card" id="card-gui">
+    <div class="card-head">
+      <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18h10"/><path d="M18 18h2"/><circle cx="16" cy="18" r="2"/><path d="M4 12h4"/><path d="M12 12h8"/><circle cx="10" cy="12" r="2"/><path d="M4 6h10"/><path d="M18 6h2"/><circle cx="16" cy="6" r="2"/></svg>
       <h2 data-i18n="launcher.gui.name">Sequence Builder</h2>
-      <p data-i18n="launcher.gui.desc">Web GUI for controlling motors, setting emotions, and building animation sequences.</p>
+      <span class="active-badge" data-i18n="launcher.badge.running">Running</span>
     </div>
-
-  </div>
-
-  <!-- Action buttons -->
-  <div class="actions">
-    <button class="btn btn-stop" id="btn-stop" onclick="stopService()" style="display:none"
-            data-i18n="launcher.stop">
-      ⏹ Stop Current Service
-    </button>
-    <button class="btn btn-open" id="btn-open" onclick="openGui()" style="display:none"
-            data-i18n="launcher.opengui">
-      Open GUI ↗
-    </button>
-    <!-- Shown while calibration is running. A tab opened straight from a
-         button click is never blocked, which the calibration link itself
-         can't guarantee — it has to start the program first. -->
-    <button class="btn btn-open" id="btn-open-calib" onclick="openCalibration()" style="display:none"
-            data-i18n="launcher.opencalib">
-      Open Motor Calibration ↗
-    </button>
-    <!-- Only shown while the Greeter is running. Wakes Yobot if he has
-         nodded off, so you don't need a GPIO button wired up. -->
-    <button class="btn btn-wake" id="btn-wake" onclick="wakeGreeter()" style="display:none"
-            data-i18n="launcher.wake">
-      ⏰ Wake Yobot
-    </button>
-  </div>
-
-  <!-- Pi-only power buttons — hidden automatically on Mac/Windows -->
-  <div class="actions" id="power-actions">
-    <button class="btn btn-restart"  onclick="confirmAction('restart')"  data-i18n="launcher.restart">↺ Restart Pi</button>
-    <button class="btn btn-shutdown" onclick="confirmAction('shutdown')" data-i18n="launcher.shutdown">⏻ Shut Down Pi</button>
-  </div>
-
-  <!-- Small motor calibration link -->
-  <div class="calib-link-wrap">
-    <a href="#" id="calib-link" onclick="handleCalibClick(); return false;"
-       data-i18n="launcher.calib" data-i18n-title="launcher.calib.tip"
-       title="Stop the current service first">
-      🔧 Motor Calibration
-    </a>
-    <a href="#" id="settings-link" onclick="openSettings(); return false;"
-       data-i18n="launcher.settings.link">&#9881; Settings &amp; Keys</a>
-  </div>
-
-  <!-- ── Which robot are you using? ────────────────────────────────────────
-       Loading a robot copies its saved calibration over the live motor file
-       that everything reads. Only offered while nothing is running, because
-       programs read that file once at startup. -->
-  <div id="robot-panel">
-    <h3 data-i18n="launcher.robot.title">🤖 Which robot are you using?</h3>
-    <p class="hint" data-i18n-html="launcher.robot.hint">
-      Load its calibration here before starting the Greeter or the GUI.<br>
-      Robots are saved by name when you finish a motor calibration.
-    </p>
-
-    <div class="robot-row">
-      <select id="robot-select">
-        <option value="" data-i18n="common.loading">Loading…</option>
-      </select>
-      <button id="btn-load-robot" onclick="loadRobot()" data-i18n="launcher.robot.load">Load calibration</button>
+    <p data-i18n="launcher.gui.desc">Web GUI for controlling motors, setting emotions, and building animation sequences.</p>
+    <div class="card-actions">
+      <button class="act-start"   onclick="startService('gui')" data-i18n="launcher.gui.start">Open the Builder</button>
+      <button class="act-open hide" onclick="openGui()"   data-i18n="launcher.opengui">Open GUI ↗</button>
+      <button class="act-stop hide"    onclick="stopService()" data-i18n="launcher.stop.short">Stop</button>
+      <button class="act-blocked hide" disabled data-i18n="launcher.blocked">Stop what's running first</button>
     </div>
+  </div>
 
-    <!-- Files whatever calibration is in the live file right now under a
-         name. Needed because the calibration page won't save unless you've
-         measured motors in that session — so this is the only way to name
-         a calibration you already have. -->
-    <div class="robot-row" style="margin-top:10px">
-      <button id="btn-save-robot" onclick="saveCurrentRobot()" data-i18n="launcher.robot.savecur">
-        💾 Save current calibration as a robot…
-      </button>
+  <!-- ── Offline Show ────────────────────────────────────────────── -->
+  <div class="card" id="card-show">
+    <div class="card-head">
+      <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/><path d="M10 8.5l4 2.2-4 2.3z"/></svg>
+      <h2 data-i18n="launcher.show.name">Offline Show</h2>
+      <span class="active-badge" data-i18n="launcher.badge.running">Running</span>
     </div>
-
-    <div id="robot-active" data-i18n-html="launcher.robot.active.none">Currently loaded: <strong>—</strong></div>
-    <div id="robot-msg"></div>
+    <p data-i18n="launcher.show.desc">The pre-recorded cue stack. Every line is already on the drive, so it runs with no internet at all.</p>
+    <div class="card-actions">
+      <button class="act-start"   onclick="startService('show')" data-i18n="launcher.show.start">Start the Show</button>
+      <button class="act-open hide" onclick="openShow()"   data-i18n="launcher.show.open">Open the Show ↗</button>
+      <button class="act-stop hide"    onclick="stopService()" data-i18n="launcher.stop.short">Stop</button>
+      <button class="act-blocked hide" disabled data-i18n="launcher.blocked">Stop what's running first</button>
+    </div>
   </div>
 
 </div>
+
+<!-- Tools: a different class of thing from the four cards, so they read
+     quieter rather than being tiny text links doing the same job. -->
+<div class="toolbar">
+  <a href="#" class="tool" id="calib-link" onclick="handleCalibClick(); return false;"
+     data-i18n="launcher.calib" data-i18n-title="launcher.calib.tip"
+     title="Stop the current service first">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 6.5a5 5 0 0 1-6.6 6.6L6 21l-3-3 7.9-7.9A5 5 0 0 1 17.5 3.5l-3 3 2 2 3-3z"/></svg>
+    <span data-i18n="launcher.calib">Motor Calibration</span>
+  </a>
+
+  <a href="#" class="tool" id="settings-link" onclick="openSettings(); return false;">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"/></svg>
+    <span data-i18n="launcher.settings.link">Settings &amp; Keys</span>
+  </a>
+
+  <span class="toolnote" data-i18n="launcher.toolnote">One thing at a time — they all share the one serial cable</span>
+
+  <!-- Pi-only. applyPlatform() hides this row on Mac and Windows. -->
+  <div id="power-actions">
+    <button class="btn-restart"  onclick="confirmAction('restart')"  data-i18n="launcher.restart">Restart Pi</button>
+    <button class="btn-shutdown" onclick="confirmAction('shutdown')" data-i18n="launcher.shutdown">Shut Down Pi</button>
+  </div>
+</div>
+
+</div>
+
 
 <!-- Shutdown/restart countdown screen -->
 <div id="shutdown-screen">
@@ -690,9 +771,11 @@
         <input id="f-AZURE_SPEECH_REGION" type="text" autocomplete="off" spellcheck="false"
                placeholder="eastus">
         <div class="hint" style="margin:6px 0 0" data-i18n="launcher.settings.voice.regionhint"></div>
-        <button class="btn-test" id="btn-test-voice" onclick="testSetting('voice')"
-                data-i18n="launcher.settings.test">Test this key</button>
-        <div class="set-msg" id="msg-voice"></div>
+        <div class="test-row">
+          <button class="btn-test" id="btn-test-voice" onclick="testSetting('voice')"
+                  data-i18n="launcher.settings.test">Test this key</button>
+          <div class="set-msg" id="msg-voice"></div>
+        </div>
       </div>
 
       <!-- The AI. Every provider in the dropdown understands the same kind
@@ -721,18 +804,27 @@
         <datalist id="model-list"></datalist>
         <div class="hint" style="margin:6px 0 0" data-i18n="launcher.settings.brain.modelhint"></div>
 
-        <button class="btn-test" id="btn-test-brain" onclick="testSetting('brain')"
-                data-i18n="launcher.settings.testai">Test the AI</button>
-        <div class="set-msg" id="msg-brain"></div>
+        <div class="test-row">
+          <button class="btn-test" id="btn-test-brain" onclick="testSetting('brain')"
+                  data-i18n="launcher.settings.testai">Test the AI</button>
+          <div class="set-msg" id="msg-brain"></div>
+        </div>
       </div>
 
       <details id="settings-advanced">
         <summary data-i18n="launcher.settings.advanced">Advanced</summary>
         <div class="set-section" style="margin-top:10px">
+      <!-- Raspberry Pi only: which ALSA card the microphone is.
+           Hidden on Windows and Mac by applyPlatform(), because it does
+           nothing there. Kept in the page so the Pi still has it - it is
+           the first thing to check when the Pi greets and then goes
+           silent. -->
+      <div id="mic-row">
           <label for="f-AZURE_MIC_DEVICE" data-i18n="launcher.settings.mic">Microphone (Raspberry Pi only)</label>
           <input id="f-AZURE_MIC_DEVICE" type="text" autocomplete="off" spellcheck="false"
                  placeholder="plughw:2,0">
           <div class="hint" style="margin:6px 0 0" data-i18n="launcher.settings.mic.hint"></div>
+      </div>
 
           <label for="f-SETTINGS_PASSWORD" data-i18n="launcher.settings.pw.change">Change the settings password</label>
           <input id="f-SETTINGS_PASSWORD" type="password" autocomplete="off">
@@ -741,6 +833,11 @@
       </details>
 
       <div id="settings-actions">
+        <!-- On a stick that gets handed round, being able to wipe the keys
+             in one click matters more than it would on a fixed machine. -->
+        <button id="btn-clear-keys" onclick="clearKeys()"
+                data-i18n="launcher.settings.clearkeys">Clear all keys from this drive</button>
+        <span class="spacer"></span>
         <button id="btn-settings-cancel" onclick="closeSettings()"
                 data-i18n="launcher.settings.close">Close</button>
         <button id="btn-settings-save" onclick="saveSettings()"
@@ -750,6 +847,75 @@
     </div>
 
   </div>
+</div>
+
+
+<!-- ── Setting up a chess game ───────────────────────────────────────────
+     Chess is not one button. It is three different evenings: two robots
+     playing each other, a visitor playing one of them, or a demo with no
+     robots at all for checking the display. Those are the same three the
+     .bat files in the Chess folder offer, and they become the command-line
+     flags chess_show.py already understands. -->
+<div id="chess-overlay">
+<div id="chess-box" role="dialog" aria-modal="true" aria-labelledby="chess-title">
+
+  <div id="chess-head">
+    <h2 id="chess-title" data-i18n="chess.title">Set up a chess game</h2>
+    <button id="chess-x" onclick="closeChessSetup()" aria-label="Close">&#10005;</button>
+  </div>
+
+  <p class="intro" data-i18n="chess.intro">Chess opens in its own page once it has started. The robots need their speech key; the demo needs nothing at all.</p>
+
+  <div class="set-section">
+    <h3 data-i18n="chess.kind">What kind of game?</h3>
+    <label class="chess-opt">
+      <input type="radio" name="chess-mode" value="robots" onchange="chessModeChanged()">
+      <span data-i18n="chess.mode.robots">Two robots play each other, and talk about it</span>
+    </label>
+    <div class="hint chess-sub" data-i18n="chess.mode.robots.needs">Needs a SECOND robot on another computer, with the listener from the Chess folder running on it. On its own, White starts and Black never does.</div>
+    <label class="chess-opt">
+      <input type="radio" name="chess-mode" value="human" checked onchange="chessModeChanged()">
+      <span data-i18n="chess.mode.human">A person plays against one robot</span>
+    </label>
+    <label class="chess-opt">
+      <input type="radio" name="chess-mode" value="demo" onchange="chessModeChanged()">
+      <span data-i18n="chess.mode.demo">Demo — no robots, board on screen only</span>
+    </label>
+  </div>
+
+  <div class="set-section" id="chess-human-only">
+    <h3 data-i18n="chess.person">The person playing</h3>
+    <label for="chess-colour" data-i18n="chess.colour">Which colour do they play?</label>
+    <select id="chess-colour">
+      <option value="white" data-i18n="chess.colour.white">White — they move first</option>
+      <option value="black" data-i18n="chess.colour.black">Black — the robot opens</option>
+    </select>
+    <label class="chess-opt" style="margin-top:14px">
+      <input type="checkbox" id="chess-polite" checked>
+      <span data-i18n="chess.polite">Leave out the cheekiest lines</span>
+    </label>
+  </div>
+
+  <div class="set-section" id="chess-mac-row">
+    <h3 data-i18n="chess.mac">The other computer</h3>
+    <label for="chess-mac" data-i18n="chess.mac.label">Address of the machine with the second robot</label>
+    <input id="chess-mac" type="text" autocomplete="off" spellcheck="false" placeholder="192.168.50.20">
+    <div class="hint" data-i18n="chess.mac.hint">Leave it empty and you start the second robot by hand over there, as before. Port 8090 is assumed.</div>
+  </div>
+
+  <div class="set-section" id="chess-strength-box">
+    <h3 data-i18n="chess.strength">How well should the robot play?</h3>
+    <select id="chess-strength"></select>
+    <div class="hint" id="chess-strength-hint"></div>
+  </div>
+
+  <div id="chess-actions">
+    <button id="btn-chess-cancel" onclick="closeChessSetup()" data-i18n="chess.cancel">Cancel</button>
+    <button id="btn-chess-start" onclick="startChessGame()" data-i18n="chess.start">Start the game</button>
+  </div>
+  <div class="set-msg" id="msg-chess"></div>
+
+</div>
 </div>
 
 <!-- In-page dialog. Filled in and shown by askConfirm/askPrompt/showNotice. -->
@@ -765,8 +931,11 @@
   </div>
 </div>
 
-<div class="footer"><span data-i18n="launcher.footer">Ohbot Web Launcher — </span><a href="https://github.com/ohbot" style="color:var(--muted)">ohbot.co.uk</a></div>
-
+<div class="footer">
+  <div data-i18n="launcher.footer.line1">Yobot Web Launcher. Hecho en Panamá.</div>
+  <div><span data-i18n="launcher.footer.based">Based on Ohbot Python by</span>
+       <a href="https://www.ohbot.co.uk" target="_blank" rel="noopener">ohbot.co.uk</a></div>
+</div>
 <script>
   let currentStatus = 'idle';
   let pollTimer     = null;
@@ -875,12 +1044,39 @@
   }
 
   // ── Poll status every 2 seconds ──────────────────────────────────────────
+  // How many status polls have failed in a row. One failure really can be a
+  // blip; two in a row means the Launcher has gone.
+  let pollFails = 0;
+
   async function pollStatus() {
     try {
       const r = await fetch('/launcher/status');
       const d = await r.json();
+      pollFails = 0;
       applyStatus(d.status);
-    } catch(e) { /* ignore network blips */ }
+    } catch (e) {
+      // This used to be swallowed silently as a "network blip". The cost of
+      // that: when the Launcher was closed, the page went on looking
+      // perfectly healthy — cards normal, robot list still filled in,
+      // nothing red anywhere — and the only way to find out was to press a
+      // button and get a baffling network error. That sent us both chasing
+      // ghosts for an afternoon (2026-09-18). Now it says so.
+      if (++pollFails >= 2) showLostContact();
+    }
+  }
+
+  // Amber, not green, and not red: nothing has broken, we just cannot see
+  // the Launcher any more. Usually its window was closed.
+  function showLostContact() {
+    const bar  = document.getElementById('status-bar');
+    const text = document.getElementById('status-text');
+    if (!bar || bar.classList.contains('offline')) return;
+    bar.classList.remove('visible');
+    bar.classList.add('offline');
+    setBarText(text, 'launcher.lost');
+    // Forget what we thought was running, so the first good poll redraws
+    // the cards properly instead of assuming nothing changed.
+    currentStatus = null;
   }
 
   function startPolling() {
@@ -896,9 +1092,12 @@
     try {
       const r = await fetch('/launcher/platform');
       const d = await r.json();
+      // can_power is only true on the Pi, so it doubles as "is this a Pi?".
       if (!d.can_power) {
         const row = document.getElementById('power-actions');
         if (row) row.style.display = 'none';
+        const mic = document.getElementById('mic-row');
+        if (mic) mic.style.display = 'none';
       }
     } catch(e) { /* leave buttons as-is if the check fails */ }
   }
@@ -912,6 +1111,45 @@
   }
 
   // ── Apply UI state ────────────────────────────────────────────────────────
+  // One table drives all four cards. A card shows exactly one set of buttons:
+  //   nothing running     → Start
+  //   this one running    → Open ↗ or Wake, plus Stop
+  //   another one running → one greyed "Stop what's running first"
+  // Nothing is inserted or removed, so the layout never jumps the way the old
+  // floating action row did.
+  const CARD_FOR = {
+    greeter: 'card-greeter',
+    chess:   'card-chess',
+    gui:     'card-gui',
+    show:    'card-show',
+  };
+  const NAME_KEY = {
+    greeter: 'launcher.greeter.name',
+    chess:   'launcher.chess.name',
+    gui:     'launcher.gui.name',
+    show:    'launcher.show.name',
+    calibration: 'launcher.calib',
+  };
+  const STATUS_KEY = {
+    greeter: 'launcher.status.greeter',
+    chess:   'launcher.status.chess',
+    gui:     'launcher.status.gui',
+    show:    'launcher.status.show',
+    calibration: 'launcher.status.calib',
+  };
+  // The Greeter has no page of its own, so it offers Wake instead of Open.
+  const HAS_OPEN = { chess: true, gui: true, show: true };
+  const HAS_WAKE = { greeter: true };
+
+  var stopAllArmed = null;
+
+  function showCardButtons(card, wanted) {
+    ['act-start', 'act-open', 'act-wake', 'act-stop', 'act-blocked'].forEach(cls => {
+      const b = card.querySelector('.' + cls);
+      if (b) b.classList.toggle('hide', !wanted[cls]);
+    });
+  }
+
   function applyStatus(status) {
     const changed = (status !== currentStatus);
     currentStatus = status;
@@ -920,58 +1158,48 @@
     // stopped — the status poll runs every 2 seconds and there's no reason
     // to hammer the disk that often.
     if (changed) refreshRobots();
+    // Never leave Stop everything sitting armed across a state change.
+    if (changed) disarmStopAll();
 
-    const bar      = document.getElementById('status-bar');
-    const barText  = document.getElementById('status-text');
-    const btnStop  = document.getElementById('btn-stop');
-    const btnOpen  = document.getElementById('btn-open');
-    const btnCalib = document.getElementById('btn-open-calib');
-    const btnWake  = document.getElementById('btn-wake');
-    const cardG    = document.getElementById('card-greeter');
-    const cardGUI  = document.getElementById('card-gui');
+    const bar       = document.getElementById('status-bar');
+    const barText   = document.getElementById('status-text');
     const calibLink = document.getElementById('calib-link');
 
-    // Reset card states
-    cardG.classList.remove('active', 'disabled');
-    cardGUI.classList.remove('active', 'disabled');
+    // We just heard back, so whatever we lost contact with is answering.
+    bar.classList.remove('offline');
+
+    const idle = (status === 'idle');
+
+    Object.keys(CARD_FOR).forEach(name => {
+      const card = document.getElementById(CARD_FOR[name]);
+      if (!card) return;
+      card.classList.remove('active', 'disabled');
+
+      if (idle) {
+        showCardButtons(card, { 'act-start': true });
+      } else if (status === name) {
+        card.classList.add('active');
+        showCardButtons(card, {
+          'act-open': !!HAS_OPEN[name],
+          'act-wake': !!HAS_WAKE[name],
+          'act-stop': true,
+        });
+      } else {
+        card.classList.add('disabled');
+        showCardButtons(card, { 'act-blocked': true });
+      }
+    });
+
     calibLink.classList.remove('active', 'disabled');
+    if (status === 'calibration') calibLink.classList.add('active');
+    else if (!idle)               calibLink.classList.add('disabled');
 
-    btnWake.style.display  = 'none';   // only the Greeter can be woken
-    btnCalib.style.display = 'none';   // only calibration can be opened
-
-    if (status === 'idle') {
+    if (idle) {
       bar.classList.remove('visible');
-      btnStop.style.display = 'none';
-      btnOpen.style.display = 'none';
-
-    } else if (status === 'greeter') {
+      setBarText(barText, 'launcher.running.none');
+    } else {
       bar.classList.add('visible');
-      setBarText(barText, 'launcher.status.greeter');
-      cardG.classList.add('active');
-      cardGUI.classList.add('disabled');
-      calibLink.classList.add('disabled');
-      btnStop.style.display = 'inline-block';
-      btnOpen.style.display = 'none';
-      btnWake.style.display = 'inline-block';
-
-    } else if (status === 'gui') {
-      bar.classList.add('visible');
-      setBarText(barText, 'launcher.status.gui');
-      cardGUI.classList.add('active');
-      cardG.classList.add('disabled');
-      calibLink.classList.add('disabled');
-      btnStop.style.display  = 'inline-block';
-      btnOpen.style.display  = 'inline-block';
-
-    } else if (status === 'calibration') {
-      bar.classList.add('visible');
-      setBarText(barText, 'launcher.status.calib');
-      cardG.classList.add('disabled');
-      cardGUI.classList.add('disabled');
-      calibLink.classList.add('active');
-      btnStop.style.display  = 'inline-block';
-      btnOpen.style.display  = 'none';
-      btnCalib.style.display = 'inline-block';
+      setBarText(barText, STATUS_KEY[status] || 'launcher.running.some');
     }
   }
 
@@ -1015,29 +1243,46 @@
   // ── Start a service ───────────────────────────────────────────────────────
   async function startService(which) {
     if (currentStatus === which) {
-      // Already running — if it's the GUI, just open it
-      if (which === 'gui') openGui();
+      // Already running — just open its page, for the ones that have one.
+      if (which === 'gui')   openGui();
+      if (which === 'show')  openShow();
+      if (which === 'chess') openChess();
       return;
     }
 
-    // If something else is running, confirm switch
+    // Only one program at a time: they all share the one serial cable.
     if (currentStatus !== 'idle') {
-      const other  = t(currentStatus === 'greeter' ? 'launcher.greeter.name' : 'launcher.gui.name');
-      const target = t(which === 'greeter' ? 'launcher.greeter.name' : 'launcher.gui.name');
+      const other  = t(NAME_KEY[currentStatus] || 'launcher.running.some');
+      const target = t(NAME_KEY[which] || 'launcher.running.some');
       if (!await askConfirm(t('launcher.switch.confirm', { other, target }))) return;
     }
 
-    const card = which === 'greeter'
-      ? document.getElementById('card-greeter')
-      : document.getElementById('card-gui');
-
-    card.style.opacity = '0.6';
+    const card = document.getElementById(CARD_FOR[which]);
+    if (card) card.style.opacity = '0.6';
 
     try {
-      await fetch(`/launcher/start/${which}`, { method: 'POST' });
+      const r = await fetch(`/launcher/start/${which}`, { method: 'POST' });
+      // A Launcher running older code simply has no route for the newer
+      // cards. Say so plainly rather than appearing to do nothing.
+      if (r.status === 404) {
+        await showNotice(t('launcher.noroute', { name: t(NAME_KEY[which] || '') }));
+        return;
+      }
+      // Anything else that went wrong has a sentence attached explaining
+      // it. Show that rather than a generic failure — the server knows far
+      // more about why than this page does.
+      if (!r.ok) {
+        let body = {};
+        try { body = await r.json(); } catch (err) {}
+        await showNotice(body.error || t('launcher.start.fail'));
+        return;
+      }
       await pollStatus();
+    } catch (e) {
+      await showNotice(t('launcher.start.fail'));
+      console.error('start failed:', which, e);
     } finally {
-      card.style.opacity = '';
+      if (card) card.style.opacity = '';
     }
   }
 
@@ -1125,6 +1370,176 @@
     const url = `http://${location.hostname}:5003/calibration`;
     if (!window.open(url, '_blank')) location.href = url;
   }
+
+  // ── Open the other programs' pages ────────────────────────────────────────
+  // Same rule as openCalibration: called straight from a click, never awaited
+  // first, or the browser treats the tab as unrequested and blocks it.
+  function openShow() {
+    const url = `http://${location.hostname}:5004/`;
+    if (!window.open(url, '_blank')) location.href = url;
+  }
+  function openChess() {
+    const url = `http://${location.hostname}:8080/`;
+    if (!window.open(url, '_blank')) location.href = url;
+  }
+
+
+  // ── Setting up a chess game ───────────────────────────────────────────────
+  // The strength names are Stockfish dial settings with friendly labels on
+  // them, and the two lists are genuinely different: the first three drive
+  // the Skill Level dial and are meant for a person to play against, the
+  // rest drive the Elo dial and are for robot against robot. Offering all
+  // eight in one list would let you set a visitor against a 2400 engine.
+  const CHESS_STRENGTH = {
+    robots: [['beginner', 'chess.str.beginner'], ['club', 'chess.str.club'],
+             ['strong', 'chess.str.strong'], ['expert', 'chess.str.expert'],
+             ['max', 'chess.str.max']],
+    human:  [['gentle', 'chess.str.gentle'], ['friendly', 'chess.str.friendly'],
+             ['easy', 'chess.str.easy']],
+  };
+  const CHESS_DEFAULT = { robots: 'club', human: 'friendly' };
+
+  function chessMode() {
+    const picked = document.querySelector('input[name="chess-mode"]:checked');
+    return picked ? picked.value : 'robots';
+  }
+
+  function chessModeChanged() {
+    const mode  = chessMode();
+    const human = (mode === 'human');
+    document.getElementById('chess-human-only').style.display = human ? '' : 'none';
+    // Only a robot-against-robot game has a second machine to point at.
+    document.getElementById('chess-mac-row').style.display =
+      (mode === 'robots') ? '' : 'none';
+    // A demo plays a pretend game to the screen; nothing is thinking, so
+    // there is no strength to choose.
+    document.getElementById('chess-strength-box').style.display =
+      (mode === 'demo') ? 'none' : '';
+
+    const sel  = document.getElementById('chess-strength');
+    const list = CHESS_STRENGTH[human ? 'human' : 'robots'];
+    sel.innerHTML = '';
+    list.forEach(([value, key]) => {
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.setAttribute('data-i18n', key);
+      opt.textContent = t(key);
+      sel.appendChild(opt);
+    });
+    sel.value = CHESS_DEFAULT[human ? 'human' : 'robots'];
+    document.getElementById('chess-strength-hint').textContent =
+      t(human ? 'chess.strength.hint.human' : 'chess.strength.hint.robots');
+  }
+
+  function openChessSetup() {
+    clearMsg('msg-chess');
+    chessModeChanged();
+    document.getElementById('chess-overlay').classList.add('visible');
+  }
+
+  function closeChessSetup() {
+    document.getElementById('chess-overlay').classList.remove('visible');
+  }
+
+  async function startChessGame() {
+    const mode = chessMode();
+    const btn  = document.getElementById('btn-chess-start');
+    const body = { mode: mode };
+
+    if (mode === 'human') {
+      body.colour = document.getElementById('chess-colour').value;
+      body.polite = document.getElementById('chess-polite').checked;
+    }
+    if (mode !== 'demo') {
+      body.strength = document.getElementById('chess-strength').value;
+    }
+    if (mode === 'robots') {
+      const mac = document.getElementById('chess-mac').value.trim();
+      if (mac) body.mac = mac;
+    }
+
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = t('chess.starting');
+    setMsg('msg-chess', 'info', t('chess.starting.hint'));
+
+    try {
+      // langBody() stamps on whichever language the page is showing, so the
+      // robots speak the same one you are reading. See the note at the
+      // bottom of i18n.js for why it travels with the request rather than
+      // being read from a file.
+      const r = await fetch('/launcher/start/chess', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(langBody(body)),
+      });
+      let d = {};
+      try { d = await r.json(); } catch (e) {}
+
+      if (!r.ok || !d.success) {
+        setMsg('msg-chess', 'problem', d.error || t('launcher.start.fail'));
+        return;
+      }
+      closeChessSetup();
+      await pollStatus();
+      openChess();
+    } catch (e) {
+      setMsg('msg-chess', 'problem', t('common.noserver.detail', { msg: e.message }));
+      console.error('chess start failed:', e);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  }
+
+  // ── Stop everything ───────────────────────────────────────────────────────
+  // Different job from the Stop on a card. That one asks the Launcher to stop
+  // the thing IT started. This is the recovery hatch: it goes by port and
+  // process, so it also catches a Show opened from the batch file, or a Chess
+  // left running from yesterday.
+  //
+  // No confirmation dialog on purpose — mid-show a modal costs seconds and a
+  // click in the wrong place. One click arms it, a second click goes through,
+  // and it disarms itself after three seconds.
+  function disarmStopAll() {
+    const btn = document.getElementById('btn-stop-all');
+    if (!btn) return;
+    clearTimeout(stopAllArmed);
+    stopAllArmed = null;
+    btn.classList.remove('armed');
+    setBarText(btn, 'launcher.stopall');
+  }
+
+  async function stopAll() {
+    const btn = document.getElementById('btn-stop-all');
+    if (!btn) return;
+
+    if (!stopAllArmed) {
+      btn.classList.add('armed');
+      setBarText(btn, 'launcher.stopall.arm');
+      stopAllArmed = setTimeout(disarmStopAll, 3000);
+      return;
+    }
+
+    disarmStopAll();
+    btn.disabled = true;
+    try {
+      let r = await fetch('/launcher/stop/all', { method: 'POST' });
+      if (r.status === 404) {
+        // Older Launcher on this drive — fall back to the ordinary stop,
+        // which at least handles whatever the Launcher started itself.
+        r = await fetch('/launcher/stop', { method: 'POST' });
+      }
+      if (!r.ok) await showNotice(t('launcher.stopall.fail'));
+    } catch (e) {
+      await showNotice(t('launcher.stopall.fail'));
+      console.error('stop all failed:', e);
+    } finally {
+      btn.disabled = false;
+      await pollStatus();
+    }
+  }
+
 
   // ── Motor Calibration link ─────────────────────────────────────────────────
   async function handleCalibClick() {
@@ -1777,6 +2192,47 @@
     } finally {
       btn.disabled = false;
       btn.textContent = original;
+    }
+  }
+
+
+  // ── Clearing the keys off this drive ──────────────────────────────────────
+  // Clears every provider's key, not just the one selected in the dropdown:
+  // the point is to hand the stick to somebody with nothing on it. The Azure
+  // region, the settings password and your provider choice all stay, so
+  // typing the keys back in on the day is quick.
+  async function clearKeys() {
+    if (!await askConfirm(t('launcher.settings.clearkeys.confirm'),
+                          { danger: true })) return;
+
+    const btn = document.getElementById('btn-clear-keys');
+    const values = { AZURE_SPEECH_KEY: 'DELETE' };
+    Object.values((settingsData || {}).providerMap || {}).forEach(spec => {
+      if (spec.key_env) values[spec.key_env] = 'DELETE';
+    });
+
+    btn.disabled = true;
+    try {
+      const d = await setFetch('/launcher/settings', {
+        method: 'POST', body: JSON.stringify({ values })
+      });
+      if (d.success) {
+        // loadSettings() wipes every message on its way in, so re-read
+        // first and put the confirmation up afterwards — otherwise the
+        // reload silently erases the only sign that anything happened.
+        await loadSettings();
+        setMsg('msg-save', 'ok', t('launcher.settings.clearkeys.done'));
+      } else {
+        setMsg('msg-save', 'problem',
+               d.error || t('launcher.settings.clearkeys.failed'));
+      }
+    } catch (e) {
+      if (e.message !== 'locked') {
+        setMsg('msg-save', 'problem',
+               t('common.noserver.detail', { msg: e.message }));
+      }
+    } finally {
+      btn.disabled = false;
     }
   }
 

@@ -234,9 +234,20 @@ cd C:\Projects\OhbotPi2
 .\yobot-launcher.bat
 ```
 
-That starts the Launcher and opens http://localhost:5000 in your browser. From that one
-page you can start and stop the Greeter, the Sequence Builder, the Timeline, and
-Calibration. Leave the black window open — closing it stops the Launcher.
+That starts the Launcher and opens http://localhost:5000 in your browser. Four cards —
+**Greeter Bot**, **Chess**, **Sequence Builder** and **Offline Show** — plus a quieter
+row underneath holding **Motor Calibration** and **Settings & Keys**. Each card starts
+and stops its own program; **Stop everything** stops the lot, including anything the
+Launcher didn't start itself. Leave the black window open — closing it stops the
+Launcher.
+
+The Timeline is not a card of its own. It is part of the Sequence Builder's server, at
+http://localhost:5001/timeline once the Builder is running.
+
+**It has to be served, not opened.** `launcher/index.html` opened from File Explorer
+renders and then does nothing: as a `file://` page its `<script src="/i18n.js">` points
+at the root of your C: drive, and every button it has is talking to a program that isn't
+there. Always reach it at http://localhost:5000.
 
 `localhost` just means "this computer" — on the Pi you would use the Pi's own address instead.
 

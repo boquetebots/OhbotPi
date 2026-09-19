@@ -217,21 +217,36 @@ A black window opens and your web browser opens a page with buttons. That page
 is the remote control. Leave the black window alone — closing it switches Yobot
 off.
 
-The page offers three things, and **only one can run at a time** because they
+The page has **four cards**, and **only one can run at a time** because they
 all share the single USB cable:
 
-| Button | What it does |
+| Card | What it does |
 |--------|-------------|
-| **Greeter** | The conversation. Yobot listens, replies out loud, and moves as it talks. |
+| **Greeter Bot** | The conversation. Yobot listens, replies out loud, and moves as it talks. |
+| **Chess** | Yobot plays a game and talks it through — against another robot, or against you. Opens a short setup screen first. |
 | **Sequence Builder** | Design your own movements and play them back. |
-| **Motor Calibration** | Fine-tune each motor's limits. Only needed occasionally. |
+| **Offline Show** | The pre-recorded talk. Every line is already on the drive, so it runs with no internet at all. |
 
-Press **Stop** before switching to a different one — or just press the one you
-want and it'll swap over for you.
+Below the cards is a quieter row with two more: **Motor Calibration**, which
+you only need occasionally, and **Settings & Keys**.
+
+Each card has its own **Stop** button, and there is a **Stop everything**
+button for when you just want it all to stop. You don't have to stop one
+before starting another — press the one you want and it swaps over for you.
+
+**Two things you should know about the page:**
+
+- It only works at **http://localhost:5000**. Opening `launcher/index.html`
+  from File Explorer gives you a page that looks right and does nothing at
+  all — there's no program behind it to answer the buttons.
+- If it loses contact with the black window, the status bar turns **amber** and
+  says so. Before, it just sat there looking normal, and the only clue was a
+  confusing error the next time you pressed something.
 
 ### The Settings page
 
-There is a **`⚙ Settings & Keys`** link on that same page, and it is the easy
+There is a **Settings & Keys** link on that same page — it has a little gear
+on it — and it is the easy
 way to handle everything in Step 4. It lets you paste your Azure key, choose
 which AI company the brain uses, pick a model, and press a button that checks
 each one actually answers — all in the browser, with no Notepad and no hunting
@@ -254,7 +269,7 @@ Yobot's own window.
 
 ### Finishing up
 
-Press **Stop** on the web page, then close the black windows.
+Press **Stop everything** on the web page, then close the black windows.
 
 If a window won't close or something seems stuck, **double-click
 `yobot-stop.bat`** — it shuts down anything Yobot left running.

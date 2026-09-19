@@ -392,11 +392,13 @@ Micrófono detectado y parlante sonando</li>
 <pre><code>http://yobot2.local:5000
 </code></pre>
 <p><em>(con tu nombre, y sin olvidar los <code>:5000</code> al final)</em></p>
-<p>Debe aparecer la página del Launcher con botones para escoger qué quieres correr.</p>
+<p>Debe aparecer la página del Launcher. Tiene cuatro tarjetas — <strong>Robot Recepcionista</strong> (<em>Greeter Bot</em>), <strong>Ajedrez</strong> (<em>Chess</em>), <strong>Creador de Secuencias</strong> (<em>Sequence Builder</em>) y <strong>Espectáculo sin internet</strong> (<em>Offline Show</em>) — y solo una puede correr a la vez, porque todas comparten la misma conexión con el robot. Cada tarjeta tiene su propio <strong>Detener</strong> (<em>Stop</em>), y <strong>Detener todo</strong> (<em>Stop everything</em>) para todo. Debajo hay una fila más discreta con <strong>Calibración de motores</strong> y <strong>Ajustes y claves</strong>.</p>
+<p>Arriba a la derecha hay un <strong>🌐</strong> que cambia el idioma de la pantalla.</p>
+<p>El Pi es la única máquina que además muestra <strong>Apagar la Pi</strong> y <strong>Reiniciar la Pi</strong>. Una página web no tiene por qué poder apagarte la laptop, así que en Windows y en la Mac esos botones están escondidos.</p>
 <blockquote>
 <p><strong>Si la página no abre:</strong> vuelve a la Terminal y corre <code>systemctl --user status ohbot-launcher</code>. Si dice <code>active (running)</code>, el problema es la red o el nombre. Prueba con el número IP: corre <code>hostname -I</code> en el Pi y usa ese número, por ejemplo <code>http://192.168.50.132:5000</code>.</p>
 </blockquote>
-<p><strong>En esa misma página hay un enlace que dice <code>⚙ Settings &amp; Keys</code></strong> (Ajustes y llaves). Es la manera fácil de hacer la Parte 10: desde ahí pegas tu llave de Azure, escoges qué compañía de inteligencia artificial le presta el cerebro al robot, y hay un botón que prueba cada llave y te dice si sirve. Todo desde el navegador, sin comandos.</p>
+<p><strong>En esa misma página hay un enlace que dice <code>Ajustes y claves</code></strong> (<em>Settings &amp; Keys</em>, el del engranaje pequeño). Es la manera fácil de hacer la Parte 10: desde ahí pegas tu llave de Azure, escoges qué compañía de inteligencia artificial le presta el cerebro al robot, y hay un botón que prueba cada llave y te dice si sirve. Todo desde el navegador, sin comandos.</p>
 <p>Como cualquiera que esté en el mismo WiFi puede abrir el Launcher, la primera vez que entres a Settings te va a ofrecer ponerle una contraseña. Mientras no le pongas una, queda abierto — así una instalación nueva no te deja afuera de la misma página donde tienes que ponerla.</p>
 <ul class="task-list">
 <li><input type="checkbox" disabled="" />
@@ -408,7 +410,7 @@ Launcher abierto en el navegador</li>
 <blockquote>
 <p><strong>¿Por qué a propósito?</strong> Cada cabeza Ohbot es físicamente distinta. Los motores no quedan exactamente iguales de una a otra. Si el archivo viniera incluido, tu robot movería la boca con las medidas de otro robot y se vería raro o se forzarían los motores.</p>
 </blockquote>
-<p>En la página del Launcher, busca la sección que dice <strong>🤖 Which robot are you using?</strong> — ahí sale una lista con los robots que ya existen:</p>
+<p>En la barra de arriba del Launcher hay una línea que dice <strong>Robot</strong>, con una lista de los que ya existen:</p>
 <table>
 <thead>
 <tr class="header">
@@ -439,7 +441,10 @@ Launcher abierto en el navegador</li>
 </tr>
 </tbody>
 </table>
-<p><strong>Escoge el que se parezca más a tu cabeza</strong> — pregúntale a Michael cuál — y presiona <strong>Load calibration</strong>. Eso copia sus medidas al archivo vivo y los motores empiezan a funcionar.</p>
+<p><strong>Escoge el que se parezca más a tu cabeza</strong> — pregúntale a Michael cuál — y presiona <strong>Cargar calibración</strong> (<em>Load calibration</em>). Eso copia sus medidas al archivo vivo y los motores empiezan a funcionar.</p>
+<blockquote>
+<p>Esa línea solo te deja cambiar de robot cuando <strong>no hay nada corriendo</strong>. Si el Robot Recepcionista o el ajedrez están en marcha, se convierte en texto simple. No es un error: cada programa lee el archivo de motores una sola vez, al arrancar, así que cambiarlo por debajo no haría nada hasta reiniciarlo.</p>
+</blockquote>
 <p>Arriba te va a decir <strong>"Currently loaded:"</strong> con el nombre del robot que cargaste.</p>
 <ul class="task-list">
 <li><input type="checkbox" disabled="" />
@@ -449,7 +454,7 @@ Robot cargado y la cabeza responde</li>
 <h2 id="parte-9--calibrar-tu-robot">Parte 9 — Calibrar tu robot</h2>
 <p>Ahora ajustas los motores a <strong>tu</strong> cabeza y le pones su propio nombre.</p>
 <ol>
-<li>En el Launcher, haz clic en <strong>🔧 Motor Calibration</strong></li>
+<li>En el Launcher, haz clic en <strong>Calibración de motores</strong> (<em>Motor Calibration</em>), en la fila discreta debajo de las tarjetas</li>
 <li>Ajusta los ocho motores hasta que se vea bien:
 <ul>
 <li><strong>HeadTurn</strong> — la cabeza mira al frente</li>
@@ -462,7 +467,7 @@ Robot cargado y la cabeza responde</li>
 <li>Cuando quede bien, guárdalo con un <strong>nombre nuevo</strong> — el nombre de tu robot</li>
 </ol>
 <blockquote>
-<p>Si necesitas guardar la calibración sin pasar por la página de ajuste, en el Launcher hay un botón que dice <strong>💾 Save current calibration as a robot…</strong></p>
+<p>Si necesitas guardar la calibración sin pasar por la página de ajuste, en esa misma línea <strong>Robot</strong> hay <strong>Guardar la calibración actual como un robot…</strong> (<em>Save current calibration as a robot…</em>)</p>
 </blockquote>
 <blockquote>
 <p><strong>Ve despacio con los motores.</strong> Si algo hace un ruido de forcejeo o se traba, <strong>detente y devuélvelo</strong>. Los servos son de plástico y se rompen.</p>
@@ -517,7 +522,7 @@ Robot calibrado y guardado como: ______________</li>
 </table>
 <p>Copia la llave apenas aparezca — casi todas se enseñan una sola vez.</p>
 <h3 id="la-manera-fácil-desde-el-navegador">La manera fácil: desde el navegador</h3>
-<p>En la página del Launcher, entra a <strong><code>⚙ Settings &amp; Keys</code></strong> (Ajustes y llaves), pega las llaves ahí y presiona el botón que las prueba. Listo. Es lo mismo que hace el archivo, pero sin comandos y avisándote si algo está mal escrito.</p>
+<p>En la página del Launcher, entra a <strong>Ajustes y claves</strong> (<em>Settings &amp; Keys</em>), pega las llaves ahí y presiona el botón que las prueba. Listo. Es lo mismo que hace el archivo, pero sin comandos y avisándote si algo está mal escrito.</p>
 <h3 id="la-otra-manera-editando-el-archivo">La otra manera: editando el archivo</h3>
 <pre><code>nano ~/Projects/Ohbot/.env
 </code></pre>

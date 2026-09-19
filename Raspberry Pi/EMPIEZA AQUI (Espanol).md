@@ -448,8 +448,19 @@ http://yobot2.local:5000
 
 *(con tu nombre, y sin olvidar los `:5000` al final)*
 
-Debe aparecer la página del Launcher con botones para escoger qué quieres
-correr.
+Debe aparecer la página del Launcher. Tiene cuatro tarjetas — **Robot
+Recepcionista** (*Greeter Bot*), **Ajedrez** (*Chess*), **Creador de
+Secuencias** (*Sequence Builder*) y **Espectáculo sin internet** (*Offline
+Show*) — y solo una puede correr a la vez, porque todas comparten la misma
+conexión con el robot. Cada tarjeta tiene su propio **Detener** (*Stop*), y
+**Detener todo** (*Stop everything*) para todo. Debajo hay una fila más
+discreta con **Calibración de motores** y **Ajustes y claves**.
+
+Arriba a la derecha hay un **🌐** que cambia el idioma de la pantalla.
+
+El Pi es la única máquina que además muestra **Apagar la Pi** y **Reiniciar la
+Pi**. Una página web no tiene por qué poder apagarte la laptop, así que en
+Windows y en la Mac esos botones están escondidos.
 
 > **Si la página no abre:** vuelve a la Terminal y corre
 > `systemctl --user status ohbot-launcher`. Si dice `active (running)`, el
@@ -457,7 +468,8 @@ correr.
 > `hostname -I` en el Pi y usa ese número, por ejemplo
 > `http://192.168.50.132:5000`.
 
-**En esa misma página hay un enlace que dice `⚙ Settings & Keys`**
+**En esa misma página hay un enlace que dice `Ajustes y claves`**
+(*Settings & Keys*, el del engranaje pequeño)
 (Ajustes y llaves). Es la manera fácil de hacer la Parte 10: desde ahí pegas
 tu llave de Azure, escoges qué compañía de inteligencia artificial le presta
 el cerebro al robot, y hay un botón que prueba cada llave y te dice si sirve.
@@ -483,9 +495,8 @@ en la descarga, a propósito.
 > incluido, tu robot movería la boca con las medidas de otro robot y se vería
 > raro o se forzarían los motores.
 
-En la página del Launcher, busca la sección que dice
-**🤖 Which robot are you using?** — ahí sale una lista con los robots que ya
-existen:
+En la barra de arriba del Launcher hay una línea que dice **Robot**, con una
+lista de los que ya existen:
 
 | Robot | Quién es |
 |---|---|
@@ -496,8 +507,13 @@ existen:
 | `Goldie` | |
 
 **Escoge el que se parezca más a tu cabeza** — pregúntale a Michael cuál — y
-presiona **Load calibration**. Eso copia sus medidas al archivo vivo y los
-motores empiezan a funcionar.
+presiona **Cargar calibración** (*Load calibration*). Eso copia sus medidas al
+archivo vivo y los motores empiezan a funcionar.
+
+> Esa línea solo te deja cambiar de robot cuando **no hay nada corriendo**. Si
+> el Robot Recepcionista o el ajedrez están en marcha, se convierte en texto
+> simple. No es un error: cada programa lee el archivo de motores una sola vez,
+> al arrancar, así que cambiarlo por debajo no haría nada hasta reiniciarlo.
 
 Arriba te va a decir **"Currently loaded:"** con el nombre del robot que
 cargaste.
@@ -510,7 +526,8 @@ cargaste.
 
 Ahora ajustas los motores a **tu** cabeza y le pones su propio nombre.
 
-1. En el Launcher, haz clic en **🔧 Motor Calibration**
+1. En el Launcher, haz clic en **Calibración de motores** (*Motor
+   Calibration*), en la fila discreta debajo de las tarjetas
 2. Ajusta los ocho motores hasta que se vea bien:
    - **HeadTurn** — la cabeza mira al frente
    - **HeadNod** — la cabeza derecha, ni mirando arriba ni abajo
@@ -520,8 +537,9 @@ Ahora ajustas los motores a **tu** cabeza y le pones su propio nombre.
    - **LidBlink** — los párpados abiertos
 3. Cuando quede bien, guárdalo con un **nombre nuevo** — el nombre de tu robot
 
-> Si necesitas guardar la calibración sin pasar por la página de ajuste, en el
-> Launcher hay un botón que dice **💾 Save current calibration as a robot…**
+> Si necesitas guardar la calibración sin pasar por la página de ajuste, en esa
+> misma línea **Robot** hay **Guardar la calibración actual como un robot…**
+> (*Save current calibration as a robot…*)
 
 > **Ve despacio con los motores.** Si algo hace un ruido de forcejeo o se
 > traba, **detente y devuélvelo**. Los servos son de plástico y se rompen.
@@ -558,7 +576,7 @@ Copia la llave apenas aparezca — casi todas se enseñan una sola vez.
 
 ### La manera fácil: desde el navegador
 
-En la página del Launcher, entra a **`⚙ Settings & Keys`** (Ajustes y llaves),
+En la página del Launcher, entra a **Ajustes y claves** (*Settings & Keys*),
 pega las llaves ahí y presiona el botón que las prueba. Listo. Es lo mismo que
 hace el archivo, pero sin comandos y avisándote si algo está mal escrito.
 

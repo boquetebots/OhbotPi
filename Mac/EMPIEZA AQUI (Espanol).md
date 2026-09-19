@@ -158,10 +158,33 @@ computadora" — en el Pi usarías la dirección del Pi en su lugar.
 Córrelos desde la carpeta del proyecto: primero `cd ~/Projects/OhbotPi2`.
 Ctrl-C detiene un servidor.
 
+Arriba a la derecha de la página hay un **🌐** que cambia el idioma de la
+pantalla. Puesto en español, todos los botones salen en español. Abajo se dan
+los dos nombres, el español y el inglés.
+
+La página tiene cuatro tarjetas, y solo una puede correr a la vez, porque todas
+comparten el único cable USB:
+
+| Tarjeta | Qué hace |
+|------|-------------|
+| **Robot Recepcionista** (*Greeter Bot*) | La conversación. Yobot escucha, contesta en voz alta y se mueve mientras habla. |
+| **Ajedrez** (*Chess*) | Yobot juega una partida y la va comentando — contra otro robot, o contra ti. Primero se abre una pantalla corta para preparar el juego. |
+| **Creador de Secuencias** (*Sequence Builder*) | Diseña tus propios movimientos y reprodúcelos. |
+| **Espectáculo sin internet** (*Offline Show*) | La charla ya grabada. Cada frase está en la unidad, así que funciona sin nada de internet. |
+
+Debajo hay una fila más discreta: **Calibración de motores** (*Motor
+Calibration*) y **Ajustes y claves** (*Settings & Keys*). Cada tarjeta tiene su
+propio **Detener** (*Stop*), y **Detener todo** (*Stop everything*) para todo.
+
+**El ajedrez vive en su propia carpeta**, `~/Projects/Chess`, al lado de
+`~/Projects/OhbotPi2`. El Launcher lo busca ahí. Si la tarjeta de ajedrez dice
+que no lo encuentra, eso es lo primero que hay que revisar.
+
 **La página del Launcher es el camino fácil** — enciende solo esa, y sus
 botones encienden y apagan las demás por ti.
 
-**También tiene un enlace `⚙ Settings & Keys`** (Ajustes y llaves), que es
+**También tiene un enlace `Ajustes y claves`** (*Settings & Keys*, el del
+engranaje pequeño), que es
 donde de verdad pertenecen las llaves del Paso 3. Ahí puedes pegar tu llave de
 Azure, escoger cuál empresa de inteligencia artificial usa el cerebro, elegir un
 modelo, y apretar un botón que comprueba que cada una contesta de verdad — todo

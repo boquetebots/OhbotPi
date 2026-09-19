@@ -224,9 +224,18 @@ Or use the IP address:
 http://192.168.xxx.xxx:5000
 ```
 
-This opens the launcher page where you can start the Greeter Bot or the GUI tool.
+This opens the Launcher page. It has four cards — **Greeter Bot**, **Chess**,
+**Sequence Builder** and **Offline Show** — and only one can run at a time,
+because they all share the one connection to the robot. Each card has its own
+**Stop**, and **Stop everything** stops the lot. Underneath sits a quieter row
+with **Motor Calibration** and **Settings & Keys**.
 
-**There is a `⚙ Settings & Keys` link on that page**, and it is the easy way to
+The Pi is the only machine that also shows **Shut Down Pi** and **Restart Pi**.
+A web page has no business switching off your laptop, so those are hidden on
+Windows and the Mac.
+
+**There is a "Settings & Keys" link on that page** — the one with the little
+gear — and it is the easy way to
 deal with everything above. It lets you paste your Azure key, choose which AI
 company the brain uses, pick a model, and check that each one answers — all
 from the browser, with no SSH and no editing files by hand. Anyone on the same

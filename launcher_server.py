@@ -52,9 +52,11 @@ PowerShell, which works but takes about a second per check.
 from flask import Flask, jsonify, request, send_from_directory
 import os
 import platform
+import shlex            # quotes the Mac's Terminal command — see _proc_start
 import shutil
 import subprocess
 import sys
+import re
 import threading
 import time
 import urllib.request   # used by the Wake button to talk to the Greeter
@@ -96,6 +98,20 @@ PROC_GREETER_BRAIN = 'ohbotchat_server.py'
 PROC_GREETER_BOT   = 'ohbot_chat.py'
 PROC_GUI           = 'gui_server.py'
 PROC_CALIBRATION   = 'calibration_server.py'
+PROC_SHOW          = 'show_server.py'
+PROC_CHESS         = 'chess_show.py'
+
+# Chess is not part of this project — it sits beside it, so that the two can
+# be updated separately. On the stick that is E:\\YobotStick\\Chess next to
+# E:\\YobotStick\\OhbotPi2; on the Mac and on Windows it is the same shape.
+CHESS_DIR = os.path.join(os.path.dirname(BASE_DIR), 'Chess')
+
+# What the page is allowed to ask for. Everything the browser sends is
+# checked against these before it becomes a command line: the page is not
+# trusted to pick the arguments, it only picks from what is offered here.
+CHESS_STRENGTHS_ROBOT = ('beginner', 'club', 'strong', 'expert', 'max')
+CHESS_STRENGTHS_HUMAN = ('gentle', 'friendly', 'easy')
+CHESS_MODES           = ('robots', 'human', 'demo')
 
 PYTHON = sys.executable          # the same python running this launcher
 
@@ -166,6 +182,8 @@ SCRIPT_PORTS = {
     PROC_GUI:         5001,
     PROC_GREETER_BRAIN: 5002,
     PROC_CALIBRATION: 5003,
+    PROC_SHOW:        5004,
+    PROC_CHESS:       8080,
 }
 
 
@@ -274,31 +292,85 @@ def _proc_running(script):
     return bool(_find_pids(script))
 
 
-def _proc_start(script, new_terminal=False):
+def _proc_start(script, new_terminal=False, folder=None, args=None):
     """Start a python program from the project folder.
 
     `new_terminal` means "give this program its own window with a working
     keyboard" — the conversation bot needs it so you can press Enter to
     wake Yobot from sleep.
     """
-    path = os.path.join(BASE_DIR, script)
+    folder = folder or BASE_DIR
+    path = os.path.join(folder, script)
+    argv = [PYTHON, '-u', path] + [str(a) for a in (args or [])]
     _pid_cache.pop(script, None)
 
     if new_terminal and IS_MAC:
         # Open in its own Terminal window so the conversation bot has a
         # keyboard (needed to press Enter to wake it) and visible output.
-        cmd = f'cd {BASE_DIR!r} && {PYTHON!r} {path!r}'
-        script_osa = f'tell application "Terminal" to do script "{cmd}"'
-        subprocess.run(['osascript', '-e', script_osa],
-                       capture_output=True, timeout=15)
+        #
+        # This one line passes through TWO different quoting systems, and
+        # they do not have the same rules. It must first be a valid shell
+        # command, and then that whole command has to survive being written
+        # inside an AppleScript "..." string.
+        #
+        # It used to be assembled from Python repr() calls, which is neither
+        # of those. repr() of a path containing an apostrophe comes back
+        # wrapped in DOUBLE quotes, and a double quote ends the AppleScript
+        # string early: osascript then fails to compile and the Terminal
+        # window simply never opens, with nothing printed anywhere to say
+        # why. shlex.quote is the half that knows shell rules; the two
+        # replace() calls below are the AppleScript half.
+        shell_cmd = 'cd {} && PYTHONIOENCODING=utf-8 {}'.format(
+            shlex.quote(folder),
+            ' '.join(shlex.quote(a) for a in argv))
+
+        # AppleScript escaping: inside "..." only \ and " need escaping, and
+        # the backslash must be doubled FIRST — do it second and it would
+        # escape the backslashes the quote pass just added.
+        osa_arg = shell_cmd.replace('\\', '\\\\').replace('"', '\\"')
+
+        # Look at what osascript says. Throwing its output away is the same
+        # mistake DEVNULL was for the background servers (2026-09-18): a
+        # failure that prints nothing is a failure nobody can diagnose, and
+        # here it looks exactly like the Start button doing nothing at all.
+        result = subprocess.run(
+            ['osascript', '-e',
+             f'tell application "Terminal" to do script "{osa_arg}"'],
+            capture_output=True, text=True, timeout=15)
+        if result.returncode != 0:
+            print(f"⚠️  Terminal window for {script} did not open: "
+                  f"{(result.stderr or '').strip()}")
+            print(f"    command was: {shell_cmd}")
+            return
+
         subprocess.run(['osascript', '-e',
                         'tell application "Terminal" to activate'],
                        capture_output=True, timeout=10)
         return
 
-    kwargs = dict(cwd=BASE_DIR,
-                  stdout=subprocess.DEVNULL,
-                  stderr=subprocess.DEVNULL)
+    # Give the program somewhere to put whatever it prints. This used to be
+    # DEVNULL, so a program that refused to start left nothing behind at all
+    # and the Launcher could only report that it never answered on its port.
+    # The Show failing to reach the robot looked exactly like the Show not
+    # existing (2026-09-18).
+    # Tell the child to speak UTF-8 no matter where its output is going.
+    #
+    # Why this is needed at all: on Windows, python writes to a real console
+    # through the console API, which handles any character. The moment its
+    # output goes anywhere else — a file, a pipe, even DEVNULL — it falls
+    # back to the machine's old code page, cp1252 here, which has no box
+    # characters and no emoji. show_server.py opens with a line of ─ , so
+    # started from a console it was fine and started from the Launcher it
+    # died on its very first print, before it ever opened port 5004. That
+    # is the whole reason the Show "worked from the .bat but not from the
+    # page" (2026-09-18).
+    child_env = os.environ.copy()
+    child_env['PYTHONIOENCODING'] = 'utf-8'
+
+    kwargs = dict(cwd=folder,
+                  env=child_env,
+                  stdout=_proc_log(script),
+                  stderr=subprocess.STDOUT)
 
     if IS_WINDOWS:
         if new_terminal:
@@ -310,6 +382,8 @@ def _proc_start(script, new_terminal=False):
             # ignore Ctrl-C. It buys nothing either — a process with its own
             # console can't be sent console signals from here anyway.
             kwargs['creationflags'] = subprocess.CREATE_NEW_CONSOLE
+            # Its own window handles Unicode natively; let it inherit that
+            # rather than a log file. env stays — it does no harm there.
             kwargs.pop('stdout')
             kwargs.pop('stderr')
         else:
@@ -319,9 +393,37 @@ def _proc_start(script, new_terminal=False):
             # which looked exactly like "Ctrl-C does nothing" (Aug 12 2026).
             kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
 
-    proc = subprocess.Popen([PYTHON, path], **kwargs)
+    # -u so the child's output reaches the log as it happens. Without it
+    # a program that dies on startup can leave an empty file behind.
+    proc = subprocess.Popen(argv, **kwargs)
     _tracked[script] = proc
 
+
+
+# One log per background program, so anything that dies on startup leaves a
+# reason behind. Overwritten on each start — the interesting copy is always
+# the most recent one.
+_proc_logs = {}
+
+
+def _proc_log(script):
+    """Open logs/<script>.out.log for a program we are about to start."""
+    try:
+        folder = os.path.join(BASE_DIR, 'logs')
+        os.makedirs(folder, exist_ok=True)
+        old = _proc_logs.pop(script, None)
+        if old:
+            try:
+                old.close()
+            except Exception:                                # noqa: BLE001
+                pass
+        path = os.path.join(folder, os.path.splitext(script)[0] + '.out.log')
+        handle = open(path, 'w', encoding='utf-8', errors='replace')
+        _proc_logs[script] = handle
+        return handle
+    except Exception as err:                                 # noqa: BLE001
+        print(f"\u26a0\ufe0f  No log for {script} ({err}) — starting it anyway")
+        return subprocess.DEVNULL
 
 def _proc_stop(script):
     """Stop a python program by script name.
@@ -404,6 +506,8 @@ def _get_status():
       'greeter'     — conversation bot is running
       'gui'         — sequence builder GUI is running
       'calibration' — motor calibration page is running
+      'show'        — the offline cue show is running
+      'chess'       — the robot chess match is running
       'idle'        — nothing is running
     """
     if USE_SYSTEMD:
@@ -413,6 +517,12 @@ def _get_status():
             return 'gui'
         if _service_active(CALIBRATION_SERVICE):
             return 'calibration'
+        # The Show has no systemd unit even on the Pi — it is a plain
+        # process there too, so it is checked the same way on both.
+        if _proc_running(PROC_SHOW):
+            return 'show'
+        if _proc_running(PROC_CHESS):
+            return 'chess'
         return 'idle'
 
     if _proc_running(PROC_GREETER_BOT):
@@ -421,6 +531,10 @@ def _get_status():
         return 'gui'
     if _proc_running(PROC_CALIBRATION):
         return 'calibration'
+    if _proc_running(PROC_SHOW):
+        return 'show'
+    if _proc_running(PROC_CHESS):
+        return 'chess'
     return 'idle'
 
 
@@ -456,9 +570,22 @@ def _stop_everything():
             _run(['systemctl', '--user', 'stop', s])
         _run(['systemctl', '--user', 'stop', GUI_SERVICE])
         _run(['systemctl', '--user', 'stop', CALIBRATION_SERVICE])
+
+        # The Show and Chess have no systemd unit — they are ordinary
+        # processes on the Pi as well, started by this program. Stopping
+        # units alone left them running while the unit stop reported
+        # success, so Stop on the page did nothing visible: the process
+        # carried on and the status poll kept reporting it as running.
+        # Found by reading, before it reached a Pi (2026-09-19).
+        for script in (PROC_SHOW, PROC_CHESS,
+                       'chess_server.py', 'chess_player.py'):
+            ok, msg = _proc_stop(script)
+            if not ok:
+                problems.append(msg)
     else:
         for script in (PROC_GREETER_BOT, PROC_GREETER_BRAIN,
-                       PROC_GUI, PROC_CALIBRATION):
+                       PROC_GUI, PROC_CALIBRATION, PROC_SHOW,
+                       PROC_CHESS, 'chess_server.py', 'chess_player.py'):
             ok, msg = _proc_stop(script)
             if not ok:
                 problems.append(msg)
@@ -639,6 +766,157 @@ def start_gui():
     return jsonify({'success': True, 'status': 'gui'})
 
 
+@app.route('/launcher/start/show', methods=['POST'])
+def start_show():
+    """Stop everything else, then start the offline cue show.
+
+    The Show is the one thing here that needs neither internet nor keys:
+    every line it speaks was recorded ahead of time into voice_cache. That
+    makes it the safe thing to run on a strange computer, or at a venue
+    where the wifi turns out to be a rumour.
+    """
+    if USE_SYSTEMD:
+        for svc in GREETER_SERVICES:
+            if _service_active(svc):
+                _run(['systemctl', '--user', 'stop', svc])
+        if _service_active(GUI_SERVICE):
+            _run(['systemctl', '--user', 'stop', GUI_SERVICE])
+        time.sleep(1)
+    else:
+        with _timed('show: stop others'):
+            _proc_stop(PROC_GREETER_BOT)
+            _proc_stop(PROC_GREETER_BRAIN)
+            _proc_stop(PROC_GUI)
+            _proc_stop(PROC_CALIBRATION)
+        time.sleep(1)
+
+    if not _proc_running(PROC_SHOW):
+        with _timed('show: start + wait for page'):
+            _proc_start(PROC_SHOW)
+            # Wait for the page to actually answer rather than sleeping a
+            # fixed guess — the browser tab is already open and waiting.
+            if not _wait_for_port(SCRIPT_PORTS[PROC_SHOW], 15):
+                print(f"\u26a0\ufe0f  The Show did not answer on port "
+                      f"{SCRIPT_PORTS[PROC_SHOW]} within 15 seconds.")
+                return jsonify({
+                    'success': False,
+                    'error': 'The Show did not start. It talks to the robot '
+                             'before it opens its page, so check the cable is '
+                             'in. logs/show_server.out.log has what it said.',
+                }), 500
+
+    return jsonify({'success': True, 'status': 'show'})
+
+
+@app.route('/launcher/start/chess', methods=['POST'])
+def start_chess():
+    """Start the robot chess match.
+
+    Chess is a whole second project living next door, and it is three
+    programs rather than one: chess_show.py runs the display and the control
+    desk on 8080, and it brings up the board server and the robot drivers
+    itself. So all we do here is start that one program, in ITS folder, with
+    the choices made on the page turned into command-line flags — the same
+    flags "Play Chess.bat" and "Play a Human.bat" pass.
+
+    Nothing the browser sends is used as-is. Mode, colour and strength are
+    each checked against a list above before they go anywhere near a command
+    line.
+    """
+    if not os.path.isdir(CHESS_DIR):
+        return jsonify({
+            'success': False,
+            'error': 'The Chess folder is not next to this one. It should be '
+                     f'at {CHESS_DIR}.',
+        }), 400
+
+    if not os.path.isfile(os.path.join(CHESS_DIR, PROC_CHESS)):
+        return jsonify({
+            'success': False,
+            'error': f'{PROC_CHESS} is missing from {CHESS_DIR}.',
+        }), 400
+
+    data = request.get_json(silent=True) or {}
+    mode = data.get('mode')
+    if mode not in CHESS_MODES:
+        return jsonify({'success': False, 'error': 'Unknown kind of game.'}), 400
+
+    args = []
+    if mode == 'demo':
+        args.append('--demo')
+    elif mode == 'human':
+        colour = data.get('colour')
+        if colour not in ('white', 'black'):
+            return jsonify({'success': False,
+                            'error': 'Pick a colour for the person.'}), 400
+        args += ['--human', colour]
+        if data.get('polite', True):
+            args.append('--polite')
+
+    allowed = CHESS_STRENGTHS_HUMAN if mode == 'human' else CHESS_STRENGTHS_ROBOT
+    strength = data.get('strength')
+    if strength:
+        if strength not in allowed:
+            return jsonify({'success': False,
+                            'error': f'Unknown strength: {strength}'}), 400
+        args += ['--strength', strength]
+
+    # The second robot lives on another machine, reached through the little
+    # listener in chess_show_agent.py. Host names and addresses only — this
+    # becomes a command line, so anything else is refused rather than passed
+    # along and hoped for.
+    mac = (data.get('mac') or '').strip()
+    if mac and mode == 'robots':
+        if not re.fullmatch(r'[A-Za-z0-9.\-]{1,80}(:\d{1,5})?', mac):
+            return jsonify({'success': False,
+                            'error': f'That does not look like an address: {mac}'}), 400
+        args += ['--mac', mac]
+
+    lang = data.get('lang')
+    if lang in ('en', 'es'):
+        args += ['--lang', lang]
+
+    # chess_show.py refuses to start if something is already answering on its
+    # port, and says so at length. Catch that here instead, so pressing the
+    # card twice is harmless rather than confusing.
+    if _proc_running(PROC_CHESS) or _port_in_use(SCRIPT_PORTS[PROC_CHESS]):
+        return jsonify({'success': True, 'status': 'chess',
+                        'note': 'already running'})
+
+    if USE_SYSTEMD:
+        for svc in GREETER_SERVICES:
+            if _service_active(svc):
+                _run(['systemctl', '--user', 'stop', svc])
+        if _service_active(GUI_SERVICE):
+            _run(['systemctl', '--user', 'stop', GUI_SERVICE])
+        time.sleep(1)
+    else:
+        with _timed('chess: stop others'):
+            _proc_stop(PROC_GREETER_BOT)
+            _proc_stop(PROC_GREETER_BRAIN)
+            _proc_stop(PROC_GUI)
+            _proc_stop(PROC_CALIBRATION)
+            _proc_stop(PROC_SHOW)
+        time.sleep(1)
+
+    print(f"\u265e  Starting chess: {' '.join(args) or '(defaults)'}")
+    with _timed('chess: start + wait for page'):
+        _proc_start(PROC_CHESS, folder=CHESS_DIR, args=args)
+        # Stockfish has to load as well as the web page, so this gets longer
+        # than the Show does.
+        if not _wait_for_port(SCRIPT_PORTS[PROC_CHESS], 25):
+            print(f"\u26a0\ufe0f  Chess did not answer on port "
+                  f"{SCRIPT_PORTS[PROC_CHESS]} within 25 seconds.")
+            return jsonify({
+                'success': False,
+                'error': 'Chess did not start. logs/chess_show.out.log has '
+                         'what it said — the usual causes are a missing '
+                         'Stockfish or no speech key.',
+            }), 500
+
+    return jsonify({'success': True, 'status': 'chess'})
+
+
 @app.route('/launcher/start/calibration', methods=['POST'])
 def start_calibration():
     """
@@ -680,6 +958,63 @@ def stop_all():
                         'error': ' '.join(problems),
                         'status': _get_status()}), 500
     return jsonify({'success': True, 'status': 'idle'})
+
+
+# Programs that are not on the Launcher's own list but can still be running
+# and holding the robot's serial cable: the Timeline, the cue editor, and the
+# three Chess programs. "Stop everything" sweeps these; the ordinary Stop does
+# not, which is the whole reason it exists.
+#
+# launcher_server.py is deliberately absent from this list and from every
+# list above. See stop_everything_hard() for why that matters.
+EXTRA_STOP_SCRIPTS = (
+    'timeline_server.py',
+    'cue_editor.py',
+)
+
+
+@app.route('/launcher/stop/all', methods=['POST'])
+def stop_everything_hard():
+    """
+    The recovery hatch behind "Stop everything" on the page.
+
+    Two things make this different from /launcher/stop. It sweeps the Chess
+    and Timeline programs as well as Yobot's own four, and it does not care
+    who started them: _find_pids looks at every python process on the
+    machine, so a Show opened from a batch file is caught exactly like one
+    this Launcher started itself.
+
+    What it must never do is stop the Launcher. The page that asked for this
+    is waiting on our reply; killing our own process hands the browser a
+    dead connection, and the user is told the stop failed when in fact it
+    worked. So our own PID is excluded, and launcher_server.py appears in
+    none of the lists.
+    """
+    me = os.getpid()
+    problems = []
+    swept = []
+
+    with _timed('stop everything'):
+        problems.extend(_stop_everything())
+
+        for script in EXTRA_STOP_SCRIPTS:
+            if not [p for p in _find_pids(script) if p != me]:
+                continue
+            ok, msg = _proc_stop(script)
+            swept.append(script)
+            if not ok:
+                problems.append(msg)
+
+    if swept:
+        print("\U0001f9f9 Stop everything also swept: " + ", ".join(swept))
+
+    if problems:
+        for p in problems:
+            print(f"\u26a0\ufe0f  Stop everything: {p}")
+        return jsonify({'success': False, 'error': ' '.join(problems),
+                        'status': _get_status()}), 500
+
+    return jsonify({'success': True, 'status': _get_status(), 'swept': swept})
 
 
 @app.route('/launcher/shutdown', methods=['POST'])
