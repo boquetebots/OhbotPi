@@ -2,6 +2,17 @@
 
 > **¿Prefieres español?** Lee **`EMPIEZA AQUI (Espanol).md`**, en esta misma carpeta.
 
+> ### Did you get this on a Yobot stick?
+>
+> **Then stop — this is the wrong guide.** Everything below is about installing
+> Yobot on a PC. On a stick that is already done: Python and every package it
+> needs are on the drive, nothing is installed on the computer, and there is no
+> `SETUP.bat` to run.
+>
+> Read **`START HERE (stick).md`**, at the top level of the drive, instead.
+>
+> Everyone else — carry on, you are in the right place.
+
 Yobot is a robot head that listens, thinks and talks back. This guide gets it
 running on a Windows laptop.
 

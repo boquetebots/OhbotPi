@@ -2,6 +2,17 @@
 
 > La versión en inglés de esta guía es **`START HERE.md`**, en esta misma carpeta.
 
+> ### ¿Te llegó esto en una memoria USB de Yobot?
+>
+> **Entonces detente — esta no es la guía.** Todo lo que sigue explica cómo
+> instalar Yobot en una PC. En la memoria USB eso ya está hecho: Python y todos
+> los paquetes vienen incluidos, no se instala nada en la computadora, y no hay
+> ningún `SETUP.bat` que correr.
+>
+> Lee **`START HERE (stick).md`**, en la carpeta principal de la memoria.
+>
+> Si no llegaste por memoria USB, sigue adelante: estás en el lugar correcto.
+
 Yobot es una cabeza de robot que escucha, piensa y te contesta. Esta guía lo
 pone a funcionar en una laptop con Windows.
 
