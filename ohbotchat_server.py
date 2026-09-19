@@ -431,7 +431,7 @@ def health():
     return jsonify({
         'status': 'healthy',
         'conversation_length': len(conversation_history) // 2,
-        'openai_key_set': bool(api_key)
+        'openai_key_set': AI_READY
     })
 
 
@@ -453,7 +453,7 @@ def home():
         </ul>
     </body></html>
     """.format(
-        key="✅ Set" if api_key else "❌ Not Set",
+        key="✅ Set" if AI_READY else "❌ Not Set",
         hist=len(conversation_history) // 2
     )
 
@@ -462,7 +462,7 @@ if __name__ == '__main__':
     print("=" * 60)
     print("🤖  Yobot Server starting...")
     print("=" * 60)
-    print(f"  OpenAI key: {'✅ Set' if api_key else '❌ NOT SET'}")
+    print(f"  AI ready: {'✅ Yes' if AI_READY else '❌ No'}")
     print(f"  Model: gpt-4o-mini")
     print(f"  Port: 5002")
     if _kb_ok:

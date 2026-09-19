@@ -662,8 +662,30 @@ def _candidate_ports(ports):
     afterwards, so an unusual adapter still gets found.
     """
     if not IS_WINDOWS:
-        return [p for p in ports
-                if "usb" in p[0].lower() or "acm" in p[0].lower()]
+        usbish = [p for p in ports
+                  if "usb" in p[0].lower() or "acm" in p[0].lower()]
+        if IS_MAC:
+            # macOS shows ONE usb serial device under TWO names:
+            #   /dev/cu.usbmodem1201   the callout device — opens instantly
+            #   /dev/tty.usbmodem1201  the dial-in device — open() BLOCKS in
+            #                          the kernel until carrier detect, and
+            #                          nothing ever asserts DCD here
+            # Both contain "usb", so both used to end up in this list. The
+            # timeout= we pass to serial.Serial only bounds READS; it does
+            # not bound open(). So whenever comports() happened to hand back
+            # the tty. name first, _checkPort blocked forever, its except
+            # never fired because nothing was raised, and init() simply never
+            # returned. The Greeter would start fine and the Sequence Builder
+            # and Calibration would hang on the very same cable, minutes
+            # apart — which is exactly what it looked like on 2026-09-19.
+            # Dropping tty. costs nothing: cu. is the correct one to use for
+            # talking to a device, and it is the one the robot was always
+            # found on.
+            # NOTE the guard is IS_MAC, not a bare string test: on the Pi the
+            # robot IS /dev/ttyACM0, so filtering "tty" everywhere would stop
+            # it being found at all.
+            usbish = [p for p in usbish if not p[0].startswith("/dev/tty.")]
+        return usbish
 
     # Descriptions that mean "definitely not the robot"
     SKIP = ('bluetooth', 'modem', 'dial-up', 'printer', 'lpt',

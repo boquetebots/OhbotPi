@@ -174,6 +174,9 @@ deploy_pronunciation_fix.command
 deploy_test_bench.command
 restart_gui_mac.command
 
+# Bundles recordings to send to someone. His tool, his Mac.
+share_recordings.command
+
 # --- Pre-recorded demo audio (voice_cache/) ---
 # Made by prerender_cues.py from demo_cues.json. These are tens of MB of
 # .wav and they can be rebuilt in a couple of minutes from the cue file,

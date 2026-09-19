@@ -164,7 +164,16 @@ class _Tee:
         return "".join(out)
 
     def write(self, text):
-        if not isinstance(text, str):
+        # Bytes have to be DECODED, not str()'d. str(b"hello") gives you the
+        # repr — the literal characters b'hello' — so a program that writes
+        # bytes to stdout (Flask's startup banner does) landed in the log as
+        #     b'b" * Serving Flask app ..." \n'
+        # instead of the words. Ugly on screen, and worse in the log file,
+        # which is the first place to look when something will not start.
+        # Found on the Mac 2026-09-19.
+        if isinstance(text, (bytes, bytearray)):
+            text = text.decode("utf-8", errors="replace")
+        elif not isinstance(text, str):
             text = str(text)
         try:
             self._real.write(text)
