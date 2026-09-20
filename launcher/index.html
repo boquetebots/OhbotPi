@@ -1277,6 +1277,12 @@ body {
         await showNotice(body.error || t('launcher.start.fail'));
         return;
       }
+      // It started, but something it would have liked is missing - the
+      // Greeter with no AI key, for instance. Worth saying; not worth
+      // refusing over, so the server let it through with a sentence.
+      let started = {};
+      try { started = await r.json(); } catch (err) {}
+      if (started.warning) await showNotice(started.warning);
       await pollStatus();
     } catch (e) {
       await showNotice(t('launcher.start.fail'));
@@ -1481,6 +1487,9 @@ body {
         return;
       }
       closeChessSetup();
+      // Shown AFTER the overlay closes: msg-chess lives inside it, so
+      // anything put there now would vanish with it.
+      if (d.warning) await showNotice(d.warning);
       await pollStatus();
       openChess();
     } catch (e) {

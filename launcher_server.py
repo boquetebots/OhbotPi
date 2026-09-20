@@ -720,6 +720,27 @@ def wake_greeter():
 @app.route('/launcher/start/greeter', methods=['POST'])
 def start_greeter():
     """Stop everything else, then start the conversation bot."""
+    # The Greeter IS listening and speaking. With no Azure key it starts,
+    # goes quiet, and gives no clue why - so it does not start. Added
+    # 2026-09-20.
+    voice_ok, missing = settings.voice_ready()
+    if not voice_ok:
+        return jsonify({
+            'success': False,
+            'error': 'The Greeter needs a Microsoft Azure speech key to hear '
+                     'you and to talk back, and there is none set yet '
+                     f'({", ".join(missing)}). Add one under Settings & Keys '
+                     'on this page, then try again.',
+        }), 400
+
+    # No AI is survivable: it still answers from the knowledge files, it just
+    # cannot hold a free conversation. Worth saying, not worth refusing.
+    warning = None
+    if not settings.brain_ready():
+        warning = ('No AI account is set up, so Yobot will answer only from '
+                   'what it already knows and will not hold a conversation. '
+                   'Add a key under Settings & Keys to switch that on.')
+
     if USE_SYSTEMD:
         if _service_active(GUI_SERVICE):
             _run(['systemctl', '--user', 'stop', GUI_SERVICE])
@@ -742,7 +763,7 @@ def start_greeter():
                       f"{SCRIPT_PORTS[PROC_GREETER_BRAIN]} — starting the bot anyway")
         _proc_start(PROC_GREETER_BOT, new_terminal=True)
 
-    return jsonify({'success': True, 'status': 'greeter'})
+    return jsonify({'success': True, 'status': 'greeter', 'warning': warning})
 
 
 @app.route('/launcher/start/gui', methods=['POST'])
@@ -808,6 +829,70 @@ def start_show():
     return jsonify({'success': True, 'status': 'show'})
 
 
+# ── Is what a program needs actually here? ──────────────────────────────────
+# Added 2026-09-20. Chess would open, lay out a board and set up a game with
+# no engine and no voice key, and only fall over once somebody tried to play.
+# The Greeter would start and go silent. Both now say so first.
+#
+# The rule is that only a FATAL absence blocks. Chess with no Azure key is a
+# perfectly good silent game; the Greeter with no AI still answers from the
+# knowledge files. Blocking those would take away something that works.
+
+def _stockfish_path():
+    """
+    Where Stockfish is, or None.
+
+    A deliberate copy of find_stockfish() in Chess/chess_server.py, not an
+    import: the Launcher must not depend on being able to import a module
+    from the project next door, which is separately installed and may not be
+    importable at all.
+
+    IT MUST NOT BE STRICTER THAN THE REAL ONE. Saying "missing" about an
+    engine that chess would have found turns a working setup into a blocked
+    one, which is worse than not checking. If find_stockfish ever gains
+    another place to look, add it here too.
+    """
+    from_env = os.getenv('STOCKFISH_PATH') or settings.get_value('STOCKFISH_PATH')
+    if from_env and os.path.exists(from_env):
+        return from_env
+
+    def look_in(folder, depth=1):
+        if not os.path.isdir(folder):
+            return None
+        for root, dirs, files in os.walk(folder):
+            if root[len(folder):].count(os.sep) >= depth:
+                dirs[:] = []
+            for name in files:
+                if name.lower().startswith('stockfish'):
+                    return os.path.join(root, name)
+        return None
+
+    found = look_in(CHESS_DIR)
+    if found:
+        return found
+
+    on_path = shutil.which('stockfish') or shutil.which('stockfish.exe')
+    if on_path:
+        return on_path
+
+    for guess in (
+        '/usr/games/stockfish',
+        '/usr/bin/stockfish',
+        '/usr/local/bin/stockfish',
+        '/opt/homebrew/bin/stockfish',
+        r'C:\Program Files\stockfish\stockfish.exe',
+    ):
+        if os.path.exists(guess):
+            return guess
+
+    downloads = os.path.join(os.path.expanduser('~'), 'Downloads')
+    found = look_in(downloads, depth=3)
+    if found:
+        return found
+
+    return None
+
+
 @app.route('/launcher/start/chess', methods=['POST'])
 def start_chess():
     """Start the robot chess match.
@@ -834,6 +919,16 @@ def start_chess():
         return jsonify({
             'success': False,
             'error': f'{PROC_CHESS} is missing from {CHESS_DIR}.',
+        }), 400
+
+    # No engine, no game. This is the one that stops us.
+    if not _stockfish_path():
+        return jsonify({
+            'success': False,
+            'error': 'The chess engine is not installed, so no moves can be '
+                     'made. On the Yobot stick, run "GET THE CHESS ENGINE.bat" '
+                     'at the top of the drive once, with the internet '
+                     'connected. Otherwise see Chess/STOCKFISH_SETUP.md.',
         }), 400
 
     data = request.get_json(silent=True) or {}
@@ -914,7 +1009,17 @@ def start_chess():
                          'Stockfish or no speech key.',
             }), 500
 
-    return jsonify({'success': True, 'status': 'chess'})
+    # Chess itself is fine without Azure - the board, the game and the guest
+    # play all work. Only the robot's commentary needs it, so this is worth
+    # saying and not worth refusing over.
+    voice_ok, _missing = settings.voice_ready()
+    warning = None
+    if not voice_ok:
+        warning = ('The game will run, but the robot will play in silence: '
+                   'there is no Microsoft Azure voice key set. Add one under '
+                   'Settings & Keys if you want it to speak.')
+
+    return jsonify({'success': True, 'status': 'chess', 'warning': warning})
 
 
 @app.route('/launcher/start/calibration', methods=['POST'])

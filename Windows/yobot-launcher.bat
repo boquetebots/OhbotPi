@@ -47,7 +47,18 @@ REM  said it could not reach the site, a refresh a second later worked, and it
 REM  read as "the pages are slow" rather than as a bug. Same on the Pi.
 REM
 REM  /b so this waits in the background and the server starts immediately.
-start "" /b "%~dp0open-when-ready.bat" 5000 "http://localhost:5000"
+REM  Run the helper through "cmd /c call", not by handing the .bat straight
+REM  to START.
+REM
+REM  START was given an empty title, an option, a quoted path to a batch file
+REM  and that batch file's own quoted argument, and left to work out that a
+REM  .bat needs an interpreter. It did not run it, and said nothing about not
+REM  running it - no error, no output, no browser. Three attempts were spent
+REM  on the path before it turned out the path had been right all along and
+REM  START simply was not launching the thing. 2026-09-20.
+REM
+REM  /b keeps it in this window instead of opening a second one.
+start "Yobot browser" /b cmd /c call "%HERE%\open-when-ready.bat" 5000 "http://localhost:5000"
 
 "%PY%" "%PROJ%\launcher_server.py"
 endlocal

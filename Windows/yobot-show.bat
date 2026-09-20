@@ -105,7 +105,17 @@ REM  which did not wait at all - but still a guess: comfortable on this PC,
 REM  short on a Pi, and much too short on the first run from a USB stick,
 REM  where Python is loading thousands of small files off flash. Asking the
 REM  port is right on every machine and wastes no time on a fast one.
-start "" /b "%~dp0open-when-ready.bat" %PORT% "http://localhost:%PORT%"
+REM  %HERE%, not %~dp0. This file is called by name from the stick's
+REM  START YOBOT.bat, which does a "cd /d" into the Windows folder and then
+REM  call "yobot-launcher.bat" - a RELATIVE name. That makes %0 relative, so
+REM  %~dp0 is resolved against the CURRENT directory each time it is expanded,
+REM  and line 40 above has already changed that to the project folder. The
+REM  result was "cannot find F:\OhbotPi2\open-when-ready.bat" - one folder up
+REM  from where it lives. %HERE% is captured at the top, before any cd, which
+REM  is exactly why it is captured at the top.
+REM  "cmd /c call", not the bare .bat - see yobot-launcher.bat. Handing a
+REM  batch file straight to START silently did nothing at all on 2026-09-20.
+start "Yobot browser" /b cmd /c call "%HERE%\open-when-ready.bat" %PORT% "http://localhost:%PORT%"
 
 "%PY%" show_server.py %ARGS%
 

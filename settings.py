@@ -148,6 +148,38 @@ def read_for_page():
     return out
 
 
+def voice_ready():
+    """
+    Can the robot speak and listen? Returns (ok, [settings still to fill in]).
+
+    Added 2026-09-20 so the Launcher can refuse to start the Greeter with a
+    clear sentence, instead of starting it and letting it fail out of sight
+    in its own window. Lives here because this file is the one place that
+    knows how .env is read.
+    """
+    raw = _read_raw()
+    missing = [n for n in REQUIRED_VOICE if _is_placeholder(raw.get(n, ''))]
+    return (not missing), missing
+
+
+def brain_ready():
+    """
+    Is an AI provider usable? Returns True or False.
+
+    Asks llm.py rather than looking for one particular key: which key matters
+    depends on LLM_PROVIDER, and a local Ollama needs no key at all. Anything
+    unexpected counts as not ready, which only ever produces a warning.
+    """
+    try:
+        import llm
+        result = llm.is_ready()
+        if isinstance(result, (tuple, list)):
+            return bool(result[0])
+        return bool(result)
+    except Exception:                                        # noqa: BLE001
+        return False
+
+
 def needs_setup():
     """True on a brand-new install — nothing usable filled in yet."""
     raw = _read_raw()
