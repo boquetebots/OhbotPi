@@ -857,15 +857,39 @@ def _stockfish_path():
         return from_env
 
     def look_in(folder, depth=1):
+        """
+        The same filtering as _look_in() in chess_server.py, and it matters.
+
+        A first version matched any file whose name began with "stockfish",
+        which quietly matched STOCKFISH_SETUP.md - the documentation, which
+        ships on every stick - and so reported an engine on a machine that had
+        none. Chess was allowed to open with no engine, which is the exact
+        thing this check exists to prevent.
+
+        So: skip documents and archives, insist on .exe on Windows, and insist
+        on the executable bit elsewhere.
+        """
         if not os.path.isdir(folder):
             return None
+        candidates = []
         for root, dirs, files in os.walk(folder):
             if root[len(folder):].count(os.sep) >= depth:
                 dirs[:] = []
             for name in files:
-                if name.lower().startswith('stockfish'):
-                    return os.path.join(root, name)
-        return None
+                low = name.lower()
+                if not low.startswith('stockfish'):
+                    continue
+                if low.endswith(('.zip', '.txt', '.md', '.nnue', '.exe.zip')):
+                    continue
+                if os.name == 'nt' and not low.endswith('.exe'):
+                    continue
+                full = os.path.join(root, name)
+                if os.access(full, os.X_OK) or os.name == 'nt':
+                    candidates.append(full)
+        if not candidates:
+            return None
+        candidates.sort(key=lambda q: (len(os.path.basename(q)), q))
+        return candidates[0]
 
     found = look_in(CHESS_DIR)
     if found:
