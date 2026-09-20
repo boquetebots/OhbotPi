@@ -98,9 +98,14 @@ REM --- Go ------------------------------------------------------------------
 echo.
 echo  Starting... the page will open on its own.
 echo.
-REM  A short wait so the robot has time to connect before the browser opens.
-REM  If the page looks empty, wait two seconds and refresh it.
-start "" /b cmd /c "timeout /t 4 /nobreak >nul & start "" "http://localhost:%PORT%""
+REM  Wait for the server to answer, then open the browser.
+REM
+REM  This was a fixed 4-second pause. Better than the launcher's version,
+REM  which did not wait at all - but still a guess: comfortable on this PC,
+REM  short on a Pi, and much too short on the first run from a USB stick,
+REM  where Python is loading thousands of small files off flash. Asking the
+REM  port is right on every machine and wastes no time on a fast one.
+start "" /b "%~dp0open-when-ready.bat" %PORT% "http://localhost:%PORT%"
 
 "%PY%" show_server.py %ARGS%
 

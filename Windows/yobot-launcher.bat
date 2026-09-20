@@ -38,6 +38,16 @@ if exist "%VENVPY%" (
 )
 
 cd /d "%PROJ%"
-start "" http://localhost:5000
+
+REM  Open the browser only once the server is answering.
+REM
+REM  This used to be a plain "start http://localhost:5000" on the line BEFORE
+REM  the server was launched - a race the browser could never win. The page
+REM  said it could not reach the site, a refresh a second later worked, and it
+REM  read as "the pages are slow" rather than as a bug. Same on the Pi.
+REM
+REM  /b so this waits in the background and the server starts immediately.
+start "" /b "%~dp0open-when-ready.bat" 5000 "http://localhost:5000"
+
 "%PY%" "%PROJ%\launcher_server.py"
 endlocal

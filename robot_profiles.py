@@ -133,12 +133,46 @@ def check_omd(path):
 # ── Active robot label ────────────────────────────────────────────────────
 
 def get_active():
-    """Name of the robot last loaded or saved, or None if never set."""
+    """
+    Name of the robot last loaded or saved, or None if never set.
+
+    Returned with the SAME capitalisation as the profile file in
+    ohbotData/robots/, because the Launcher compares the two exactly:
+
+        robotsKnown.some(rb => rb.name === d.active)
+
+    active_robot.txt has historically been written in lower case ("rubia")
+    while the profile beside it is Rubia.omd, so that comparison was always
+    false and the dropdown silently fell back to whichever robot happened to
+    sort first. Found 2026-09-20 on a fresh stick: the dropdown showed
+    TallMan while Ohbot's calibration was the one actually loaded.
+
+    That is worse than untidy. Somebody reading the dropdown believes a
+    different robot is live, and the next thing they do is press Load.
+
+    Resolving the case here fixes every caller at once, instead of each page
+    having to remember to compare loosely.
+    """
     try:
         with open(ACTIVE_FILE, 'r') as f:
-            return clean_name(f.read())
+            name = clean_name(f.read())
     except Exception:
         return None
+
+    if not name:
+        return None
+
+    # Match the file on disk, whatever case the text file used.
+    try:
+        for fn in os.listdir(ROBOTS_DIR):
+            if fn.endswith('.omd') and fn[:-4].lower() == name.lower():
+                return fn[:-4]
+    except Exception:
+        pass
+
+    # No profile of that name - hand back what was written, so the caller can
+    # still report it rather than pretending nothing is loaded.
+    return name
 
 
 def set_active(name):
