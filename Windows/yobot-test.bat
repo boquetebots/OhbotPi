@@ -3,6 +3,7 @@ REM ===========================================================================
 REM  yobot-test.bat  -  does the robot move?
 REM ===========================================================================
 REM  DOUBLE-CLICK THIS FILE. This is Step 6 of "START HERE.md" in this folder.
+REM  On a Yobot drive it is what "TEST THIS COMPUTER.bat" runs.
 REM
 REM  Yobot should turn its head, nod, blink, open its mouth and change eye
 REM  colour. No internet, no API keys - this only talks to the robot down the
@@ -19,7 +20,6 @@ if not exist "%PROJ%\yobot_win.py" (
 )
 
 title Yobot - Movement Test
-set "VENVPY=%USERPROFILE%\yobot-venv\Scripts\python.exe"
 
 echo.
 echo ===========================================================
@@ -36,16 +36,44 @@ if not exist "%PROJ%\yobot_win.py" (
     exit /b 1
 )
 
-if not exist "%VENVPY%" (
-    echo  [X] Yobot has not been set up on this laptop yet.
-    echo.
-    echo      Double-click  SETUP.bat  in this folder first, let it
-    echo      finish, then come back to this one.
-    echo.
-    pause
-    endlocal
-    exit /b 1
-)
+REM --- Which Python runs Yobot ----------------------------------------------
+REM  THE STICK'S OWN PYTHON COMES FIRST. See yobot-launcher.bat for the full
+REM  story.
+REM
+REM  This file was the worst of the four. It did not just prefer the venv - it
+REM  REFUSED TO RUN without one, with "Yobot has not been set up on this
+REM  laptop yet, double-click SETUP.bat". On a Yobot drive there is no
+REM  SETUP.bat, by design, and no venv is wanted or needed.
+REM
+REM  So the one file the guide tells a stranger to run FIRST, to find out
+REM  whether their computer can run Yobot, was guaranteed to fail on exactly
+REM  the computers it exists to check. Found 2026-10-02 by the first tester
+REM  outside the project.
+REM
+REM  Longhand with gotos on purpose - cmd expands the whole of a parenthesised
+REM  block before it picks a branch.
+set "PY="
+
+for %%I in ("%PROJ%\..\python\python.exe") do set "STICKPY=%%~fI"
+if exist "%STICKPY%" set "PY=%STICKPY%"
+if not "%PY%"=="" goto have_python
+
+set "VENVPY=%USERPROFILE%\yobot-venv\Scripts\python.exe"
+if exist "%VENVPY%" set "PY=%VENVPY%"
+if not "%PY%"=="" goto have_python
+
+where python >nul 2>&1
+if not errorlevel 1 set "PY=python"
+if not "%PY%"=="" goto have_python
+
+where py >nul 2>&1
+if not errorlevel 1 set "PY=py"
+
+:have_python
+if "%PY%"=="" goto no_python
+
+echo.
+echo   Python: %PY%
 
 echo  Before you carry on, check both of these:
 echo.
@@ -61,7 +89,7 @@ echo  Running the test - watch the robot, not the screen...
 echo.
 
 cd /d "%PROJ%"
-"%VENVPY%" "%PROJ%\yobot_win.py" test
+"%PY%" "%PROJ%\yobot_win.py" test
 set "RESULT=%ERRORLEVEL%"
 
 echo.
@@ -71,8 +99,10 @@ if "%RESULT%"=="0" (
     echo.
     echo   Did the head move and the eyes change colour?
     echo.
-    echo     YES - setup is done. Double-click yobot-launcher.bat
-    echo           to actually use Yobot.
+    echo     YES - setup is done. Now start Yobot properly:
+    echo           on a Yobot drive, double-click START YOBOT.bat
+    echo           at the top of the drive. On an installed copy,
+    echo           double-click yobot-launcher.bat in this folder.
     echo.
     echo     NO  - the laptop found the robot but nothing moved.
     echo           Check the power supply is on, not just the USB.
@@ -93,3 +123,27 @@ echo.
 pause
 endlocal
 exit /b 0
+
+:no_python
+echo.
+echo ===========================================================
+echo    NO PYTHON FOUND
+echo ===========================================================
+echo.
+echo    This test could not find a Python to run with. It looked for:
+echo.
+echo      1. The Yobot drive's own Python, which should be at
+echo         %PROJ%\..\python\python.exe
+echo      2. An installed Yobot's Python, at
+echo         %USERPROFILE%\yobot-venv
+echo      3. "python" or "py" on this computer
+echo.
+echo    IF YOU ARE RUNNING FROM A USB DRIVE, number 1 is the one
+echo    that should have worked. The usual cause is that the ZIP
+echo    was not fully extracted - the python folder is large and
+echo    is often the part that gets cut short. Extract it again
+echo    and let it finish.
+echo.
+pause
+endlocal
+exit /b 1
